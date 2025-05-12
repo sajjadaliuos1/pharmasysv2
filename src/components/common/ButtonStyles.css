@@ -1,0 +1,54 @@
+.g-btn{
+  /* background: #14A4D6; */
+  border-radius: 8px;
+}
+.icon-button {
+  display: flex;
+  align-items: center; /* Center the icon and text vertically */
+  justify-content: center;
+  gap: 8px; 
+  border: none;
+  color: #14A4D6;
+  font-size: 1.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.3s ease;
+  height: 40px;
+}
+
+.icon-button:hover {
+  color: #FFAF04;
+}
+
+.hover-left-to-right {
+  background: linear-gradient(#14A4D6 0 0) no-repeat;
+  background-size: 0% 100%;
+  background-position: 100% 0%;
+  transition: background-size 0.4s;
+}
+
+.hover-left-to-right:hover {
+  background-size: 100% 100%;
+  background-position: 0% 0%;
+  transition: background-size 0.4s;
+}
+
+.button-text {
+  font-size: 1rem; /* Adjust text size */
+  font-weight: 500; /* Optional: Make text slightly bold */
+}
+
+.sizing{
+  font-size: 0.8rem !important;
+}
+
+.btn-primary{
+  border: 1px solid #FFAF04;
+}
+
+.btn-danger{
+  border: 1px solid rgb(232, 116, 116);
+  color: rgb(225, 61, 61);
+}

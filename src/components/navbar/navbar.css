@@ -1,0 +1,437 @@
+
+
+.navbar-container {
+  display: flex;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background-color: #F3F6F9;
+  color: #5B6670;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: transform 0.3s ease;
+  z-index: 1500;
+  padding: 20px;
+}
+
+/* code for logo start */
+.logo-img {
+  width: 121px;
+  height: 85px;
+  border: 1px solid #00A4E3;
+  border-radius: 50%;
+  margin-left: 35px;
+  margin-top: -15px;
+}
+
+/* code for logo end */
+
+/* Sidebar for PC view */
+@media (min-width: 769px) {
+  .sidebar {
+    transform: translateX(0); /* Always visible on larger screens */
+    margin-left: 0 !important;
+  }
+}
+
+/* Sidebar for Mobile/Tablet view */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    margin-left: 0 !important;
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
+}
+
+/* Sidebar Links */
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar nav ul li {
+  margin: 10px 0;
+}
+/* .sidebar-item dropdown dropdown-item a{
+  list-style:circle ;
+} */
+
+.sidebar nav ul li a {
+  text-decoration: none;
+  color: #5B6670;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+/* .sidebar nav ul li a::before {
+  content: "-";
+  color: #5B6670;
+  margin-right: 8px; 
+} */
+ .sidebar nav ul li a::before {
+  content: none; /* Remove the hyphen content */
+}
+.sidebar-link::before {
+  content: none !important;
+}
+
+.sidebar nav ul li a:hover {
+  color: #f39c12;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* background-color: rgba(0, 0, 0, 0.5); */
+  z-index: 1000;
+}
+
+/* Hamburger Menu */
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 13px;
+  left: 280px;
+  z-index: 2000;
+  cursor: pointer;
+}
+
+.hamburger .line {
+  width: 30px;
+  height: 3px;
+  background-color: #333;
+  margin: 5px 0;
+  transition: all 0.3s ease;
+}
+
+.hamburger .line.open:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger .line.open:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger .line.open:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Hamburger for Mobile/Tablet */
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+}
+
+/* Content area */
+.content {
+  margin-left: 250px; /* Adjust for sidebar */
+  /* padding: 20px; */
+  /* padding-top: 0; */
+  width: calc(100% - 250px);
+  transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .content {
+    margin-left: 0; /* Sidebar hidden */
+    width: 350px;
+  }
+}
+
+
+.sidebar-item {
+  margin: 10px 0;
+}
+
+/* .sidebar-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 25px;
+  color: #5B6670;
+  cursor: pointer;
+  background-color:  #F3F6F9;
+  transition: background-color 0.3s ease;
+} */
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 10px 15px;
+  color: inherit;
+  gap: 10px; /* Space between icon and label */
+}
+.dropdown-item a::before {
+  content: none;
+}
+
+/* Add a small circle for dropdown items if desired */
+.dropdown-item a {
+  position: relative;
+  padding-left: 15px;
+}
+
+.dropdown-item a::before {
+  content: "•"; /* Use a bullet point instead of hyphen */
+  position: absolute;
+  left: 0;
+  color: #5B6670;
+}
+.sidebar-link:hover {
+  /* background-color: #333; */
+  color: #f39c12;
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown item styles with icons */
+.dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 15px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.dropdown-icon {
+  font-size: 16px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-item.active .dropdown-link {
+  color: #f39c12;
+}
+
+/* Adjust dropdown positioning */
+.dropdown {
+  position: relative;
+  left: 1.5rem;
+  padding-left: 20px;
+  margin-top: 5px;
+}
+
+/* Improve spacing for dropdown items */
+.dropdown-item {
+  margin: 5px 0;
+  padding: 0;
+}
+
+/* .dropdown {
+  position: relative;
+  font-size: 2px;
+  left: 3rem;
+} */
+
+/* .dropdown-item {
+  list-style: circle;
+  background: red;
+  margin: 5px 0;
+} */
+
+.dropdown-item a {
+  color: black;
+  text-decoration: none;
+  font-size: 1px;
+}
+
+.dropdown-item a:hover {
+  color: #f39c12;
+}
+
+
+
+
+/* css for scroll bar  */
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px grey; 
+  border-radius: 10px;
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background:#f39c12; 
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #f39c12; 
+}
+
+.sidebar-item.active .sidebar-link, 
+.dropdown-item.active a {
+  /* background-color: #f39c12;  */
+  color:  #f39c12; /* Active text color */
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Space between icon and label */
+}
+
+.sidebar-label {
+  flex-grow: 1; /* Prevents overlap with other elements */
+}
+.sidebar-link {
+  padding: 10px 15px;
+  font-size: 16px; /* Adjust text size */
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-link svg {
+  font-size: 20px; /* Adjust icon size */
+}
+
+/* ////////
+ */
+ .sidebar-item.active > .sidebar-link {
+  background-color: #fad392;
+  color: #f39c12;
+}
+
+
+
+
+
+
+
+/* Profile container styles */
+.navbar-brand{
+  margin-left: 2rem;
+}
+.profile-container {
+  position: relative;
+  display: flex; /* Use flex to align the icon and badge */
+  align-items: center; /* Vertically align items */
+  margin-right: 30px;
+}
+
+.profile-container .navbar-icon {
+  margin-right: 10px; /* Space between the icon and badge */
+}
+
+.profile-dropdown {
+  position: absolute;
+  background: #F8F9FA;
+  top: 40px;
+  right: 0;
+  text-align: center;
+  width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-20px); /* Start above */
+  transition: all 0.3s ease-in-out; /* Smooth transition */
+}
+
+.profile-dropdown.open {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0); /* Drop-down effect */
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  font-size: 14px;
+  text-decoration: none;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  opacity: 0;
+  animation: fadeIn 0.3s forwards;
+}
+
+.dropdown-item:hover {
+  background-color: #ddd;
+}
+
+.dropdown-item .sidebar-icon {
+  font-size: 18px;
+}
+
+/* Notification Badge */
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: red;
+  color: white;
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 50%;
+  font-weight: bold;
+  margin-left: 5px; /* Space between the icon and badge */
+}
+
+/* Profile dropdown text animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.navbar{
+  margin-left: 252px;
+}
+
+@media (max-width: 768px) { 
+  .navbar {
+    margin-left: 0;
+  }
+}
+
+/* Default spacing for large screens */
+.custom-justify {
+  justify-content: space-between !important;
+}
+
+/* Override for smaller screens */
+@media (max-width: 768px) {
+  .custom-justify {
+    justify-content: flex-start !important;
+  }
+}
+

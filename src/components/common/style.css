@@ -1,0 +1,94 @@
+.test-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+    font-size: 13px;
+
+    margin-bottom: 1rem;
+}
+
+.test-header > div {
+    vertical-align: middle;
+    align-content: center;
+}
+
+.test-header button {
+    margin-right: 5px;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.test-header input {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.test-header #floating-rows {
+    vertical-align: bottom;
+}
+.ag-floating-top .ag-row-pinned.ag-row {
+    background-color: #2244cc44;
+}
+
+.ag-floating-bottom .ag-row-pinned.ag-row {
+    background-color: #2244cc44;
+}
+/* AG Grid base styles */
+.ag-theme-alpine {
+    --ag-font-size: 14px;
+    --ag-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  }
+  
+  /* For small screens */
+  .small-screen .ag-theme-alpine {
+    --ag-font-size: 12px;
+  }
+  
+  .ag-theme-alpine .ag-header {
+    font-weight: bold;
+  }
+  
+  /* Mobile styles (small screens) */
+  @media (max-width: 576px) {
+    .ag-theme-alpine .ag-cell {
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+    
+    .ag-theme-alpine .ag-header-cell-label {
+      font-size: 12px;
+    }
+    
+    /* Mobile-specific styles */
+    .mobile-header h2 {
+      text-align: center;
+    }
+  }
+  
+  /* Tablet and mobile optimizations */
+  @media (max-width: 768px) {
+    .ag-paging-page-size .ag-picker-field .ag-label {
+      display: none;
+    }
+    
+    .ag-paging-row-summary-panel {
+      display: none;
+    }
+    
+    .ag-header-cell-label {
+      white-space: normal;
+      overflow: visible;
+    }
+    
+    .desktop-header {
+      display: none;
+    }
+  }
+  
+  /* Desktop-only styles */
+  @media (min-width: 769px) {
+    .mobile-header {
+      display: none;
+    }
+  }
+
