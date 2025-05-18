@@ -3,7 +3,7 @@ import { Modal, Form, Button, Input, message } from 'antd';
 import { createSubCategory } from '../../../api/API';
 
 
-const SubCategoryModal = ({ visible, title, onCancel, initialValues, onSave, button,setIsModalVisible }) => {
+const SubCategoryModal = ({ visible, title, onCancel, initialValues, onSave,button, setIsModalVisible }) => {
   const [form] = Form.useForm();
   const [btnLoading, setBtnLoading] = useState(false);
 
@@ -21,39 +21,38 @@ const SubCategoryModal = ({ visible, title, onCancel, initialValues, onSave, but
   const handleSubmit = async (values) => {
     try {
       setBtnLoading(true);
-      // Validate form before proceeding
+      
+try {
+      await form.validateFields();
+    } catch (validationError) {
+      setBtnLoading(false);
+      return;
+    }
+
       await form.validateFields();
       
-      // Prepare payload with proper type conversion
       const payload = {
         ...values,
         typeId: values.typeId ? Number(values.typeId) : 0,  
       };
 
-      // Call API
       const response = await createSubCategory(payload);
       
-      // Safety check for API response
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
       }
       
-      // Check response status
       if (response.data.status === "Success") {      
-        // Reset form and notify parent component
         form.resetFields();
         
-        // Call parent's onSave callback to trigger grid refresh
         if (typeof onSave === 'function') {
           onSave(values);
         }
       } else {
-        // Show error message from API
         message.error(response.data.message || "Operation failed");
       }
     } catch (err) {
-      // Handle API errors
-      console.error("Error saving category:", err);
+      console.error("Error saving Subcategory:", err);
       message.error(err.message || "Something went wrong while saving.");
     }finally {
       setBtnLoading(false);
@@ -71,9 +70,12 @@ const SubCategoryModal = ({ visible, title, onCancel, initialValues, onSave, but
           Cancel
         </Button>,
         <Button 
-          key="submit" 
-          type="primary" 
+          key="submit"
+          type="primary"
           onClick={() => handleSubmit(form.getFieldsValue())}
+          loading={btnLoading}
+          disabled={btnLoading}
+         
         >
          {button}
         </Button>
@@ -84,16 +86,16 @@ const SubCategoryModal = ({ visible, title, onCancel, initialValues, onSave, but
         layout="vertical"
         initialValues={initialValues}
       >
-        <Form.Item name="typeId" hidden />
+        <Form.Item name="typeId" noStyle />
         <Form.Item
           name="typeName"
-          label="Category Name"
+          label="SubCategory Name"
           rules={[
-            { required: true, message: 'Please enter category name' },
-            { max: 100, message: 'Category name cannot exceed 100 characters' }
+            { required: true, message: 'Please enter Subcategory name', whitespace: true },
+            { max: 100, message: 'SubCategory name cannot exceed 100 characters' }
           ]}
         >
-          <Input placeholder="Enter category name" maxLength={100} />
+          <Input placeholder="Enter Subcategory name" maxLength={100} />
         </Form.Item>
       </Form>
     </Modal>

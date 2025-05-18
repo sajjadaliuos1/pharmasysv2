@@ -14,15 +14,15 @@ import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { deleteCategory, getCategories } from "../../../api/API";
-import CategoryModal from "./CategoryModol";
+import { deleteUom, getUom } from "../../../api/API";
+import UomModal from "./UomModol";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
  
 ]);
 
-const Category = () => {
+const Uom = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
@@ -48,12 +48,12 @@ const Category = () => {
   }, [AddnewModal, rowData]);
 
   const handleDelete = useCallback(async (id) => {
-    console.log("Delete category id:", id);
+    console.log("Delete  id:", id);
     try {
-      const response = await deleteCategory(id);
+      const response = await deleteUom(id);
       if(response.data.status === "Success"){
-      handleRefreshData();
-    Toaster.success(response.data.message);
+             handleRefreshData();
+         Toaster.success(response.data.message);
       } else {
         Toaster.error(response.data.message);
       }
@@ -70,12 +70,11 @@ const Category = () => {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
         minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
+       
       },
     
       {
-        headerName: "Category Name",
+        headerName: "Unit Name",
         field: "typeName",
         sortable: true,
         filter: true,
@@ -131,7 +130,7 @@ const Category = () => {
     setLoading(true);
     
     try {
-      const response = await getCategories();
+      const response = await getUom();
       // Handle potential null response safely
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
@@ -144,7 +143,7 @@ const Category = () => {
       if (data.length > 0) {
         messageApi.success({ content: 'Data loaded successfully', key: 'loadingData' });
       } else {
-        messageApi.info({ content: 'No category data available', key: 'loadingData' });
+        messageApi.info({ content: 'No data available', key: 'loadingData' });
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch data');
@@ -163,7 +162,7 @@ const Category = () => {
     loadingRef.current = true;
 
     try {
-      const response = await getCategories();
+      const response = await getUom();
     
       if (!response) {
         throw new Error("Failed to fetch categories");
@@ -189,16 +188,16 @@ const Category = () => {
   }, []);
 
   const handleExportPDF = useCallback(() => {
-    const fileName = prompt("Enter file name for PDF:", "category-data");
+    const fileName = prompt("Enter file name for PDF:", "Uom-data");
     if (!fileName) return;
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text('Category Report', 14, 22);
+    doc.text('Uom Report', 14, 22);
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
     
     // Include serial number and exclude actions column
-    const columns = ['S.No', 'Category ID', 'Category Name'];
+    const columns = ['S.No',  'Unit Name'];
     
     const rows = rowData.map((row, index) => [
       index + 1,
@@ -227,8 +226,8 @@ const Category = () => {
         }));
       
       gridRef.current.api.exportDataAsCsv({
-        fileName: 'category-data.csv',
-        sheetName: 'Categories',
+        fileName: 'Uom-data.csv',
+        sheetName: 'Uom',
         columnKeys: columnsToExport
           .filter(col => col.field) // Only include columns with field property
           .map(col => col.field),   // Extract field names for columnKeys
@@ -278,7 +277,7 @@ const Category = () => {
 
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: "Category Management",
+    title: "Unit Management",
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -336,7 +335,7 @@ const Category = () => {
   }, [searchText, rowData]);
  
   const handleModalSave = useCallback(() => { 
-    Toaster.success(editingRecord?.typeId ? "Category updated successfully!" : "Category added successfully!");
+    Toaster.success(editingRecord?.typeId ? "Unit updated successfully!" : "Unit added successfully!");
    
     setIsModalVisible(false);
      
@@ -430,9 +429,9 @@ const Category = () => {
         </div>
       )}
       
-      <CategoryModal
+      <UomModal
         visible={isModalVisible}
-        title={editingRecord?.typeId ? `Edit Category` : 'Add New Category'}
+        title={editingRecord?.typeId ? `Edit Unit` : 'Add New Unit'}
         button={editingRecord?.typeId ? 'Update' : 'Save'}
         onCancel={() => setIsModalVisible(false)}
         initialValues={editingRecord}
@@ -445,4 +444,4 @@ const Category = () => {
   );
 };
 
-export default Category;
+export default Uom;

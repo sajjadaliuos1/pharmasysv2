@@ -10,19 +10,18 @@ import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-
-
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { deleteCategory, getCategories } from "../../../api/API";
-import CategoryModal from "./CategoryModol";
+import { deleteProduct, getProduct } from "../../../api/API";
+import ProductModal from "./ProductModal";
+
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
  
 ]);
 
-const Category = () => {
+const ProductList = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
@@ -36,24 +35,23 @@ const Category = () => {
   const loadingRef = useRef(false); 
   
   const AddnewModal = useCallback((record) => {
-    setEditingRecord(record ? { ...record } : { typeId: '', typeName: '' });
+    setEditingRecord(record ? { ...record } : { productId: '', categoryId: '',subCategoryId: '',uomId:'',productName:'',barcode:'',discountPercent:'',stockAlert:'',location:'',description:'',isStrip:'',stripPerBox:'' });
     setIsModalVisible(true);
   }, []);
 
   const handleEdit = useCallback((id) => {
-    const record = rowData.find(item => item.typeId === id);
+    const record = rowData.find(item => item.productId === id);
     if (record) {
       AddnewModal(record);
     }
   }, [AddnewModal, rowData]);
 
-  const handleDelete = useCallback(async (id) => {
-    console.log("Delete category id:", id);
+  const handleDelete = useCallback(async (id) => {     
     try {
-      const response = await deleteCategory(id);
+      const response = await deleteProduct(id);
       if(response.data.status === "Success"){
-      handleRefreshData();
-    Toaster.success(response.data.message);
+       handleRefreshData();
+        Toaster.success(response.data.message);
       } else {
         Toaster.error(response.data.message);
       }
@@ -65,62 +63,103 @@ const Category = () => {
   }, [rowData, messageApi]);
 
    const getColumnDefs = useCallback(() => {
-    return [
-      {
-        headerName: 'S.No',
-        valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
-      },
-    
-      {
-        headerName: "Category Name",
-        field: "typeName",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-     
-      {
-        headerName: "Actions",
-        field: "actions",
-        sortable: false,
-        filter: false,
-        //  pinned: 'right', 
-        // minWidth: 110,
-        cellRenderer: (params) => {
-          return (
-            <Space size="middle">
-              <Tooltip title="Edit">
-                <Button 
-                  icon={<EditOutlined />} 
-                  text={params.data.typeId}
-                  onClick={() => handleEdit(params.data.typeId)} 
-                  size="small"
-                />
-              </Tooltip>
-              <Popconfirm
-                title="Are you sure you want to delete?"
-                onConfirm={() => handleDelete(params.data.typeId)}
-                okText="Yes"
-                cancelText="No"
-              >
-                  <Tooltip title="Delete"> 
-                <Button 
-                  icon={<DeleteOutlined />} 
-                  danger 
-                  size="small"
-                /> </Tooltip>
-              </Popconfirm>
-            </Space>
-          );
-        },
-        // suppressSizeToFit: true,
-      }
-    ];
-  }, [screenSize, handleEdit, handleDelete]);
+  return [
+    {
+      headerName: 'S.No',
+      valueGetter: (params) => params.node.rowIndex + 1,
+      minWidth: 80,
+    },
+    {
+      headerName: "Product Name",
+      field: "productName",
+      sortable: true,
+      filter: true,
+      minWidth: 140,
+    },
+    {
+      headerName: "Barcode",
+      field: "barcode",
+      minWidth: 140,
+    },
+    {
+      headerName: "Category ID",
+      field: "categoryId",
+      minWidth: 100,
+    },
+    {
+      headerName: "Subcategory ID",
+      field: "subCategoryId",
+      minWidth: 100,
+    },
+    {
+      headerName: "UOM ID",
+      field: "uomId",
+      minWidth: 100,
+    },
+    {
+      headerName: "Discount %",
+      field: "discountPercent",
+      minWidth: 100,
+    },
+    {
+      headerName: "Stock Alert",
+      field: "stockAlert",
+      minWidth: 100,
+    },
+    {
+      headerName: "Location",
+      field: "location",
+      minWidth: 120,
+    },
+    {
+      headerName: "Description",
+      field: "description",
+      minWidth: 150,
+    },
+    {
+      headerName: "Is Strip",
+      field: "isStrip",
+      valueFormatter: params => params.value ? 'Yes' : 'No',
+      minWidth: 100,
+    },
+    {
+      headerName: "Strip/Box",
+      field: "stripPerBox",
+      minWidth: 100,
+    },
+    {
+      headerName: "Actions",
+      field: "actions",
+      cellRenderer: (params) => (
+        <Space size="middle">
+          <Tooltip title="Edit">
+            <Button 
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(params.data.productId)}
+              size="small"
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Are you sure you want to delete?"
+            onConfirm={() => handleDelete(params.data.productId)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Tooltip title="Delete">
+              <Button 
+                icon={<DeleteOutlined />} 
+                danger 
+                size="small"
+              />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
+      minWidth: 130,
+    }
+  ];
+}, [useScreenSize, handleEdit, handleDelete]);
+
   
   const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
 
@@ -131,7 +170,7 @@ const Category = () => {
     setLoading(true);
     
     try {
-      const response = await getCategories();
+      const response = await getProduct();
       // Handle potential null response safely
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
@@ -163,7 +202,7 @@ const Category = () => {
     loadingRef.current = true;
 
     try {
-      const response = await getCategories();
+      const response = await getProduct();
     
       if (!response) {
         throw new Error("Failed to fetch categories");
@@ -195,9 +234,7 @@ const Category = () => {
     doc.setFontSize(18);
     doc.text('Category Report', 14, 22);
     doc.setFontSize(11);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-    
-    // Include serial number and exclude actions column
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);     
     const columns = ['S.No', 'Category ID', 'Category Name'];
     
     const rows = rowData.map((row, index) => [
@@ -218,7 +255,6 @@ const Category = () => {
 
   const handleExportExcel = useCallback(() => {
     if (gridRef.current?.api) {
-      // Export only specific columns, excluding the actions column
       const columnsToExport = columnDefs
         .filter(col => col.field !== 'actions')
         .map(col => ({ 
@@ -230,8 +266,8 @@ const Category = () => {
         fileName: 'category-data.csv',
         sheetName: 'Categories',
         columnKeys: columnsToExport
-          .filter(col => col.field) // Only include columns with field property
-          .map(col => col.field),   // Extract field names for columnKeys
+          .filter(col => col.field) 
+          .map(col => col.field), 
         skipColumnHeaders: false,
         skipHeader: false
       });
@@ -278,7 +314,7 @@ const Category = () => {
 
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: "Category Management",
+    title: "Product Management",
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -290,8 +326,7 @@ const Category = () => {
     screenSize
   });
   
-  const defaultColDef = useMemo(() => ({
-   
+  const defaultColDef = useMemo(() => ({   
     filter: true,
     resizable: true,
     suppressSizeToFit: false
@@ -317,29 +352,23 @@ const Category = () => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
-        (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+         (row.typeName && row.typeName.toLowerCase().includes(searchLower))
       );
-  
       setFilteredData(filtered);
     };
     
     const handler = setTimeout(() => {
-      filterData();
-      
+      filterData();      
       if (gridRef.current?.api) {
         gridRef.current.api.onFilterChanged();
       }
-    }, 300);
-    
+    }, 300);    
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
  
   const handleModalSave = useCallback(() => { 
-    Toaster.success(editingRecord?.typeId ? "Category updated successfully!" : "Category added successfully!");
-   
-    setIsModalVisible(false);
-     
+    Toaster.success(editingRecord?.typeId ? "Product updated successfully!" : "Product added successfully!");   
+    setIsModalVisible(false);     
     handleRefreshData();
   }, [editingRecord?.typeId, handleRefreshData]);
   
@@ -430,9 +459,9 @@ const Category = () => {
         </div>
       )}
       
-      <CategoryModal
+      <ProductModal
         visible={isModalVisible}
-        title={editingRecord?.typeId ? `Edit Category` : 'Add New Category'}
+        title={editingRecord?.typeId ? `Edit Product` : 'Add Product'}
         button={editingRecord?.typeId ? 'Update' : 'Save'}
         onCancel={() => setIsModalVisible(false)}
         initialValues={editingRecord}
@@ -445,4 +474,4 @@ const Category = () => {
   );
 };
 
-export default Category;
+export default ProductList;

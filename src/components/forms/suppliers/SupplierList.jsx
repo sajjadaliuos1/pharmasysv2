@@ -1,30 +1,29 @@
+
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
-import "../common/style.css";
+import "../../common/style.css";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { ExcelExportModule } from "ag-grid-enterprise";
+
 import { ModuleRegistry } from 'ag-grid-community';
-import { RowGroupingModule, PivotModule, TreeDataModule, ServerSideRowModelModule, SetFilterModule } from 'ag-grid-enterprise';
-import { AllCommunityModule } from "ag-grid-community";
-import { Spin, message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
-import useScreenSize from '../common/useScreenSize';
-import { useTableHeader } from '../common/useTableHeader';
+ import { AllCommunityModule } from "ag-grid-community";
+import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
+import useScreenSize from '../../common/useScreenSize';
+import { useTableHeader } from '../../common/useTableHeader';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
-import CategoryModal from './CategoryModol';
+
+import { Toaster } from "../../common/Toaster";
+import Loader from "../../common/Loader";
+import { deleteSupplier, getSuppliers } from "../../../api/API";
+import SupplierListModal from "./SupplierListModal";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
-  ExcelExportModule,
-  RowGroupingModule,
-  PivotModule,
-  TreeDataModule,
-  ServerSideRowModelModule,
-  SetFilterModule
+ 
 ]);
 
-const Categorydetail = () => {
+const SupplierList = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
@@ -37,95 +36,154 @@ const Categorydetail = () => {
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
   
-  // Action handlers - defined early to avoid reference issues
   const AddnewModal = useCallback((record) => {
-    setEditingRecord(record ? { ...record } : { typeId: '', typeName: '' });
+    setEditingRecord(record ? { ...record } : { supplierId: '', name: '', contact :'', address: '', amount: '', discount : '', paid :'', remaining :'', description : '', date :''});
     setIsModalVisible(true);
   }, []);
 
   const handleEdit = useCallback((id) => {
-
- 
-    const record = rowData.find(item => item.typeId === id);
+    const record = rowData.find(suplier => suplier.supplierId === id);
     if (record) {
       AddnewModal(record);
     }
   }, [AddnewModal, rowData]);
 
-  const handleDelete = useCallback((id) => {
+  const handleDelete = useCallback(async (id) => {
     console.log("Delete category id:", id);
-    // Add your delete API call here
-    // For example:
-    // axios.delete(`https://pos.idotsolution.com/api/Setting/categories/${id}`)
-    //   .then(() => {
-    //     messageApi.success('Category deleted successfully');
-    //     fetchInvoiceData(); // Refresh data after delete
-    //   })
-    //   .catch(err => {
-    //     messageApi.error(`Delete failed: ${err.message}`);
-    //   });
-    messageApi.success('Category deleted successfully');
-  }, [messageApi]);
+    try {
+      const response = await deleteSupplier(id);
+      if(response.data.status === "Success"){
+        // Update the local data without calling API again
+        // const updatedData = rowData.filter(item => item.typeId !== id);
+      handleRefreshData();
+        // setRowData(updatedData);
+        // setFilteredData(updatedData);
 
-  // Define column definitions before using them in functions
-  const getColumnDefs = useCallback(() => {
+        
+        // Just update the states, don't try to update the grid directly
+        // The grid will automatically update when filteredData changes
+        
+        Toaster.success(response.data.message);
+      } else {
+        Toaster.error(response.data.message);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete data');
+      messageApi.error({ content: `Failed to delete data: ${err.message || 'Unknown error'}`, key: 'deletingData' });
+      console.error('Error deleting data:', err);
+    }
+  }, [rowData, messageApi]);
+
+   const getColumnDefs = useCallback(() => {
     return [
       {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        width: 80,
-        // cellStyle: { textAlign: 'center' },
-        pinned: 'left', 
+        minWidth: 80,
+        // width: 80,
+        //  pinned: 'left', 
       },
+    
       {
-        headerName: "Category ID",
-        field: "typeId",
+        headerName: "Supplier Name",
+        field: "name",
         sortable: true,
         filter: true,
+       
         minWidth: 140,
-        hide: screenSize === 'xs',
       },
-      {
-        headerName: "Category Name",
-        field: "typeName",
+            {
+        headerName: "Contact",
+        field: "contact",
         sortable: true,
         filter: true,
+       
         minWidth: 140,
       },
-     
+            {
+        headerName: "Address",
+        field: "address",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+            {
+        headerName: "Amount",
+        field: "amount",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+            {
+        headerName: "Discount",
+        field: "discount",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+            {
+        headerName: "Paid",
+        field: "paid",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+            {
+        headerName: "Remaining",
+        field: "remaining",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+            {
+        headerName: "Description",
+        field: "description",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+
       {
         headerName: "Actions",
         field: "actions",
         sortable: false,
         filter: false,
+        //  pinned: 'right', 
         minWidth: 110,
         cellRenderer: (params) => {
           return (
             <Space size="middle">
-              <Tooltip title={params.data.typeId}>
+              <Tooltip title="Edit">
                 <Button 
                   icon={<EditOutlined />} 
-                  text={params.data.typeId}
-                  onClick={() => handleEdit(params.data.typeId)} 
+                  text={params.data.supplierId}
+                  onClick={() => handleEdit(params.data.supplierId)} 
                   size="small"
                 />
               </Tooltip>
               <Popconfirm
                 title="Are you sure you want to delete?"
-                onConfirm={() => handleDelete(params.data._id)}
+                onConfirm={() => handleDelete(params.data.supplierId)}
                 okText="Yes"
                 cancelText="No"
               >
+                  <Tooltip title="Delete"> 
                 <Button 
                   icon={<DeleteOutlined />} 
                   danger 
                   size="small"
-                />
+                /> </Tooltip>
               </Popconfirm>
             </Space>
           );
         },
-        suppressSizeToFit: true,
+        // suppressSizeToFit: true,
       }
     ];
   }, [screenSize, handleEdit, handleDelete]);
@@ -136,19 +194,20 @@ const Categorydetail = () => {
     if (loadingRef.current) return;
     
     loadingRef.current = true;
- 
+    setLoading(true);
     
     try {
-       // messageApi.loading({ content: 'Loading category data...', key: 'loadingData', duration: 0 });
+      const response = await getSuppliers();
+      // Handle potential null response safely
+      if (!response || !response.data) {
+        throw new Error("Invalid response from server");
+      }
       
-      // await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const response = await getCategories();
       const data = response?.data?.data || [];
       setRowData(data);
       setFilteredData(data);
       
-       if (data.length > 0) {
+      if (data.length > 0) {
         messageApi.success({ content: 'Data loaded successfully', key: 'loadingData' });
       } else {
         messageApi.info({ content: 'No category data available', key: 'loadingData' });
@@ -159,19 +218,41 @@ const Categorydetail = () => {
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
-      // loadingRef.current = false;
+      loadingRef.current = false; 
     }
   }, [messageApi]);
 
-  // Other handlers defined after columnDefs
-  const handleRefreshData = useCallback(() => {
-    // Only trigger refresh if not already loading
-    if (!loadingRef.current) {
-      fetchInvoiceData();
-    } else {
-      messageApi.info('Data is currently loading');
+  const handleRefreshData = useCallback(async () => {
+    if (loadingRef.current) return;
+    
+    setLoading(true);
+    loadingRef.current = true;
+
+    try {
+      const response = await getSuppliers();
+    
+      if (!response) {
+        throw new Error("Failed to fetch categories");
+      }
+      
+      const data = response?.data?.data || [];
+      
+      setRowData(data);
+      setFilteredData(data);
+      
+      if (gridRef.current?.api) {
+        gridRef.current.api.setRowData(data);
+        gridRef.current.api.refreshCells();
+      }
+      
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      Toaster.error("Failed to fetch categories");
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
     }
-  }, [fetchInvoiceData, messageApi]);
+  }, []);
 
   const handleExportPDF = useCallback(() => {
     const fileName = prompt("Enter file name for PDF:", "category-data");
@@ -182,12 +263,22 @@ const Categorydetail = () => {
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
     
-    // Use columnDefs safely now that it's defined
-    const visibleCols = columnDefs.filter(col => !col.hide && col.field !== 'actions');
-    const columns = visibleCols.map((col) => col.headerName || col.field);
-    const rows = rowData.map((row) =>
-      visibleCols.map((col) => row[col.field] || "")
-    );
+    // Include serial number and exclude actions column
+    const columns = ['S.No', 'Category ID', 'Category Name'];
+    
+    const rows = rowData.map((row, index) => [
+      index + 1,
+      row.supplierId || '',
+      row.name || '',
+        row.contact || '',
+        row.address || '',
+        row.amount || '',
+        row.discount || '',
+        row.paid || '',
+        row.remaining || '',
+        row.description || '',
+        row.date || ''
+    ]);
 
     doc.autoTable({
       head: [columns],
@@ -197,16 +288,29 @@ const Categorydetail = () => {
       headStyles: { fillColor: [66, 139, 202] }
     });
     doc.save(`${fileName}.pdf`);
-  }, [rowData, columnDefs]);
+  }, [rowData]);
 
   const handleExportExcel = useCallback(() => {
-    if (gridRef.current && gridRef.current.api) {
-      gridRef.current.api.exportDataAsExcel({
-        fileName: 'category-data.xlsx',
-        sheetName: 'Categories'
+    if (gridRef.current?.api) {
+      // Export only specific columns, excluding the actions column
+      const columnsToExport = columnDefs
+        .filter(col => col.field !== 'actions')
+        .map(col => ({ 
+          field: col.field,
+          headerName: col.headerName
+        }));
+      
+      gridRef.current.api.exportDataAsCsv({
+        fileName: 'supplier-list.csv',
+        sheetName: 'Supplier List',
+        columnKeys: columnsToExport
+          .filter(col => col.field) // Only include columns with field property
+          .map(col => col.field),   // Extract field names for columnKeys
+        skipColumnHeaders: false,
+        skipHeader: false
       });
     }
-  }, []);
+  }, [columnDefs]);
 
   const setAutoHeight = useCallback(() => {
     if (gridRef.current && gridRef.current.api) {
@@ -246,9 +350,9 @@ const Categorydetail = () => {
     }
   }, [messageApi, setAutoHeight, setFixedHeight, handleFullscreen]);
 
-  // Now we can safely use all the handlers in useTableHeader
+
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: "Category Management",
+    title: "Supplier List Management",
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -261,8 +365,7 @@ const Categorydetail = () => {
   });
   
   const defaultColDef = useMemo(() => ({
-    enableRowGroup: true,
-    enableValue: true,
+   
     filter: true,
     resizable: true,
     suppressSizeToFit: false
@@ -270,19 +373,15 @@ const Categorydetail = () => {
 
   const popupParent = useMemo(() => document.body, []);
   
-  // Effect hooks - Only run once on mount with proper cleanup
   useEffect(() => {
-    // Set loading to true immediately to show loading state
     setLoading(true);
     fetchInvoiceData();
     
     return () => {
-      // Reset state on unmount
       loadingRef.current = false;
     };
   }, [fetchInvoiceData]);
 
-  // Optimize filtering for better performance
   useEffect(() => {
     const filterData = () => {
       if (!searchText.trim()) {
@@ -292,29 +391,33 @@ const Categorydetail = () => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-        (row.categoryId && row.categoryId.toString().toLowerCase().includes(searchLower)) ||
-        (row.category && row.category.toLowerCase().includes(searchLower))
+        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
+        (row.name && row.name.toLowerCase().includes(searchLower))
       );
   
       setFilteredData(filtered);
     };
     
-    // Debounce search for better performance
     const handler = setTimeout(() => {
       filterData();
       
-      // Update grid filters if grid is ready
-      if (gridRef.current && gridRef.current.api) {
+      if (gridRef.current?.api) {
         gridRef.current.api.onFilterChanged();
       }
     }, 300);
     
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
+ 
+  const handleModalSave = useCallback(() => { 
+    Toaster.success(editingRecord?.typeId ? "Supplier List updated successfully!" : "Supplier List added successfully!");
+   
+    setIsModalVisible(false);
+     
+    handleRefreshData();
+  }, [editingRecord?.typeId, handleRefreshData]);
+  
 
-  
-  
-  // UI Components
   const renderLoadingState = () => (
     <div style={{ 
       display: 'flex', 
@@ -326,7 +429,7 @@ const Categorydetail = () => {
       background: '#f9f9f9',
       borderRadius: '8px'
     }}>
-      <Spin size="large" />
+    <Loader /> 
     </div>
   );
 
@@ -357,19 +460,21 @@ const Categorydetail = () => {
   );
   
   return (
-    <div className="category-management-container" style={{ padding: '10px', maxWidth: '100%' }}>
+    
+    <div className="container mt-2">
+    <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
       {contextHolder}
-     
-      {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}
-      
+      {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}     
       {loading ? renderLoadingState() : error ? renderErrorState() : (
         <div 
           id="myGrid" 
           className="ag-theme-alpine" 
           style={{
-            height: screenSize === 'xs' ? '450px' : '500px', 
+            height:'515px',
+            minHeight: '515px',
+            maxHeight: '520px',
             width: '100%',
-            fontSize: screenSize === 'xs' ? '12px' : '14px'
+            fontSize: '14px'
           }}
         >
           {filteredData.length === 0 ? renderEmptyState() : (
@@ -381,8 +486,8 @@ const Categorydetail = () => {
               defaultColDef={defaultColDef}
               pagination={true}
               popupParent={popupParent}
-              paginationPageSize={screenSize === 'xs' ? 5 : 10}
-              paginationPageSizeSelector={[5, 10, 20, 50, 100]}
+              paginationPageSize={10}
+              paginationPageSizeSelector={[ 10, 20, 50, 100]}
               domLayout='normal'
               suppressCellFocus={true}
               animateRows={true}
@@ -399,15 +504,19 @@ const Categorydetail = () => {
         </div>
       )}
       
-      <CategoryModal
+      <SupplierListModal
         visible={isModalVisible}
-        title={editingRecord?.typeId ? `Edit Category` : 'Add New Category'}
+        title={editingRecord?.typeId ? `Edit Supplier List` : 'Add New Supplier List'}
+        button={editingRecord?.typeId ? 'Update' : 'Save'}
         onCancel={() => setIsModalVisible(false)}
         initialValues={editingRecord}
-        
+        setIsModalVisible={setIsModalVisible}
+        onSave={handleModalSave}
       />
+    </div>
+    
     </div>
   );
 };
 
-export default Categorydetail;
+export default SupplierList;

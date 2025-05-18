@@ -14,8 +14,8 @@ import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import SubCategoryModal from "./SubCategoryModol";
 import { deleteSubCategory, getSubCategories } from "../../../api/API";
+import SubCategoryModal from "./SubCategoryModol";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
@@ -47,21 +47,11 @@ const SubCategory = () => {
     }
   }, [AddnewModal, rowData]);
 
-  const handleDelete = useCallback(async (id) => {
-    console.log("Delete category id:", id);
+  const handleDelete = useCallback(async (id) => {    
     try {
       const response = await deleteSubCategory(id);
       if(response.data.status === "Success"){
-        // Update the local data without calling API again
-        // const updatedData = rowData.filter(item => item.typeId !== id);
-      handleRefreshData();
-        // setRowData(updatedData);
-        // setFilteredData(updatedData);
-
-        
-        // Just update the states, don't try to update the grid directly
-        // The grid will automatically update when filteredData changes
-        
+       handleRefreshData();    
         Toaster.success(response.data.message);
       } else {
         Toaster.error(response.data.message);
@@ -78,12 +68,12 @@ const SubCategory = () => {
       {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        width: 80,
-        //  pinned: 'left', 
+        minWidth: 80,
+       
       },
     
       {
-        headerName: "Category Name",
+        headerName: "Sub Category Name",
         field: "typeName",
         sortable: true,
         filter: true,
@@ -97,11 +87,11 @@ const SubCategory = () => {
         sortable: false,
         filter: false,
         //  pinned: 'right', 
-        minWidth: 110,
+        // minWidth: 110,
         cellRenderer: (params) => {
           return (
             <Space size="middle">
-              <Tooltip title={params.data.typeId}>
+              <Tooltip title="Edit">
                 <Button 
                   icon={<EditOutlined />} 
                   text={params.data.typeId}
@@ -115,16 +105,18 @@ const SubCategory = () => {
                 okText="Yes"
                 cancelText="No"
               >
+                <Tooltip title="Delete"> 
                 <Button 
                   icon={<DeleteOutlined />} 
                   danger 
                   size="small"
                 />
+                </Tooltip>
               </Popconfirm>
             </Space>
           );
         },
-        suppressSizeToFit: true,
+        // suppressSizeToFit: true,
       }
     ];
   }, [screenSize, handleEdit, handleDelete]);
@@ -139,8 +131,7 @@ const SubCategory = () => {
     
     try {
       const response = await getSubCategories();
-      // Handle potential null response safely
-      if (!response || !response.data) {
+       if (!response || !response.data) {
         throw new Error("Invalid response from server");
       }
       
@@ -151,7 +142,7 @@ const SubCategory = () => {
       if (data.length > 0) {
         messageApi.success({ content: 'Data loaded successfully', key: 'loadingData' });
       } else {
-        messageApi.info({ content: 'No category data available', key: 'loadingData' });
+        messageApi.info({ content: 'No data available', key: 'loadingData' });
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch data');
@@ -196,16 +187,16 @@ const SubCategory = () => {
   }, []);
 
   const handleExportPDF = useCallback(() => {
-    const fileName = prompt("Enter file name for PDF:", "category-data");
+    const fileName = prompt("Enter file name for PDF:", "Subcategory-data");
     if (!fileName) return;
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text('Category Report', 14, 22);
+    doc.text('SubCategory Report', 14, 22);
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
     
     // Include serial number and exclude actions column
-    const columns = ['S.No', 'Category ID', 'Category Name'];
+    const columns = ['S.No', 'SubCategory ID', 'SubCategory Name'];
     
     const rows = rowData.map((row, index) => [
       index + 1,
@@ -234,8 +225,8 @@ const SubCategory = () => {
         }));
       
       gridRef.current.api.exportDataAsCsv({
-        fileName: 'category-data.csv',
-        sheetName: 'Categories',
+        fileName: 'Subcategory-data.csv',
+        sheetName: 'SubCategories',
         columnKeys: columnsToExport
           .filter(col => col.field) // Only include columns with field property
           .map(col => col.field),   // Extract field names for columnKeys
@@ -285,7 +276,7 @@ const SubCategory = () => {
 
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: "Category Management",
+    title: "Sub Category Management",
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -343,7 +334,7 @@ const SubCategory = () => {
   }, [searchText, rowData]);
  
   const handleModalSave = useCallback(() => { 
-    Toaster.success(editingRecord?.typeId ? "Category updated successfully!" : "Category added successfully!");
+    Toaster.success(editingRecord?.typeId ? "SubCategory updated successfully!" : "SubCategory added successfully!");
    
     setIsModalVisible(false);
      
@@ -395,7 +386,7 @@ const SubCategory = () => {
   return (
     
     <div className="container mt-2">
-    <div className="category-management-container" style={{ padding: '10px', maxWidth: '100%' }}>
+    <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
       {contextHolder}
       {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}     
       {loading ? renderLoadingState() : error ? renderErrorState() : (
@@ -403,9 +394,11 @@ const SubCategory = () => {
           id="myGrid" 
           className="ag-theme-alpine" 
           style={{
-            height: screenSize === 'xs' ? '450px' : '500px', 
+            height: '515px', 
+            minHeight:'515px',
+            maxHeight: '520px',
             width: '100%',
-            fontSize: screenSize === 'xs' ? '12px' : '14px'
+            fontSize: '14px'
           }}
         >
           {filteredData.length === 0 ? renderEmptyState() : (
@@ -417,8 +410,8 @@ const SubCategory = () => {
               defaultColDef={defaultColDef}
               pagination={true}
               popupParent={popupParent}
-              paginationPageSize={screenSize === 'xs' ? 5 : 10}
-              paginationPageSizeSelector={[5, 10, 20, 50, 100]}
+              paginationPageSize={10}
+              paginationPageSizeSelector={[10, 20, 50, 100]}
               domLayout='normal'
               suppressCellFocus={true}
               animateRows={true}
@@ -437,7 +430,7 @@ const SubCategory = () => {
       
       <SubCategoryModal
         visible={isModalVisible}
-        title={editingRecord?.typeId ? `Edit Category` : 'Add New Category'}
+        title={editingRecord?.typeId ? `Edit Category` : 'Add New  SubCategory'}
         button={editingRecord?.typeId ? 'Update' : 'Save'}
         onCancel={() => setIsModalVisible(false)}
         initialValues={editingRecord}

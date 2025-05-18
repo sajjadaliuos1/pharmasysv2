@@ -5,7 +5,7 @@ import './navbar.css';
 import { 
   FaRegUser, 
   FaStore, 
-  FaTruck, 
+ 
   FaTachometerAlt,
   FaShoppingBasket,
   FaListAlt,
@@ -16,8 +16,8 @@ import {
   FaHandshake
 } from 'react-icons/fa';
 import { RiLogoutCircleRLine } from "react-icons/ri";
-import { GrUserWorker, GrTransaction } from "react-icons/gr";
-import { GiExpense, GiBuyCard } from "react-icons/gi";
+import { GrUserWorker} from "react-icons/gr";
+import {  GiBuyCard } from "react-icons/gi";
 
 const Navbar = () => {
   const { user, logout } = useAuthContext();
@@ -71,9 +71,31 @@ const Navbar = () => {
               { path: '/Shop', label: 'Shop', icon: <FaStore /> },
               { path: '/category', label: 'Category', icon: <FaListAlt /> },
               { path: '/subCategory', label: 'Sub Category', icon: <FaLayerGroup /> },
-              { path: '/bank', label: 'Bank', icon: <FaUniversity /> },
+              { path: '/uom', label: 'Unit of M', icon: <FaLayerGroup /> },
               { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },
+              { path: '/bank', label: 'Bank', icon: <FaUniversity /> },
               { path: '/registerForm', label: 'Register Form', icon: <FaUserEdit /> },
+            ],
+          },
+          {
+            label: 'Product',
+            icon: <FaStore />,
+            dropdown: true,
+            links: [
+              { path: '/productList', label: 'product', icon: <FaStore /> },
+              // { path: '/category', label: 'Category', icon: <FaListAlt /> },
+              // { path: '/subCategory', label: 'Sub Category', icon: <FaLayerGroup /> },
+              // { path: '/bank', label: 'Bank', icon: <FaUniversity /> },
+              // { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },
+              // { path: '/registerForm', label: 'Register Form', icon: <FaUserEdit /> },
+            ],
+          },
+          {
+            label: 'Supplier',
+            icon: <FaStore />,
+            dropdown: true,
+            links: [
+              { path: '/supplier', label: 'Suppliers', icon: <FaStore /> },
             ],
           },
         ];

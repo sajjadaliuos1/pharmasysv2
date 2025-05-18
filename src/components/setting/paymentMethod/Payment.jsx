@@ -5,24 +5,23 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 
 import { ModuleRegistry } from 'ag-grid-community';
- import { AllCommunityModule } from "ag-grid-community";
+import { AllCommunityModule } from "ag-grid-community";
 import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-
+import { EditOutlined, DeleteOutlined, DollarCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { deleteCategory, getCategories } from "../../../api/API";
-import CategoryModal from "./CategoryModol";
+import { deletePayment, getPayment } from "../../../api/API";
+import PaymentModal from "./PaymentModol";
+import TransactionModal from "./TransactionModol";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
- 
 ]);
 
-const Category = () => {
+const Payment = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
@@ -30,30 +29,44 @@ const Category = () => {
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isTransactionModalVisible, setIsTransactionModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [transactionRecord, setTransactionRecord] = useState(null);
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
   
   const AddnewModal = useCallback((record) => {
-    setEditingRecord(record ? { ...record } : { typeId: '', typeName: '' });
+    setEditingRecord(record ? { ...record } : { paymentMethodId: '', name: '', description: '', amountIn: '', amountOut: '', remaining: '', date:'' });
     setIsModalVisible(true);
   }, []);
 
+  const showTransactionModal = useCallback((record) => {
+    setTransactionRecord(record ? { ...record } : { paymentMethodId: '', description: '', amountIn: '', amountOut: '', remaining: '', date:'' });
+    setIsTransactionModalVisible(true);
+  }, []);
+
   const handleEdit = useCallback((id) => {
-    const record = rowData.find(item => item.typeId === id);
+    const record = rowData.find(item => item.paymentMethodId === id);
     if (record) {
       AddnewModal(record);
     }
   }, [AddnewModal, rowData]);
 
+  const handleTransaction = useCallback((id) => {
+    const record = rowData.find(item => item.paymentMethodId === id);
+    if (record) {
+      showTransactionModal(record);
+    }
+  }, [showTransactionModal, rowData]);
+
   const handleDelete = useCallback(async (id) => {
-    console.log("Delete category id:", id);
+    console.log("Delete id:", id);
     try {
-      const response = await deleteCategory(id);
+      const response = await deletePayment(id);
       if(response.data.status === "Success"){
-      handleRefreshData();
-    Toaster.success(response.data.message);
+        handleRefreshData();
+        Toaster.success(response.data.message);
       } else {
         Toaster.error(response.data.message);
       }
@@ -64,32 +77,54 @@ const Category = () => {
     }
   }, [rowData, messageApi]);
 
-   const getColumnDefs = useCallback(() => {
+  const getColumnDefs = useCallback(() => {
     return [
       {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
         minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
       },
-    
       {
-        headerName: "Category Name",
-        field: "typeName",
+        headerName: "Payment Name",
+        field: "name",
         sortable: true,
         filter: true,
-       
         minWidth: 140,
       },
-     
+      {
+        headerName: "Description",
+        field: "description",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+      {
+        headerName: "Amount In",
+        field: "amountIn",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+      {
+        headerName: "Amount out",
+        field: "amountOut",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+      {
+        headerName: "Remaining",
+        field: "remaining",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
       {
         headerName: "Actions",
         field: "actions",
         sortable: false,
         filter: false,
-        //  pinned: 'right', 
-        // minWidth: 110,
+        minWidth: 180,
         cellRenderer: (params) => {
           return (
             <Space size="middle">
@@ -97,30 +132,46 @@ const Category = () => {
                 <Button 
                   icon={<EditOutlined />} 
                   text={params.data.typeId}
-                  onClick={() => handleEdit(params.data.typeId)} 
+                  onClick={() => handleEdit(params.data.paymentMethodId)} 
                   size="small"
                 />
               </Tooltip>
               <Popconfirm
                 title="Are you sure you want to delete?"
-                onConfirm={() => handleDelete(params.data.typeId)}
+                onConfirm={() => handleDelete(params.data.paymentMethodId)}
                 okText="Yes"
                 cancelText="No"
               >
-                  <Tooltip title="Delete"> 
-                <Button 
-                  icon={<DeleteOutlined />} 
-                  danger 
-                  size="small"
-                /> </Tooltip>
+                <Tooltip title="Delete"> 
+                  <Button 
+                    icon={<DeleteOutlined />} 
+                    danger 
+                    size="small"
+                  />
+                </Tooltip>
               </Popconfirm>
+              <Tooltip title="Transaction">
+                <Button 
+                  icon={<DollarCircleOutlined />} 
+                  onClick={() => handleTransaction(params.data.paymentMethodId)} 
+                  size="small"
+                />
+              </Tooltip>
+              <Tooltip title="Details">
+                <Button 
+                  icon={<InfoCircleOutlined />} 
+                  onClick={() => handleEdit(params.data.paymentMethodId)} 
+                  size="small"
+                >
+                  {params.data.typeId}
+                </Button>
+              </Tooltip>
             </Space>
           );
         },
-        // suppressSizeToFit: true,
       }
     ];
-  }, [screenSize, handleEdit, handleDelete]);
+  }, [screenSize, handleEdit, handleDelete, handleTransaction]);
   
   const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
 
@@ -131,7 +182,7 @@ const Category = () => {
     setLoading(true);
     
     try {
-      const response = await getCategories();
+      const response = await getPayment();
       // Handle potential null response safely
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
@@ -144,7 +195,7 @@ const Category = () => {
       if (data.length > 0) {
         messageApi.success({ content: 'Data loaded successfully', key: 'loadingData' });
       } else {
-        messageApi.info({ content: 'No category data available', key: 'loadingData' });
+        messageApi.info({ content: 'No data available', key: 'loadingData' });
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch data');
@@ -163,7 +214,7 @@ const Category = () => {
     loadingRef.current = true;
 
     try {
-      const response = await getCategories();
+      const response = await getPayment();
     
       if (!response) {
         throw new Error("Failed to fetch categories");
@@ -189,21 +240,24 @@ const Category = () => {
   }, []);
 
   const handleExportPDF = useCallback(() => {
-    const fileName = prompt("Enter file name for PDF:", "category-data");
+    const fileName = prompt("Enter file name for PDF:", "payment-data");
     if (!fileName) return;
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text('Category Report', 14, 22);
+    doc.text('payment Report', 14, 22);
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
     
     // Include serial number and exclude actions column
-    const columns = ['S.No', 'Category ID', 'Category Name'];
+    const columns = ['S.No', 'Name','Description', 'Amount In', 'Amount Out', 'Remaining'];
     
     const rows = rowData.map((row, index) => [
       index + 1,
-      row.typeId || '',
-      row.typeName || ''
+      row.name || '',
+      row.description || '',
+      row.amountIn || '',  
+      row.amountOut || '',
+      row.remaining || '',
     ]);
 
     doc.autoTable({
@@ -227,8 +281,8 @@ const Category = () => {
         }));
       
       gridRef.current.api.exportDataAsCsv({
-        fileName: 'category-data.csv',
-        sheetName: 'Categories',
+        fileName: 'payment-data.csv',
+        sheetName: 'Payment',
         columnKeys: columnsToExport
           .filter(col => col.field) // Only include columns with field property
           .map(col => col.field),   // Extract field names for columnKeys
@@ -276,9 +330,8 @@ const Category = () => {
     }
   }, [messageApi, setAutoHeight, setFixedHeight, handleFullscreen]);
 
-
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: "Category Management",
+    title: "Payment Management",
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -291,7 +344,6 @@ const Category = () => {
   });
   
   const defaultColDef = useMemo(() => ({
-   
     filter: true,
     resizable: true,
     suppressSizeToFit: false
@@ -317,8 +369,8 @@ const Category = () => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
-        (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+        (row.name && row.name.toLowerCase().includes(searchLower)) ||
+        (row.description && row.description.toLowerCase().includes(searchLower))
       );
   
       setFilteredData(filtered);
@@ -336,13 +388,16 @@ const Category = () => {
   }, [searchText, rowData]);
  
   const handleModalSave = useCallback(() => { 
-    Toaster.success(editingRecord?.typeId ? "Category updated successfully!" : "Category added successfully!");
-   
+    Toaster.success(editingRecord?.paymentMethodId ? "Payment updated successfully!" : "Payment added successfully!");
     setIsModalVisible(false);
-     
     handleRefreshData();
-  }, [editingRecord?.typeId, handleRefreshData]);
+  }, [editingRecord?.paymentMethodId, handleRefreshData]);
   
+  const handleTransactionModalSave = useCallback(() => { 
+    Toaster.success("Transaction processed successfully!");
+    setIsTransactionModalVisible(false);
+    handleRefreshData();
+  }, [handleRefreshData]);
 
   const renderLoadingState = () => (
     <div style={{ 
@@ -378,7 +433,7 @@ const Category = () => {
       image={Empty.PRESENTED_IMAGE_SIMPLE}
       description={
         <span>
-          No categories found matching your search criteria
+          No payments found matching your search criteria
         </span>
       }
     >
@@ -386,63 +441,71 @@ const Category = () => {
   );
   
   return (
-    
     <div className="container mt-2">
-    <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
-      {contextHolder}
-      {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}     
-      {loading ? renderLoadingState() : error ? renderErrorState() : (
-        <div 
-          id="myGrid" 
-          className="ag-theme-alpine" 
-          style={{
-            height:'515px',
-            minHeight: '515px',
-            maxHeight: '520px',
-            width: '100%',
-            fontSize: '14px'
-          }}
-        >
-          {filteredData.length === 0 ? renderEmptyState() : (
-            <AgGridReact
-              gridOptions={{ suppressMenuHide: true }}
-              columnDefs={columnDefs}
-              ref={gridRef}
-              rowData={filteredData}
-              defaultColDef={defaultColDef}
-              pagination={true}
-              popupParent={popupParent}
-              paginationPageSize={10}
-              paginationPageSizeSelector={[ 10, 20, 50, 100]}
-              domLayout='normal'
-              suppressCellFocus={true}
-              animateRows={true}
-              enableCellTextSelection={true}
-              onGridReady={params => {
-                params.api.sizeColumnsToFit();
-                if (screenSize === 'xs') {
-                  params.api.setGridOption('rowHeight', 40);
-                }
-              }}
-              onFirstDataRendered={params => params.api.sizeColumnsToFit()}
-            />
-          )}
-        </div>
-      )}
-      
-      <CategoryModal
-        visible={isModalVisible}
-        title={editingRecord?.typeId ? `Edit Category` : 'Add New Category'}
-        button={editingRecord?.typeId ? 'Update' : 'Save'}
-        onCancel={() => setIsModalVisible(false)}
-        initialValues={editingRecord}
-        setIsModalVisible={setIsModalVisible}
-        onSave={handleModalSave}
-      />
-    </div>
-    
+      <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
+        {contextHolder}
+        {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}     
+        {loading ? renderLoadingState() : error ? renderErrorState() : (
+          <div 
+            id="myGrid" 
+            className="ag-theme-alpine" 
+            style={{
+              height:'515px',
+              minHeight: '515px',
+              maxHeight: '520px',
+              width: '100%',
+              fontSize: '14px'
+            }}
+          >
+            {filteredData.length === 0 ? renderEmptyState() : (
+              <AgGridReact
+                gridOptions={{ suppressMenuHide: true }}
+                columnDefs={columnDefs}
+                ref={gridRef}
+                rowData={filteredData}
+                defaultColDef={defaultColDef}
+                pagination={true}
+                popupParent={popupParent}
+                paginationPageSize={10}
+                paginationPageSizeSelector={[ 10, 20, 50, 100]}
+                domLayout='normal'
+                suppressCellFocus={true}
+                animateRows={true}
+                enableCellTextSelection={true}
+                onGridReady={params => {
+                  params.api.sizeColumnsToFit();
+                  if (screenSize === 'xs') {
+                    params.api.setGridOption('rowHeight', 40);
+                  }
+                }}
+                onFirstDataRendered={params => params.api.sizeColumnsToFit()}
+              />
+            )}
+          </div>
+        )}
+        
+        <PaymentModal
+          visible={isModalVisible}
+          title={editingRecord?.paymentMethodId ? `Edit Payment` : 'Add New Payment'}
+          button={editingRecord?.paymentMethodId ? 'Update' : 'Save'}
+          onCancel={() => setIsModalVisible(false)}
+          initialValues={editingRecord}
+          setIsModalVisible={setIsModalVisible}
+          onSave={handleModalSave}
+        />
+
+        <TransactionModal
+          visible={isTransactionModalVisible}
+          title="Process Transaction"
+          button="Save Transaction"
+          onCancel={() => setIsTransactionModalVisible(false)}
+          initialValues={transactionRecord}
+          setIsModalVisible={setIsTransactionModalVisible}
+          onSave={handleTransactionModalSave}
+        />
+      </div>
     </div>
   );
 };
 
-export default Category;
+export default Payment;

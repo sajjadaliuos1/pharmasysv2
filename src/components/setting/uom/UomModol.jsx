@@ -1,9 +1,9 @@
 import React, { useEffect,useState } from 'react';
 import { Modal, Form, Button, Input, message } from 'antd';
-import { createCategory } from '../../../api/API';
+import { createUom } from '../../../api/API';
 
 
-const CategoryModal = ({ visible, title, onCancel, initialValues, onSave,button, setIsModalVisible }) => {
+const UomModal = ({ visible, title, onCancel, initialValues, onSave,button, setIsModalVisible }) => {
   const [form] = Form.useForm();
   const [btnLoading, setBtnLoading] = useState(false);
 
@@ -21,45 +21,38 @@ const CategoryModal = ({ visible, title, onCancel, initialValues, onSave,button,
   const handleSubmit = async (values) => {
     try {
       setBtnLoading(true);
-      // Validate form before proceeding
-      try{
-             await form.validateFields();
-      }
-      catch (error) {
-        setBtnLoading(false);
-        return;
-      }
       
-      // Prepare payload with proper type conversion
+try {
+      await form.validateFields();
+    } catch (validationError) {
+      setBtnLoading(false);
+      return;
+    }
+
+      await form.validateFields();
+      
       const payload = {
         ...values,
         typeId: values.typeId ? Number(values.typeId) : 0,  
       };
 
-      // Call API
-      const response = await createCategory(payload);
+      const response = await createUom(payload);
       
-      // Safety check for API response
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
       }
       
-      // Check response status
       if (response.data.status === "Success") {      
-        // Reset form and notify parent component
         form.resetFields();
         
-        // Call parent's onSave callback to trigger grid refresh
         if (typeof onSave === 'function') {
           onSave(values);
         }
       } else {
-        // Show error message from API
         message.error(response.data.message || "Operation failed");
       }
     } catch (err) {
-      // Handle API errors
-      console.error("Error saving category:", err);
+      console.error("Error saving Data:", err);
       message.error(err.message || "Something went wrong while saving.");
     }finally {
       setBtnLoading(false);
@@ -77,11 +70,12 @@ const CategoryModal = ({ visible, title, onCancel, initialValues, onSave,button,
           Cancel
         </Button>,
         <Button 
-          key="submit" 
-          type="primary" 
+          key="submit"
+          type="primary"
           onClick={() => handleSubmit(form.getFieldsValue())}
-          disabled={btnLoading}
           loading={btnLoading}
+          disabled={btnLoading}
+         
         >
          {button}
         </Button>
@@ -95,17 +89,17 @@ const CategoryModal = ({ visible, title, onCancel, initialValues, onSave,button,
         <Form.Item name="typeId" noStyle />
         <Form.Item
           name="typeName"
-          label="Category Name"
+          label="Unit of Masurement"
           rules={[
-            { required: true, message: 'Please enter category name' , whitespace: true },
-            { max: 100, message: 'Category name cannot exceed 100 characters' }
+            { required: true, message: 'Please enter Unite name', whitespace: true },
+            { max: 100, message: 'Unite name cannot exceed 100 characters' }
           ]}
         >
-          <Input placeholder="Enter category name" maxLength={100} />
+          <Input placeholder="Enter Unit name" maxLength={100} />
         </Form.Item>
       </Form>
     </Modal>
   );
 };
 
-export default CategoryModal;
+export default UomModal;

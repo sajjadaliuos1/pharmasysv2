@@ -4,13 +4,12 @@ import { theme } from 'antd';
 const useScreenSize = (gridRef = null) => {
   const { token } = theme.useToken();
   const [screenSize, setScreenSize] = useState('xl');
-  
+
   useEffect(() => {
     const handleResize = () => {
-      // Using Ant Design's breakpoints
       const width = window.innerWidth;
       let newSize;
-      
+
       if (width < token.screenXSMin) {
         newSize = 'xs';
       } else if (width < token.screenSMMin) {
@@ -24,25 +23,33 @@ const useScreenSize = (gridRef = null) => {
       } else {
         newSize = 'xxl';
       }
-      
+
       setScreenSize(newSize);
-      
-      // Handle grid resizing if gridRef is provided
+
+      // ✅ Delay API call until gridRef is available
       if (gridRef?.current?.api) {
         setTimeout(() => {
-          gridRef.current.api.sizeColumnsToFit();
+          try {
+            gridRef.current.api.sizeColumnsToFit();
+          } catch (e) {
+            console.warn('Grid API is not ready yet:', e);
+          }
         }, 100);
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial call
-    
+
+    // 🔐 Only call resize if gridRef is ready
+    if (gridRef?.current?.api) {
+      handleResize(); // initial call
+    }
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, [gridRef, token]);
-  
+
   return screenSize;
 };
 

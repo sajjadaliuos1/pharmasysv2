@@ -9,7 +9,10 @@ import Navbar from "../components/navbar/Navbar"
 import "../components/navbar/navbar.css"
 import Category from "../components/setting/Category/Category";
 import SubCategory from "../components/setting/SubCategory/SubCategory";
- 
+import Uom from "../components/setting/uom/Uom";
+import Payment from "../components/setting/paymentMethod/Payment";
+import ProductList from "../components/forms/product/ProductList";
+import SupplierList from "../components/forms/suppliers/SupplierList";
 
 // Mock authentication function
 const isAuthenticated = () => {
@@ -49,8 +52,10 @@ const AppRoutes = () => {
           <Route path="/" element={<Home />} />
           <Route path="/category" element={<Category />} /> 
           <Route path="/subCategory" element={<SubCategory />} /> 
-          
-         
+           <Route path="/uom" element={<Uom/>} /> 
+           <Route path="/paymentMethod" element={<Payment/>} /> 
+              <Route path="/productList" element={<ProductList />} />
+        <Route path="/supplier" element={<SupplierList />} />
         </Route>
       </Routes>
       </div>

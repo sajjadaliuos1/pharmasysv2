@@ -114,7 +114,7 @@ export const useTableHeader = ({
         </h2>
       </div>
 
-      <Space style={{ width: '100%' }}>
+      <Space style={{ width: '100%', justifyContent:'center' }}>
         <Input
           placeholder="Search..."
           value={searchText}
