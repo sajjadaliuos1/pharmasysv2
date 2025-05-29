@@ -3,24 +3,28 @@ import { AgGridReact } from "ag-grid-react";
 import "../../common/style.css";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+
 import { ModuleRegistry } from 'ag-grid-community';
  import { AllCommunityModule } from "ag-grid-community";
 import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import TransactionModal from "./TransactionModol";
+
+
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { deleteProduct, getProduct } from "../../../api/API";
-import ProductModal from "./ProductModal";
-
+import { deletePayment,getPaymentByDateRange } from "../../../api/API";
+import PaymentModal from "./PaymentModol";
+import { useLocation } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
  
 ]);
 
-const ProductList = () => {
+const  PaymentDetail = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
@@ -32,24 +36,43 @@ const ProductList = () => {
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
+  const [dateRange, setDateRange] = 
+  useState([
+   dayjs().subtract(30, 'day'), // 30 days ago
+  dayjs() // Today
+  ]);
+
+    const location = useLocation();
+  const { paymentId , paymentName } = location.state || {};
+
   
   const AddnewModal = useCallback((record) => {
-    setEditingRecord(record ? { ...record } : { productId: '', categoryId: '', categoryName:'',subCategoryId: '',uomId:'',productName:'',barcode:'',discountPercent:'',stockAlert:'',location:'',description:'',isStrip:'',stripPerBox:'' });
+    setEditingRecord(record ? { ...record } : { paymentMethodId: '', name: '',description: '', amountIn: '', amountOut: '', remaining: '', date:'' });
     setIsModalVisible(true);
   }, []);
 
   const handleEdit = useCallback((id) => {
-    const record = rowData.find(item => item.productId === id);
+    const record = rowData.find(item => item.paymentMethodId === id);
     if (record) {
       AddnewModal(record);
     }
   }, [AddnewModal, rowData]);
 
-  const handleDelete = useCallback(async (id) => {     
+  const handleDelete = useCallback(async (id) => {
+    console.log("Delete id:", id);
     try {
-      const response = await deleteProduct(id);
+      const response = await deletePayment(id);
       if(response.data.status === "Success"){
-       handleRefreshData();
+        // Update the local data without calling API again
+        // const updatedData = rowData.filter(item => item.typeId !== id);
+      handleRefreshData();
+        // setRowData(updatedData);
+        // setFilteredData(updatedData);
+
+        
+        // Just update the states, don't try to update the grid directly
+        // The grid will automatically update when filteredData changes
+        
         Toaster.success(response.data.message);
       } else {
         Toaster.error(response.data.message);
@@ -62,196 +85,153 @@ const ProductList = () => {
   }, [rowData, messageApi]);
 
    const getColumnDefs = useCallback(() => {
-  return [
-    {
-      headerName: 'S.No',
-      valueGetter: (params) => params.node.rowIndex + 1,
-      minWidth: 80,
-    },
-    {
-      headerName: "Product Name",
-      field: "productName",
-      sortable: true,
-      filter: true,
-      minWidth: 140,
-    },
-        {
-      headerName: "Category",
-      field: "categoryName",
-      minWidth: 100,
-    },
-    {
-      headerName: "Subcategory",
-      field: "subCategoryName",
-      minWidth: 100,
-    },
-    {
-      headerName: "UOM",
-      field: "uom",
-      minWidth: 100,
-    },
-    {
-      headerName: "Barcode",
-      field: "barcode",
-      minWidth: 140,
-    },
-    {
-      headerName: "Stock Alert",
-      field: "stockAlert",
-      minWidth: 100,
-    },
-    // {
-    //   headerName: "Location",
-    //   field: "location",
-    //   minWidth: 120,
-    // },
-    // {
-    //   headerName: "Description",
-    //   field: "description",
-    //   minWidth: 150,
-    // },
-    
-    {
-      headerName: "Strip/Box",
-      field: "stripPerBox",
-      minWidth: 100,
-    },
-    {
-      headerName: "Actions",
-      field: "actions",
-      cellRenderer: (params) => (
-        <Space size="middle">
-          <Tooltip title="Edit">
-            <Button 
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(params.data.productId)}
-              size="small"
-            />
-          </Tooltip>
-          <Popconfirm
-            title="Are you sure you want to delete?"
-            onConfirm={() => handleDelete(params.data.productId)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Tooltip title="Delete">
-              <Button 
-                icon={<DeleteOutlined />} 
-                danger 
-                size="small"
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
-      minWidth: 130,
-    }
-  ];
-}, [useScreenSize, handleEdit, handleDelete]);
-
+    return [
+      {
+        headerName: 'S.No',
+        valueGetter: (params) => params.node.rowIndex + 1, 
+        minWidth: 80,
+        // width: 80,
+        //  pinned: 'left', 
+      },
+      {
+        headerName: "Amount In",
+        field: "amountIn",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+       {
+        headerName: "Amount out",
+        field: "amountOut",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+       {
+        headerName: "Remaining",
+        field: "remaining",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+          
+     {
+        headerName: "Description",
+        field: "description",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+           {
+        headerName: "Date",
+        field: "date",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+    ];
+  }, [screenSize, handleEdit, handleDelete]);
   
   const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
 
-  const fetchInvoiceData = useCallback(async () => {
-    if (loadingRef.current) return;
-    
-    loadingRef.current = true;
-    setLoading(true);
-    
-    try {
-      const response = await getProduct();
-      console.log("Response from server:", response);
-      if (!response || !response.data) {
+// Updated fetchPaymentDetailData function
+const fetchPaymentDetailData = useCallback(async () => {
+  if (loadingRef.current || !paymentId) return;  // Add paymentId check
+  
+  loadingRef.current = true;
+  setLoading(true);
+  
+  try {
+    if (dateRange[0] && dateRange[1]) {
+      const startDate = dateRange[0].format('YYYY-MM-DD');
+      const endDate = dateRange[1].format('YYYY-MM-DD');
+      
+      const response = await getPaymentByDateRange(paymentId, startDate, endDate);
+      console.log('API Response:', response.data);
+      
+      if (!response?.data) {
         throw new Error("Invalid response from server");
       }
       
-      const data = response?.data?.data || [];
+      const data = response.data.data || [];
       setRowData(data);
       setFilteredData(data);
       
-      if (data.length > 0) {
-        messageApi.success({ content: 'Data loaded successfully', key: 'loadingData' });
-      } else {
-        messageApi.info({ content: 'No category data available', key: 'loadingData' });
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to fetch data');
-      messageApi.error({ content: `Failed to fetch data: ${err.message || 'Unknown error'}`, key: 'loadingData' });
-      console.error('Error fetching data:', err);
-    } finally {
-      setLoading(false);
-      loadingRef.current = false; 
+      // Simplified message logic
+      messageApi[data.length ? 'success' : 'info']({ 
+        content: data.length 
+          ? 'Payment records loaded successfully' 
+          : 'No records found for selected criteria',
+        key: 'loadingData'
+      });
+    } else {
+      messageApi.info({ 
+        content: 'Please select a date range', 
+        key: 'loadingData' 
+      });
+      setRowData([]);
+      setFilteredData([]);
     }
-  }, [messageApi]);
+  } catch (err) {
+    console.error('Error:', err);
+    messageApi.error({ 
+      content: `Failed to fetch records: ${err.message || 'Unknown error'}`,
+      key: 'loadingData'
+    });
+    setError(err.message);
+  } finally {
+    setLoading(false);
+    loadingRef.current = false;
+  }
+}, [messageApi, dateRange, paymentId]);  // Added paymentId to dependencies
 
-  const handleRefreshData = useCallback(async () => {
-    if (loadingRef.current) return;
-    
-    setLoading(true);
-    loadingRef.current = true;
+// Consolidated refresh function
+const handleRefreshData = useCallback(async () => {
+  await fetchPaymentDetailData();  // Reuse the same logic
+}, [fetchPaymentDetailData]);
 
-    try {
-      const response = await getProduct();
-    
-      if (!response) {
-        throw new Error("Failed to fetch categories");
-      }
-      
-      const data = response?.data?.data || [];
-      
-      setRowData(data);
-      setFilteredData(data);
-      
-      if (gridRef.current?.api) {
-        gridRef.current.api.setRowData(data);
-        gridRef.current.api.refreshCells();
-      }
-      
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      Toaster.error("Failed to fetch categories");
-    } finally {
-      setLoading(false);
-      loadingRef.current = false;
-    }
-  }, []);
+// useEffect hook
+useEffect(() => {
+  if (paymentId && dateRange[0] && dateRange[1]) {
+    handleRefreshData();
+  }
+}, [paymentId, dateRange, handleRefreshData]);
 
   const handleExportPDF = useCallback(() => {
-    const fileName = prompt("Enter file name for PDF:", "product-data");
-    if (!fileName) return;
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Product Report', 14, 22);
-    doc.setFontSize(11);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);     
-    const columns = ['S.No','product Name','Category Name' , 'subcategoryName', 'UOM', 'Barcode', 'Stock Alert', 'Strip/Box', 'Location', 'Description'];
-    
-    const rows = rowData.map((row, index) => [
-      index + 1,
-      row.productName || '',
-      row.categoryName || '',
-      row.subCategoryName || '',
-      row.uom || '',
-      row.barcode || '',
-      row.stockAlert || '',
-      row.stripPerBox || '',
-      row.location || '',
-      row.description || '',
-   
-    ]);
-
-    doc.autoTable({
-      head: [columns],
-      body: rows,
-      startY: 40,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [66, 139, 202] }
-    });
-    doc.save(`${fileName}.pdf`);
-  }, [rowData]);
+      const fileName = prompt("Enter file name for PDF:", "category-data");
+      if (!fileName) return;
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text('Category Report', 14, 22);
+      doc.setFontSize(11);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+      
+      // Include serial number and exclude actions column
+      const columns = ['S.No', 'Name','Description', 'Amount In', 'Amount Out', 'Remaining'];
+      
+      
+      const rows = rowData.map((row, index) => [
+        index + 1,
+        row.name || '',
+        row.description || '',
+        row.amountIn || '',  
+        row.amountOut || '',
+        row.remaining || '',
+      ]);
+  
+      doc.autoTable({
+        head: [columns],
+        body: rows,
+        startY: 40,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [66, 139, 202] }
+      });
+      doc.save(`${fileName}.pdf`);
+    }, [rowData]);
 
   const handleExportExcel = useCallback(() => {
     if (gridRef.current?.api) {
+      // Export only specific columns, excluding the actions column
       const columnsToExport = columnDefs
         .filter(col => col.field !== 'actions')
         .map(col => ({ 
@@ -260,11 +240,11 @@ const ProductList = () => {
         }));
       
       gridRef.current.api.exportDataAsCsv({
-        fileName: 'category-data.csv',
-        sheetName: 'Categories',
+        fileName: 'payment-data.csv',
+        sheetName: 'Payment',
         columnKeys: columnsToExport
-          .filter(col => col.field) 
-          .map(col => col.field), 
+          .filter(col => col.field) // Only include columns with field property
+          .map(col => col.field),   // Extract field names for columnKeys
         skipColumnHeaders: false,
         skipHeader: false
       });
@@ -309,21 +289,35 @@ const ProductList = () => {
     }
   }, [messageApi, setAutoHeight, setFixedHeight, handleFullscreen]);
 
+const handleDateChange = (dates) => {
+  setDateRange(dates); // Store the array directly
+  
+  if (dates && dates[0] && dates[1]) {
+    console.log('Start Date:', dates[0].format('YYYY-MM-DD'));
+    console.log('End Date:', dates[1].format('YYYY-MM-DD'));
+  } else {
+    console.log('No date selected');
+    setDateRange([null, null]); // Reset to null array when cleared
+  }
+};
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: "Product Management",
+    title: `Payment Details of ${paymentName}`,
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
     onAddNew: () => AddnewModal(null),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
+    dateRange,
+    handleDateChange,
     searchText,
     rowData,
     screenSize
   });
   
-  const defaultColDef = useMemo(() => ({   
+  const defaultColDef = useMemo(() => ({
+   
     filter: true,
     resizable: true,
     suppressSizeToFit: false
@@ -333,12 +327,12 @@ const ProductList = () => {
   
   useEffect(() => {
     setLoading(true);
-    fetchInvoiceData();
+    fetchPaymentDetailData();
     
     return () => {
       loadingRef.current = false;
     };
-  }, [fetchInvoiceData]);
+  }, [fetchPaymentDetailData]);
 
   useEffect(() => {
     const filterData = () => {
@@ -349,25 +343,31 @@ const ProductList = () => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-         (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
+        (row.typeName && row.typeName.toLowerCase().includes(searchLower))
       );
+  
       setFilteredData(filtered);
     };
     
     const handler = setTimeout(() => {
-      filterData();      
+      filterData();
+      
       if (gridRef.current?.api) {
         gridRef.current.api.onFilterChanged();
       }
-    }, 300);    
+    }, 300);
+    
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
  
   const handleModalSave = useCallback(() => { 
-    Toaster.success(editingRecord?.typeId ? "Product updated successfully!" : "Product added successfully!");   
-    setIsModalVisible(false);     
+    Toaster.success(editingRecord?.paymentMethodId ? "Payment updated successfully!" : "Payment added successfully!");
+   
+    setIsModalVisible(false);
+     
     handleRefreshData();
-  }, [editingRecord?.typeId, handleRefreshData]);
+  }, [editingRecord?.paymentMethodId, handleRefreshData]);
   
 
   const renderLoadingState = () => (
@@ -456,19 +456,31 @@ const ProductList = () => {
         </div>
       )}
       
-      <ProductModal
+      <PaymentModal
         visible={isModalVisible}
-        title={editingRecord?.productId ? `Edit Product` : 'Add Product'}
-        button={editingRecord?.productId ? 'Update' : 'Save'}
+        title={editingRecord?.paymentMethodId ? `Edit Record` : 'Add New Record'}
+        button={editingRecord?.paymentMethodId ? 'Update' : 'Save'}
         onCancel={() => setIsModalVisible(false)}
         initialValues={editingRecord}
         setIsModalVisible={setIsModalVisible}
         onSave={handleModalSave}
+        
       />
+
+              <TransactionModal
+                visible={isModalVisible}
+                title="Process Transaction"
+                button="Save Transaction"
+                onCancel={() => setIsModalVisible(false)}
+                initialValues={rowData}
+                setIsModalVisible={setIsModalVisible}
+                
+              />
+
     </div>
     
     </div>
   );
 };
 
-export default ProductList;
+export default PaymentDetail;

@@ -58,6 +58,18 @@ const Navbar = () => {
     setIsSidebarOpen(false);
   };
 
+  // Helper function to check if main menu item should be active
+  const isMainItemActive = (item) => {
+    if (item.path) {
+      return item.path === location.pathname;
+    }
+    // For dropdown items, check if any sub-item is active
+    if (item.dropdown && item.links) {
+      return item.links.some(subItem => subItem.path === location.pathname);
+    }
+    return false;
+  };
+
   const getLinks = () => {
     switch (roleId) {
       case 1: // Admin
@@ -83,11 +95,6 @@ const Navbar = () => {
             dropdown: true,
             links: [
               { path: '/productList', label: 'product', icon: <FaStore /> },
-              // { path: '/category', label: 'Category', icon: <FaListAlt /> },
-              // { path: '/subCategory', label: 'Sub Category', icon: <FaLayerGroup /> },
-              // { path: '/bank', label: 'Bank', icon: <FaUniversity /> },
-              // { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },
-              // { path: '/registerForm', label: 'Register Form', icon: <FaUserEdit /> },
             ],
           },
           {
@@ -96,6 +103,14 @@ const Navbar = () => {
             dropdown: true,
             links: [
               { path: '/supplier', label: 'Suppliers', icon: <FaStore /> },
+            ],
+          },
+          {
+            label: 'Purchase',
+            icon: <FaStore />,
+            dropdown: true,
+            links: [
+              { path: '/purchase', label: 'Purchase', icon: <FaStore /> },
             ],
           },
         ];
@@ -175,7 +190,7 @@ const Navbar = () => {
               {getLinks().map((item, index) => (
                 <li
                   key={index}
-                  className={`sidebar-item ${item.path === location.pathname ? 'active' : ''}`}
+                  className={`sidebar-item ${isMainItemActive(item) ? 'active' : ''}`}
                 >
                   {item.dropdown ? (
                     <div className="sidebar-link" onClick={() => toggleDropdown(index)}>
@@ -204,7 +219,11 @@ const Navbar = () => {
                           key={subIndex}
                           className={`dropdown-item ${subItem.path === location.pathname ? 'active' : ''}`}
                         >
-                          <Link to={subItem.path} onClick={closeSidebar} className="dropdown-link">
+                          <Link 
+                            to={subItem.path} 
+                            onClick={closeSidebar} 
+                            className={`dropdown-link ${subItem.path === location.pathname ? 'active' : ''}`}
+                          >
                             {subItem.icon && <span className="dropdown-icon">{subItem.icon}</span>}
                             {subItem.label}
                           </Link>

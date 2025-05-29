@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Space, Form, Button, Input, message, Checkbox } from 'antd';
+import { Modal, Space, Form, Button, Input, message, Checkbox, Row, Col } from 'antd';
+
 import { createProduct, getCategories, getSubCategories, getUom } from '../../../api/API';
 import ReusableDropdown from '../../common/ReusableDropdown';
-import TextArea from 'antd/es/input/TextArea';
+
 import CategoryModal from '../../setting/Category/CategoryModol';
 import { Toaster } from '../../common/Toaster';
 import SubCategoryModal from '../../setting/SubCategory/SubCategoryModol';
 import UomModal from '../../setting/uom/UomModol';
+import preventWheelChange from '../../common/PreventWheel';
 
 const ProductModal = ({ visible, title, onCancel, initialValues, onSave, button, setIsModalVisible }) => {
   const [form] = Form.useForm();
@@ -20,28 +22,48 @@ const ProductModal = ({ visible, title, onCancel, initialValues, onSave, button,
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [isSubCategoryModalVisible, setIsSubCategoryModalVisible] = useState(false);
   const [isUomModalVisible, setIsUomModalVisible] = useState(false);
-  useEffect(() => {
-    if (visible) {
-      fetchCategories();
-      fetchSubCategories();
-      fetchUom();
-      if (initialValues) {
-        form.setFieldsValue({
-          ...initialValues,
-          isStrip: initialValues.isStrip || false,
-          stripPerBox: initialValues.stripPerBox || 0
-        });
-        setIsStripChecked(initialValues.isStrip || false);
-      } else {
-        form.resetFields();
-        form.setFieldsValue({
-          isStrip: false,
-          stripPerBox: 0
-        });
-        setIsStripChecked(false);
-      }
+  const [categoryId, setCategoryId] = useState();
+  const [subCategoryId, setSubCategoryId] = useState();
+  const [uomId, setUomId] = useState();
+useEffect(() => {
+  if (visible) {
+    fetchCategories();
+    fetchSubCategories();
+    fetchUom();
+
+ 
+    if (initialValues.productId !== "") {
+
+      // form.setFieldsValue({ categoryId: initialValues.categoryId });
+
+
+      form.setFieldsValue({
+        ...initialValues,
+        categoryId: initialValues.categoryId,
+        barcod: initialValues.barcode || "",
+        isStrip: initialValues.isStrip || false,
+      });
+      setIsStripChecked(initialValues.isStrip || false);
+      setCategoryId(initialValues.categoryId); 
+      setSubCategoryId(initialValues.subCategoryId); 
+      setUomId(initialValues.uomId); 
+    } else {
+      
+      
+
+      form.resetFields();
+      form.setFieldsValue({
+        isStrip: false,
+         categoryId: null,
+      });
+      setIsStripChecked(false);
+       setCategoryId(null); 
+       setSubCategoryId(null);
+       setUomId(null);
     }
-  }, [visible, initialValues, form]);
+  }
+}, [visible, initialValues, form]);
+
 
   const fetchCategories = async () => {
     try {
@@ -98,6 +120,7 @@ const ProductModal = ({ visible, title, onCancel, initialValues, onSave, button,
 
       const validatedValues = await form.validateFields();
 
+
       const payload = {
         ...validatedValues,
         categoryId: Number(validatedValues.categoryId),
@@ -106,11 +129,11 @@ const ProductModal = ({ visible, title, onCancel, initialValues, onSave, button,
         uomId: Number(validatedValues.uomId),
         stockAlert: Number(validatedValues.stockAlert),
         stripPerBox: validatedValues.stripPerBox ? Number(validatedValues.stripPerBox) : null,
-        discountPercent: validatedValues.discountPercent ? Number(validatedValues.discountPercent) : 0,
+       discountPercent :0.00
       };
 
       console.log("my payload is", payload);
-
+ 
       const response = await createProduct(payload);
 
       if (!response || !response.data) {
@@ -122,7 +145,7 @@ const ProductModal = ({ visible, title, onCancel, initialValues, onSave, button,
         form.resetFields();
 
         if (typeof onSave === 'function') {
-          onSave(validatedValues); // Return updated values
+          onSave(validatedValues); 
         }
 
       } else {
@@ -140,7 +163,7 @@ const ProductModal = ({ visible, title, onCancel, initialValues, onSave, button,
   const handleCheckboxChange = (e) => {
     setIsStripChecked(e.target.checked);
     if (!e.target.checked) {
-      form.setFieldsValue({ stripPerBox: 0 });
+      form.setFieldsValue({ stripPerBox: isStripChecked ? "" : 0 });
     }
   };
 
@@ -164,7 +187,7 @@ const ProductModal = ({ visible, title, onCancel, initialValues, onSave, button,
     }
   };
   
-const handleSaveSubCategory = async (newSubCategory) => {
+  const handleSaveSubCategory = async (newSubCategory) => {
     try {
        setIsSubCategoryModalVisible(false);
        await fetchSubCategories();
@@ -184,7 +207,7 @@ const handleSaveSubCategory = async (newSubCategory) => {
     }
   };
   
-const handleUom = async (newUom) => {
+  const handleUom = async (newUom) => {
     try {
        setIsUomModalVisible(false);
        await fetchUom();
@@ -203,105 +226,108 @@ const handleUom = async (newUom) => {
       message.error("Failed to refresh categories");
     }
   };
- 
-  
 
   return (
     <Modal
-      open={visible}
-      title={title}
-      onCancel={onCancel}
-      width={500}
-      zIndex={3000}
-      footer={[
-        <Button key="cancel" onClick={onCancel}>
-          Cancel
-        </Button>,
-        <Button 
-          key="submit"
-          type="primary"
-          onClick={() => handleSubmit(form.getFieldsValue())}
-          loading={btnLoading}
-          disabled={btnLoading}
-        >
-         {button}
-        </Button>
-      ]}
+  open={visible}
+  title={title}
+  onCancel={onCancel}
+  width="90%"
+  style={{ maxWidth: 700 }}
+  zIndex={3000}
+  footer={[
+    <Button key="cancel" onClick={onCancel}>
+      Cancel
+    </Button>,
+    <Button 
+      key="submit"
+      type="primary"
+      onClick={() => handleSubmit(form.getFieldsValue())}
+      loading={btnLoading}
+      disabled={btnLoading}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={initialValues}
-      >
-        <Form.Item name="productId" noStyle />
-      
+     {button}
+    </Button>
+  ]}
+>
+  <Form
+    form={form}
+    layout="vertical"
+    initialValues={initialValues}
+  >
+    <Form.Item name="productId" noStyle />
+    
+    <Row gutter={[16, 0]}>
+      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
         <Form.Item
           name="categoryId"
           label="Category"
-          rules={[{ required: true, message: 'Please select a category' }]}>
+          rules={[{ required: true, message: 'Please select a category' }]}
+        >
           <Space.Compact style={{ width: '100%' }}>
-            <ReusableDropdown
-              data={categories}
-              valueField="typeId"
-              labelField="typeName"
-              placeholder="Select Category"
-              loading={loadingCategories}
-              onChange={(value) => form.setFieldValue('categoryId', value)}
-              style={{ width: 'calc(100% - 43px)' }}
-            />
+           <ReusableDropdown
+  data={categories}
+  value={categoryId}
+  valueField="typeId"
+  labelField="typeName"
+  onChange={(value) => {
+    setCategoryId(value); // update local state
+    form.setFieldValue('categoryId', value); // update form field
+  }}
+  placeholder="Select Category"
+  loading={loadingCategories}
+/>
+
             <Button
               type="primary"
               onClick={() => {
                 console.log("Add Category Clicked");
-                setIsCategoryModalVisible(true); // Open the category modal
+                setIsCategoryModalVisible(true);
               }}
             >
               +
             </Button>
           </Space.Compact>
         </Form.Item>
-
-        <CategoryModal
-          visible={isCategoryModalVisible}
-          title="Add New Category"
-          button="Add"
-          onCancel={() => setIsCategoryModalVisible(false)}
-          onSave={handleSaveCategory}
-          setIsModalVisible={setIsCategoryModalVisible}
-        />
-
-        <Form.Item
+      </Col>
+      
+      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+      <Form.Item
           name="subCategoryId"
-          label="Sub Category">
+          label="Sub Category"
+          rules={[{ required: true, message: 'Please select a sub Category' }]}
+        >
           <Space.Compact style={{ width: '100%' }}>
-            <ReusableDropdown
-              data={subCategories}
-              valueField="typeId"
-              labelField="typeName"
-              placeholder="Select Sub Category"
-              loading={loadingCategories}
-              onChange={(value) => form.setFieldValue('subCategoryId', value)}
-              style={{ width: 'calc(100% - 43px)' }} 
-            />
-             <Button
+           <ReusableDropdown
+  data={subCategories}
+  value={subCategoryId}
+  valueField="typeId"
+  labelField="typeName"
+  onChange={(value) => {
+    setSubCategoryId(value); // update local state correctly
+    form.setFieldValue('subCategoryId', value); // update form field
+  }}
+  placeholder="Select sub Category"
+  loading={loadingCategories}
+/>
+
+            <Button
               type="primary"
               onClick={() => {
-                
-                setIsSubCategoryModalVisible(true); // Open the category modal
+                console.log("Add Category Clicked");
+                setIsCategoryModalVisible(true);
               }}
             >
               +
             </Button>
           </Space.Compact>
         </Form.Item>
-       <SubCategoryModal
-          visible={isSubCategoryModalVisible}
-          title="Add New Category"
-          button="Add"
-          onCancel={() => setIsSubCategoryModalVisible(false)}
-          onSave={handleSaveSubCategory}
-          setIsModalVisible={setIsSubCategoryModalVisible}
-        />
+       
+      </Col>
+    </Row>
+    
+    <Row gutter={[16, 0]}>
+      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
         <Form.Item
           name="productName"
           label="Product Name"
@@ -311,38 +337,37 @@ const handleUom = async (newUom) => {
         >
           <Input placeholder="Enter Product name" maxLength={100} />
         </Form.Item>
-
-       <Form.Item
-  name="barcode"
-  label="Barcode">
-  <Space.Compact style={{ width: '100%' }}>
-    <Input
-      id="barcodeInput"
-      placeholder="Enter barcode"
-      maxLength={100}
-      style={{ width: 'calc(100% - 43px)' }} 
-    />
-    <Button
-      type="primary"
-      onClick={() => {
-        const barcodeInput = document.getElementById('barcodeInput');
-        if (barcodeInput) {
-          barcodeInput.focus();
-        }
-      }}
-    >
-      +
-    </Button>
-  </Space.Compact>
-</Form.Item>
-
+      </Col>
+      
+      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
         <Form.Item
-          name="discountPercent"
-          label="Discount in Percent"
+          name="barcode"
+          label="Barcode"
         >
-          <Input placeholder="Enter Discount in Percentage" maxLength={100} />
+          <Space.Compact style={{ width: '100%' }}>
+            <Input
+              id="barcodeInput"
+              placeholder="Enter barcode"
+              maxLength={100}
+            />
+            <Button
+              type="primary"
+              onClick={() => {
+                const barcodeInput = document.getElementById('barcodeInput');
+                if (barcodeInput) {
+                  barcodeInput.focus();
+                }
+              }}
+            >
+              +
+            </Button>
+          </Space.Compact>
         </Form.Item>
-
+      </Col>
+    </Row>
+    
+    <Row gutter={[16, 0]}>
+      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
         <Form.Item
           name="stockAlert"
           label="Stock Alert"
@@ -350,90 +375,129 @@ const handleUom = async (newUom) => {
             { required: true, message: 'Please enter stock alert value', whitespace: true },
           ]}
         >
-          <Input type='number' placeholder="Enter Stock Alert" maxLength={100} />
+          <Input type='number' placeholder="Enter Stock Alert" maxLength={100} onWheel={preventWheelChange} />
         </Form.Item>
-
+      </Col>
+      
+      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+        
         <Form.Item
-          name="uomId"
+           name="uomId"
           label="Unit of Measurement"
           rules={[{ required: true, message: 'Please select a UOM' }]}
         >
           <Space.Compact style={{ width: '100%' }}>
-            <ReusableDropdown
-              data={uom}
-              valueField="typeId"
-              labelField="typeName"
-              placeholder="Select UOM"
-              loading={loadingCategories}
-              onChange={(value) => form.setFieldValue('uomId', value)}
-              style={{ width: 'calc(100% - 43px)' }} 
-            />
+           <ReusableDropdown
+  data={uom}
+  value={uomId}
+  valueField="typeId"
+  labelField="typeName"
+  onChange={(value) => {
+    setUomId(value); // update local state
+    form.setFieldValue('uomId', value); // update form field
+  }}
+  placeholder="Select Uom"
+  loading={loadingCategories}
+/>
+
             <Button
               type="primary"
               onClick={() => {
-                
-                setIsUomModalVisible(true); 
+                console.log("Add Category Clicked");
+                setIsCategoryModalVisible(true);
               }}
             >
               +
             </Button>
           </Space.Compact>
         </Form.Item>
-<UomModal
-          visible={isUomModalVisible}
-          title="Add New Unit of Measurement"
-          button="Add"
-          onCancel={() => setIsUomModalVisible(false)}
-          onSave={handleUom}
-          setIsModalVisible={setIsUomModalVisible}
-        />
+      </Col>
+    </Row>
+    
+    <Row gutter={[16, 0]}>
+      <Col xs={24} sm={24} md={24} lg={24} xl={24}>
         <Form.Item
           name="location"
           label="Location"
         >
           <Input placeholder="Enter Location" maxLength={100} />
         </Form.Item>
-
+      </Col>
+    </Row>
+    
+    <Row gutter={[16, 0]}>
+      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
         <Form.Item
           name="description"
           label="Description"
         >
-          <TextArea placeholder="Enter Description" maxLength={200} />
+          <Input.TextArea 
+            placeholder="Enter Description" 
+            maxLength={200} 
+            rows={4}
+            autoSize={{ minRows: 2, maxRows: 4 }}
+          />
         </Form.Item>
-
-        <Form.Item label="Strip Configuration" style={{ marginBottom: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Form.Item name="isStrip" valuePropName="checked" style={{ marginBottom: 0 }}>
-              <Checkbox onChange={handleCheckboxChange}
-                style={{
-                  transform: 'scale(1.5)',  
-                  margin: '0 40px 0 0',    
-                  height: '20px',          
-                  width: '20px',
-                  fontSize: '9px'          
-                }}
-              >Exist</Checkbox>
+      </Col>
+      
+      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+        <Form.Item label="Allow Strip Sale">
+          <Form.Item name="isStrip" valuePropName="checked" style={{ marginBottom: 8 }}>
+            <Checkbox 
+              onChange={handleCheckboxChange}
+              size="large"
+            >
+              {isStripChecked ? "Yes" : "No"}
+            </Checkbox>
+          </Form.Item>
+          
+          {isStripChecked && (
+            <Form.Item
+              name="stripPerBox"
+              rules={[
+                { required: true, message: 'Please enter Strip Per Box quantity' },
+              ]}
+            >
+              <Input 
+                type="number" 
+                placeholder="Enter strip per box" 
+                onWheel={preventWheelChange}
+              />
             </Form.Item>
-            
-            {isStripChecked && (
-              <Form.Item
-                name="stripPerBox"
-                style={{ marginBottom: 0, flex: 1 }}
-                rules={[
-                  { required: true, message: 'Please enter Strip Per Box quantity' },
-                ]}
-              >
-                <Input 
-                  type="number" 
-                  placeholder="Enter strip per box" 
-                  style={{ width: '100%' }} 
-                />
-              </Form.Item>
-            )}
-          </div>
+          )}
         </Form.Item>
-      </Form>
-    </Modal>
+      </Col>
+    </Row>
+  </Form>
+  
+  {/* Modals */}
+  <CategoryModal
+    visible={isCategoryModalVisible}
+    title="Add New Category"
+    button="Add"
+    onCancel={() => setIsCategoryModalVisible(false)}
+    onSave={handleSaveCategory}
+    setIsModalVisible={setIsCategoryModalVisible}
+  />
+  
+  <SubCategoryModal
+    visible={isSubCategoryModalVisible}
+    title="Add New Category"
+    button="Add"
+    onCancel={() => setIsSubCategoryModalVisible(false)}
+    onSave={handleSaveSubCategory}
+    setIsModalVisible={setIsSubCategoryModalVisible}
+  />
+  
+  <UomModal
+    visible={isUomModalVisible}
+    title="Add New Unit of Measurement"
+    button="Add"
+    onCancel={() => setIsUomModalVisible(false)}
+    onSave={handleUom}
+    setIsModalVisible={setIsUomModalVisible}
+  />
+</Modal>
   );
 };
 

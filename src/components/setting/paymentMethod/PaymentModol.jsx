@@ -181,7 +181,7 @@ const PaymentModal = ({ visible, title, onCancel, initialValues, onSave, button,
             <Input 
               type="number" 
               placeholder="0" 
-              disabled 
+              readOnly
               onWheel={preventWheelChange}
             />
           </Form.Item>
@@ -203,7 +203,10 @@ const PaymentModal = ({ visible, title, onCancel, initialValues, onSave, button,
             { required: true, message: 'Please enter description', whitespace: true },
           ]}
         >
-          <Input.TextArea placeholder="Enter Description" />
+          <Input.TextArea placeholder="Enter Description"
+          maxLength={200} 
+        rows={4}
+        style={{ height: '40px' }} />
         </Form.Item>
       </Form>
     </Modal>

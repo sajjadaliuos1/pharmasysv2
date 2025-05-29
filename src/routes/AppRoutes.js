@@ -13,7 +13,8 @@ import Uom from "../components/setting/uom/Uom";
 import Payment from "../components/setting/paymentMethod/Payment";
 import ProductList from "../components/forms/product/ProductList";
 import SupplierList from "../components/forms/suppliers/SupplierList";
-
+import Purchase from "../components/forms/purchase/Purchase";
+import PaymentDetail from "../components/setting/paymentMethod/PaymentDetail";
 // Mock authentication function
 const isAuthenticated = () => {
   // Replace with your actual authentication logic
@@ -56,6 +57,8 @@ const AppRoutes = () => {
            <Route path="/paymentMethod" element={<Payment/>} /> 
               <Route path="/productList" element={<ProductList />} />
         <Route path="/supplier" element={<SupplierList />} />
+        <Route path="/purchase" element={<Purchase />} />
+        <Route path="/paymentDetail" element={<PaymentDetail />} />
         </Route>
       </Routes>
       </div>

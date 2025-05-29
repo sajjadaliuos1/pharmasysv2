@@ -3,7 +3,7 @@ import { AgGridReact } from "ag-grid-react";
 import "../../common/style.css";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-
+import { useNavigate } from "react-router-dom";
 import { ModuleRegistry } from 'ag-grid-community';
 import { AllCommunityModule } from "ag-grid-community";
 import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
@@ -35,7 +35,7 @@ const Payment = () => {
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
-  
+  const navigate = useNavigate();
   const AddnewModal = useCallback((record) => {
     setEditingRecord(record ? { ...record } : { paymentMethodId: '', name: '', description: '', amountIn: '', amountOut: '', remaining: '', date:'' });
     setIsModalVisible(true);
@@ -59,7 +59,14 @@ const Payment = () => {
       showTransactionModal(record);
     }
   }, [showTransactionModal, rowData]);
-
+const handleDetails = useCallback((id, name) => {
+  navigate('/paymentDetail', { 
+    state: { 
+      paymentId: id,
+      paymentName: name
+    }
+  });
+}, [navigate]);
   const handleDelete = useCallback(async (id) => {
     console.log("Delete id:", id);
     try {
@@ -160,7 +167,7 @@ const Payment = () => {
               <Tooltip title="Details">
                 <Button 
                   icon={<InfoCircleOutlined />} 
-                  onClick={() => handleEdit(params.data.paymentMethodId)} 
+                  onClick={() => handleDetails(params.data.paymentMethodId, params.data.name)} 
                   size="small"
                 >
                   {params.data.typeId}

@@ -8,6 +8,7 @@ import {
   MenuOutlined
 } from '@ant-design/icons';
 import { Dropdown, Button, Input, Space, Tooltip } from 'antd';
+import { DatePicker } from 'antd';
 
 export const useTableHeader = ({
   title,
@@ -16,12 +17,16 @@ export const useTableHeader = ({
   onExportPDF,
   onAddNew,
   onTableSizeChange,
+  dateRange,
+  handleDateChange,
   searchText,
   onSearchChange,
   rowData,
   screenSize
+
 }) => {
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+  const { RangePicker } = DatePicker;
 
   const mobileMenuItems = [
     {
@@ -114,7 +119,7 @@ export const useTableHeader = ({
         </h2>
       </div>
 
-      <Space style={{ width: '100%', justifyContent:'center' }}>
+      <Space style={{ width: '100%', justifyContent: 'center' }}>
         <Input
           placeholder="Search..."
           value={searchText}
@@ -143,11 +148,21 @@ export const useTableHeader = ({
     </div>
   );
 
+
   const renderDesktopHeader = () => (
     <div className="desktop-header" style={{ marginBottom: '15px' }}>
+      {dateRange ? <h3 style={{ margin: 0 }}>{title}</h3> : ''}
       <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-        <h3 style={{ margin: 0 }}>{title}</h3>
-
+        {dateRange ?
+          <RangePicker
+            value={dateRange}
+            onChange={handleDateChange}
+            format="YYYY-MM-DD"
+            allowClear
+          />
+          :
+          <h4 style={{ margin: 0 }}>{title}</h4>
+        }
         <Input
           placeholder="Search..."
           value={searchText}

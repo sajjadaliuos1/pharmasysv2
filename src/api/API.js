@@ -2,10 +2,8 @@ import axios from "axios";
 
 const API = axios.create({
   baseURL: "https://ph.idotsolution.com/api",
-    // baseURL: "http://192.168.100.7:5277/api",
-    // baseURL: "http://192.168.100.7:45457/api",
-    // baseURL: "http://192.168.10.4:45456/api",   
-  //   baseURL: "https://localhost:7078/api",
+   //  baseURL: "http://192.168.100.7:5277/api",
+    
 });
 
 API.interceptors.request.use((config) => {
@@ -41,8 +39,18 @@ export const getPayment = () => API.get('/Setting/paymentMethod');
 export const createPayment = (data) => API.post('/Setting/paymentMethod', data);  
 export const deletePayment= (id) => API.post(`/Setting/paymentMethod/${id}`);
 export const transactionPayment = (data) => API.post('/Setting/paymentMethodBalance', data); 
+export const getPaymentByDateRange = (id, startDate, endDate) => {
+   return API.get(`Setting/paymentMethodRecord`, { 
+    params: { id, startDate, endDate } 
+  });
+};
 // supplier Api and supplier list
 export const getSuppliers = () => API.get('/Supplier/supplier');
 export const createSupplier = (data) => API.post('/Supplier/supplier', data);
 export const deleteSupplier = (id) => API.post(`/Supplier/supplier/${id}`);
+// Purchase Api
+export const getPurchaseNo = () => API.get('/Purchase/invoiceNo');
+export const getPurchaseProduct = () => API.get('/Purchase/product');
+export const deleteSupplier1 = (id) => API.post(`/Supplier/supplier/${id}`);
+
 export default API;

@@ -1,19 +1,33 @@
-
 import React, { useEffect,useState } from 'react';
-import { Modal, Form, Button, Input, message } from 'antd';
+import { Modal, Form, Button, Input, message, Row, Col, DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import { createSupplier } from '../../../api/API';
 
 
 const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,button, setIsModalVisible }) => {
   const [form] = Form.useForm();
   const [btnLoading, setBtnLoading] = useState(false);
-
+  const [isUpdate, setIsUpdate] = useState(false);
+  
   useEffect(() => {
     if (visible) {
+      // Check if supplierId exists and is not 0 to determine if it's an update
+      const hasInitial = !!(initialValues?.supplierId && initialValues.supplierId !== 0);
+      setIsUpdate(hasInitial);
+      
       if (initialValues) {
-        form.setFieldsValue(initialValues);
+      
+        const formattedValues = {
+          ...initialValues,
+          date: initialValues.date ? dayjs(initialValues.date) : dayjs() // Default to current date if no date in initialValues
+        };
+        form.setFieldsValue(formattedValues);
       } else {
         form.resetFields();
+        // Set current date as default
+        form.setFieldsValue({
+          date: dayjs()
+        });
       }
     }
   }, [visible, initialValues, form]);
@@ -31,8 +45,8 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
       
       const payload = {
         ...values,
-        supplierId: values.supplierId ? Number(values.supplierId) : 0, 
-        // date: values.date ? new Date(values.date).toISOString() : null, 
+        supplierId: values.supplierId ? Number(values.supplierId) : 0,
+        date: values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'), // Use current date if no date selected
       };
 
       console.log("Payload supplier:as ", payload); 
@@ -71,7 +85,8 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
       open={visible}
       title={title}
       onCancel={onCancel}
-      width={500}
+      width={800}
+      zIndex={3000}
       footer={[
         <Button key="cancel" onClick={onCancel}>
           Cancel
@@ -90,80 +105,108 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
       <Form
         form={form}
         layout="vertical"
-        initialValues={initialValues}
+        initialValues={{
+          date: dayjs() // Set current date as form's initial value
+        }}
       >
         <Form.Item name="supplierId" noStyle />
-        <Form.Item
-          name="name"
-          label="Supplier Name"
-          rules={[
-            { required: true, message: 'Please enter supplier name' , whitespace: true },
-            { max: 100, message: 'supplier name cannot exceed 100 characters' }
-          ]}
-        >
-          <Input placeholder="Enter supplier name" maxLength={100} />
-        </Form.Item>
-
-                <Form.Item
-          name="contact"
-          label="Contact"
-        >
-          <Input placeholder="Enter Contact" maxLength={100} />
-        </Form.Item>
-
-                <Form.Item
-          name="address"
-          label="Address"
-        >
-          <Input placeholder="Enter address" maxLength={100} />
-        </Form.Item>
         
-        <Form.Item
-        name = "amount"
-        label="Amount"
-        >
-          <Input type='number' placeholder="Enter Amount" maxLength={100} />
-        </Form.Item>
-{/*
-        <Form.Item
-            name="discount"
-            label="Discount"
-            rules={[
-              { required: true, message: 'Please enter Discount' , whitespace: true },
-              { type: 'number', message: 'Discount must be a number' },
-              { max: 100, message: 'Discount cannot exceed 100 characters' }
-            ]}
+        <Row gutter={[16, 0]}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Form.Item
+              name="name"
+              label="Supplier Name"
+              rules={[
+                { required: true, message: 'Please enter supplier name' , whitespace: true },
+                { max: 100, message: 'supplier name cannot exceed 100 characters' }
+              ]}
             >
-            <Input placeholder="Enter Discount" maxLength={100} />
-        </Form.Item>
-        */}
-        <Form.Item
-            name="paid"
-            label="Paid"
+              <Input placeholder="Enter supplier name" maxLength={100} />
+            </Form.Item>
+          </Col>
+          
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Form.Item
+              name="contact"
+              label="Contact"
             >
-            <Input type='number' placeholder="Enter paid Amount" maxLength={100} />
-        </Form.Item>
+              <Input placeholder="Enter Contact" maxLength={100} />
+            </Form.Item>
+          </Col>
+        </Row>
 
-        <Form.Item
-            name="remaining"
-            label="Remaining"
+        <Row gutter={[16, 0]}>
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Form.Item
+              name="address"
+              label="Address"
             >
-            <Input type='number' placeholder="Enter Remaining" maxLength={100} />
-        </Form.Item>    
+              <Input placeholder="Enter address" maxLength={100} />
+            </Form.Item>
+          </Col>
+          
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            
+              <Form.Item
+                name="amount"
+                label="Amount"
+              >
+                <Input type='number' placeholder="Enter Amount" maxLength={100}
+                disabled={isUpdate} />
+              </Form.Item>
+          
+          </Col>
+        </Row>
 
-        <Form.Item
-            name="description"
-            label="Description"
+        <Row gutter={[16, 0]}>
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Form.Item
+              name="paid"
+              label="Paid"
             >
-            <Input placeholder="Enter Description" maxLength={100} />
-        </Form.Item>
+              <Input type='number' placeholder="Enter paid Amount" maxLength={100} 
+              disabled={isUpdate} />
+            </Form.Item>
+          </Col>
+          
+         <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Form.Item
+              name="remaining"
+              label="Remaining"
+            >
+              <Input type='number' placeholder="Enter Remaining" maxLength={100} 
+              disabled={isUpdate} />
+            </Form.Item>
+          </Col>
+        </Row>
 
-        <Form.Item
-                name="date"
-                label="Date"
-                >
-                <Input type='date' placeholder="Enter Date" maxLength={100} />
-        </Form.Item>
+        <Row gutter={[16,0]}>
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Form.Item
+              name="description"
+              label="Description"
+            >
+              <Input.TextArea placeholder="Enter Description"
+                        maxLength={200} 
+                      rows={4}
+                      style={{ height: '40px' }} />
+            </Form.Item>
+          </Col>
+          
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+            <Form.Item
+              name="date"
+              label="Date"
+            >
+              <DatePicker 
+                placeholder="Select Date" 
+                style={{ width: '100%' }}
+                format="YYYY-MM-DD"
+              />
+            </Form.Item>
+            
+          </Col>
+        </Row>
 
       </Form>
     </Modal>
