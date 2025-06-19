@@ -30,7 +30,7 @@ useEffect(() => {
     fetchCategories();
     fetchSubCategories();
     fetchUom();
-
+console.log("initital Value", initialValues);
  
     if (initialValues.productId !== "") {
 
@@ -315,7 +315,7 @@ useEffect(() => {
               type="primary"
               onClick={() => {
                 console.log("Add Category Clicked");
-                setIsCategoryModalVisible(true);
+                setIsSubCategoryModalVisible(true);
               }}
             >
               +
@@ -404,7 +404,7 @@ useEffect(() => {
               type="primary"
               onClick={() => {
                 console.log("Add Category Clicked");
-                setIsCategoryModalVisible(true);
+                setIsUomModalVisible(true);
               }}
             >
               +
@@ -441,32 +441,34 @@ useEffect(() => {
       </Col>
       
       <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-        <Form.Item label="Allow Strip Sale">
-          <Form.Item name="isStrip" valuePropName="checked" style={{ marginBottom: 8 }}>
-            <Checkbox 
-              onChange={handleCheckboxChange}
-              size="large"
-            >
-              {isStripChecked ? "Yes" : "No"}
-            </Checkbox>
-          </Form.Item>
-          
-          {isStripChecked && (
-            <Form.Item
-              name="stripPerBox"
-              rules={[
-                { required: true, message: 'Please enter Strip Per Box quantity' },
-              ]}
-            >
-              <Input 
-                type="number" 
-                placeholder="Enter strip per box" 
-                onWheel={preventWheelChange}
-              />
-            </Form.Item>
-          )}
+  <Form.Item label="Allow Strip Sale" style={{ marginBottom: 0 }}> 
+    <Space align="start" style={{ width: '100%', display: 'flex' }}> 
+      <Form.Item name="isStrip" valuePropName="checked" noStyle> 
+        <Checkbox onChange={handleCheckboxChange}>
+        
+        </Checkbox>
+      </Form.Item>
+
+      
+      {isStripChecked && (
+        <Form.Item
+          name="stripPerBox"
+          rules={[
+            { required: true, message: 'Please enter Strip Per Box quantity' },
+          ]}
+          style={{ flexGrow: 1, margin: 0 }} 
+        >
+          <Input
+            type="number"
+            placeholder="Enter strip per box"
+            onWheel={preventWheelChange}
+            style={{ width: '100%' }}
+          />
         </Form.Item>
-      </Col>
+      )}
+    </Space>
+  </Form.Item>
+</Col>
     </Row>
   </Form>
   

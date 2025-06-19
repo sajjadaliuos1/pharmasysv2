@@ -80,7 +80,7 @@ const Navbar = () => {
             icon: <FaStore />,
             dropdown: true,
             links: [
-              { path: '/Shop', label: 'Shop', icon: <FaStore /> },
+              { path: '/shop', label: 'Shop', icon: <FaStore /> },
               { path: '/category', label: 'Category', icon: <FaListAlt /> },
               { path: '/subCategory', label: 'Sub Category', icon: <FaLayerGroup /> },
               { path: '/uom', label: 'Unit of M', icon: <FaLayerGroup /> },
@@ -105,12 +105,29 @@ const Navbar = () => {
               { path: '/supplier', label: 'Suppliers', icon: <FaStore /> },
             ],
           },
+           {
+            label: 'Customer',
+            icon: <FaStore />,
+            dropdown: true,
+            links: [
+              { path: '/customer', label: 'Customer', icon: <FaStore /> },
+            ],
+          },
           {
             label: 'Purchase',
             icon: <FaStore />,
             dropdown: true,
             links: [
               { path: '/purchase', label: 'Purchase', icon: <FaStore /> },
+            ],
+          },
+          {
+            label: 'Sale',
+            icon: <FaStore />,
+            dropdown: true,
+            links: [
+              { path: '/sale', label: 'Sale', icon: <FaStore /> },
+               { path: '/invoicerecord', label: 'Invoice Record', icon: <FaStore /> },
             ],
           },
         ];
@@ -153,7 +170,7 @@ const Navbar = () => {
     <>
       <nav className="navbar custom-justify sticky-top navbar-light bg-light w-auto">
         <label className="navbar-brand">
-          Kabal POS System
+          Store Management System
         </label>
         <div className="profile-container">
           <FaRegUser

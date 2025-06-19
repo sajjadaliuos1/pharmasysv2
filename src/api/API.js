@@ -1,8 +1,10 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://ph.idotsolution.com/api",
-   //  baseURL: "http://192.168.100.7:5277/api",
+    baseURL: "https://ph.idotsolution.com/api",
+    // baseURL: "http://192.168.100.7:5277/api", //  Office
+    // baseURL: "http://192.168.10.7:5277/api", // Home
+    // baseURL: "http://192.168.214.9:5277/api", // Mobile Hotspot
     
 });
 
@@ -15,7 +17,12 @@ API.interceptors.request.use((config) => {
 });
 
 
-
+export const getShop = () => API.get('/Setting/shop');  
+export const createShop = (data) => API.post('/Setting/shop', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 
 export const getCategories = () => API.get('/Setting/categories');  
 export const createCategory = (data) => API.post('/Setting/categories', data);  
@@ -34,6 +41,7 @@ export const deleteUom = (id) => API.post(`/Setting/Uom/${id}`);
 export const getProduct = () => API.get('/Product/product');  
 export const createProduct = (data) => API.post('/Product/product', data);  
 export const deleteProduct = (id) => API.post(`/Product/product/${id}`);
+
 // Payment Api
 export const getPayment = () => API.get('/Setting/paymentMethod');  
 export const createPayment = (data) => API.post('/Setting/paymentMethod', data);  
@@ -51,6 +59,21 @@ export const deleteSupplier = (id) => API.post(`/Supplier/supplier/${id}`);
 // Purchase Api
 export const getPurchaseNo = () => API.get('/Purchase/invoiceNo');
 export const getPurchaseProduct = () => API.get('/Purchase/product');
-export const deleteSupplier1 = (id) => API.post(`/Supplier/supplier/${id}`);
+export const purchaseOrder = (data) => API.post('/Purchase/purchase', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+// customer Api
+export const getCustomer = () => API.get('/Customer/customer');
+export const createCustomer = (data) => API.post('/Customer/customer', data);
+export const deleteCustomer = (id) => API.post(`/Customer/customer/${id}`);
+
+
+// Sale Api
+export const getNewInvoice = () => API.get('/Sale/newInvoice');
+export const getBoxProduct = () => API.get('/Sale/boxProduct');
+export const getStripProduct = () => API.get('/Sale/stripProduct');
 
 export default API;

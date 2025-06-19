@@ -102,3 +102,8 @@ input[type="number"] {
 }
 
 
+/* Inam added for checkbox */
+.custom-checkbox .ant-checkbox-inner {
+  width: 30px;
+  height: 30px;
+}

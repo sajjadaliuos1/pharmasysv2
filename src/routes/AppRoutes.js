@@ -13,8 +13,12 @@ import Uom from "../components/setting/uom/Uom";
 import Payment from "../components/setting/paymentMethod/Payment";
 import ProductList from "../components/forms/product/ProductList";
 import SupplierList from "../components/forms/suppliers/SupplierList";
-import Purchase from "../components/forms/purchase/Purchase";
 import PaymentDetail from "../components/setting/paymentMethod/PaymentDetail";
+import Shop from "../components/setting/Shop";
+import PurchaseItem from "../components/forms/purchase/PurchaseItem";
+import Sale from "../components/forms/sale/Sale";
+import Customer from "../components/forms/customer/Customer";
+import InvoiceRecord from "../components/forms/sale/invoiceRecord";
 // Mock authentication function
 const isAuthenticated = () => {
   // Replace with your actual authentication logic
@@ -37,28 +41,21 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
 
         <Route element={<ProtectedRoute />}>
-          {/*Routes For Products start*/}
-       
-      
-          
-
-          {/*Routes For investers  start*/}
-      
-
-{/*Routes For employess  end*/}
+         
  
-
-
-
-          <Route path="/" element={<Home />} />
-          <Route path="/category" element={<Category />} /> 
-          <Route path="/subCategory" element={<SubCategory />} /> 
-           <Route path="/uom" element={<Uom/>} /> 
-           <Route path="/paymentMethod" element={<Payment/>} /> 
-              <Route path="/productList" element={<ProductList />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/category" element={<Category />} /> 
+        <Route path="/subCategory" element={<SubCategory />} /> 
+        <Route path="/uom" element={<Uom/>} /> 
+        <Route path="/paymentMethod" element={<Payment/>} /> 
+        <Route path="/productList" element={<ProductList />} />
         <Route path="/supplier" element={<SupplierList />} />
-        <Route path="/purchase" element={<Purchase />} />
+        <Route path="/purchase" element={<PurchaseItem />} />
         <Route path="/paymentDetail" element={<PaymentDetail />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/sale" element={<Sale />} />
+        <Route path="/invoicerecord" element={<InvoiceRecord />} />
+        <Route path="/customer" element={<Customer/>} />
         </Route>
       </Routes>
       </div>
