@@ -18,7 +18,13 @@ import Shop from "../components/setting/Shop";
 import PurchaseItem from "../components/forms/purchase/PurchaseItem";
 import Sale from "../components/forms/sale/Sale";
 import Customer from "../components/forms/customer/Customer";
-import InvoiceRecord from "../components/forms/sale/invoiceRecord";
+import Purchase from "../components/forms/extra/Purchase";
+import SaleReturn from "../components/forms/sale/SaleReturn";
+import PurchaseList from "../components/forms/purchase/PurchaseList";
+import SaleRecord from "../components/forms/sale/SaleRecord";
+import SaleRecordDetail from "../components/forms/sale/SaleRecordDetail";
+import SupplierPaymentDetails from "../components/forms/suppliers/SupplierPaymentDetails";
+
 // Mock authentication function
 const isAuthenticated = () => {
   // Replace with your actual authentication logic
@@ -54,8 +60,13 @@ const AppRoutes = () => {
         <Route path="/paymentDetail" element={<PaymentDetail />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/sale" element={<Sale />} />
-        <Route path="/invoicerecord" element={<InvoiceRecord />} />
+        <Route path="/salereturn" element={<SaleReturn />} />
         <Route path="/customer" element={<Customer/>} />
+        <Route path="/purchaseList" element={<PurchaseList />} />
+        <Route path="/purchaseRecrod" element={<Purchase/>} />
+        <Route path="/saleRecord" element={<SaleRecord/>} />
+        <Route path="/saleRecordDetail" element={<SaleRecordDetail/>} />
+        <Route path="/supplierpaymentDetails" element={<SupplierPaymentDetails />} />
         </Route>
       </Routes>
       </div>

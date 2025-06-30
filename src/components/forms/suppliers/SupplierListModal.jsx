@@ -31,6 +31,39 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
       }
     }
   }, [visible, initialValues, form]);
+
+  // Function to calculate remaining amount
+  const calculateRemaining = () => {
+    const amount = parseFloat(form.getFieldValue('amount')) || 0;
+    const paid = parseFloat(form.getFieldValue('paid')) || 0;
+    const remaining = amount - paid;
+    
+    form.setFieldsValue({
+      remaining: remaining.toString()
+    });
+  };
+
+  // Handle amount field change
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    form.setFieldsValue({ amount: value });
+    
+    // Calculate remaining after a short delay to ensure form value is updated
+    setTimeout(() => {
+      calculateRemaining();
+    }, 0);
+  };
+
+  // Handle paid field change
+  const handlePaidChange = (e) => {
+    const value = e.target.value;
+    form.setFieldsValue({ paid: value });
+    
+    // Calculate remaining after a short delay to ensure form value is updated
+    setTimeout(() => {
+      calculateRemaining();
+    }, 0);
+  };
   
   const handleSubmit = async (values) => {
     try {
@@ -151,8 +184,13 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
                 name="amount"
                 label="Amount"
               >
-                <Input type='number' placeholder="Enter Amount" maxLength={100}
-                disabled={isUpdate} />
+                <Input 
+                  type='number' 
+                  placeholder="Enter Amount" 
+                  maxLength={100}
+                  disabled={isUpdate}
+                  onChange={handleAmountChange}
+                />
               </Form.Item>
           
           </Col>
@@ -164,8 +202,13 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
               name="paid"
               label="Paid"
             >
-              <Input type='number' placeholder="Enter paid Amount" maxLength={100} 
-              disabled={isUpdate} />
+              <Input 
+                type='number' 
+                placeholder="Enter paid Amount" 
+                maxLength={100} 
+                disabled={isUpdate}
+                onChange={handlePaidChange}
+              />
             </Form.Item>
           </Col>
           
@@ -174,8 +217,16 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
               name="remaining"
               label="Remaining"
             >
-              <Input type='number' placeholder="Enter Remaining" maxLength={100} 
-              disabled={isUpdate} />
+              <Input 
+                type='number' 
+                placeholder="Auto calculated remaining amount" 
+                maxLength={100} 
+                disabled={true}
+                style={{ 
+                  backgroundColor: '#f5f5f5',
+                  color: '#666'
+                }}
+              />
             </Form.Item>
           </Col>
         </Row>
@@ -188,8 +239,9 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
             >
               <Input.TextArea placeholder="Enter Description"
                         maxLength={200} 
-                      rows={4}
-                      style={{ height: '40px' }} />
+                      rows={2}
+                      // style={{ height: '40px' }} 
+                      />
             </Form.Item>
           </Col>
           

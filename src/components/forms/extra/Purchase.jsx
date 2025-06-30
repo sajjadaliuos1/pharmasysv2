@@ -11,24 +11,23 @@ import {
   DeleteOutlined,
   BarcodeOutlined,
   CalendarOutlined,
-  SaveOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { Toaster } from "../../common/Toaster";
-import ProductModal from '../product/ProductModal'; // Assuming correct path
-import ReusableDropdown from '../../common/ReusableDropdown'; // Assuming correct path
-import { purchaseOrder, getSuppliers,getPurchaseNo,getPurchaseProduct,getPayment } from '../../../api/API'; // Assuming correct API functions
-import SupplierListModal from '../suppliers/SupplierListModal'; // Assuming correct path
+import ProductModal from '../product/ProductModal'; 
+import ReusableDropdown from '../../common/ReusableDropdown'; 
+import { purchaseOrder, getSuppliers,getPurchaseNo,getPurchaseProduct,getPayment } from '../../../api/API';  
+import SupplierListModal from '../suppliers/SupplierListModal';  
  
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
-const PurchaseItem = () => {
+const Purchase = () => {
   const [form] = Form.useForm();
   const [form1] = Form.useForm();
   const [showProductModal, setShowProductModal] = useState(false);
   const [showSuppliersModal, setShowSuppliersModal] = useState(false);
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
-    const [loadingPaymentMethod, setLoadingPaymentMethod] = useState(false);
+  const [loadingPaymentMethod, setLoadingPaymentMethod] = useState(false);
   const [loadingproduct, setLoadingproduct] = useState(false);
   const [product, setProducts] = useState([]);
   const [productMap, setProductMap] = useState(new Map());
@@ -264,7 +263,7 @@ setProducts(productList);
   const handleSaveSupplier = (newSupplier) => {
     setShowSuppliersModal(false);
     if (newSupplier && newSupplier.supplierId) {
-      form.setFieldsValue({ suppliersId: newSupplier.supplierId });
+      form.setFieldsValue({ supplierId: newSupplier.supplierId });
       fetchSuppliers(); 
     }
   };
@@ -372,22 +371,11 @@ setProducts(productList);
 
  const handleAddOrUpdate = (values) => {
  
-  const formattedNotificationDate = values.dates?.[0]
-    ? values.dates[0].format("DD-MM-YYYY")
-    : null;
-
-  const formattedExpireDate = values.dates?.[1]
-    ? values.dates[1].format("DD-MM-YYYY")
-    : null;
-
-  const formattedManufactureDate = values.manufactureDate
-    ? values.manufactureDate.format("DD-MM-YYYY")
-    : null;
+  
 
   const newItem = {
     ...values,
-    manufactureDate: formattedManufactureDate,
-    expiryDate: formattedExpireDate,
+    
     purchaseDiscountPercent: values.purchaseDiscount || 0,
     purchaseDiscountAmount:0,
     totalPurchaseAmount : values.totalPurchaseAmount,
@@ -397,8 +385,7 @@ setProducts(productList);
     remainingOpenStrip: 0,
     remainingQuantity: values.quantity || 0,
     saleDiscountPercent: values.saleDiscount || 0,
-    stripDiscountPercent: values.stripDiscount || 0, 
-    expiryNotification: formattedNotificationDate,
+    stripDiscountPercent: values.stripDiscount || 0,    
     purchaseQuantity: values.quantity || 0,
     productId: selectedProductId,
     barcode: productBarcode,
@@ -430,7 +417,7 @@ setProducts(productList);
 
   form.resetFields();
   form.setFieldsValue({
-    manufactureDate: dayjs(),
+    
     dates: [startDate, endDate],
     isSoldInStrips: false,
     purchaseDiscount: 0,
@@ -458,29 +445,13 @@ setProducts(productList);
   } else {
     setStripPerBox('');
   }
-  const format = "DD-MM-YYYY";
+  
     form.setFieldsValue({
       purchaseRate: item.purchaseRate,
       saleRate: item.saleRate,
       productId: item.productId,
       batchNo: item.batchNo,
       quantity: item.quantity,
-   
-      manufactureDate: item.manufactureDate
-      ? dayjs(item.manufactureDate, format)
-      : null,
-
-      // purchaseDate: item.purchaseDate
-      // ? dayjs(item.purchaseDate, format)
-      // : null,
-
-      dates: item.expiryNotification && item.expiryDate
-      ? [
-          dayjs(item.expiryNotification, format),
-          dayjs(item.expiryDate, format)
-        ]
-      : [],
-
       saleDiscount: item.saleDiscount,
       purchaseDiscount: item.purchaseDiscount,
       finalPurchaseRate: item.finalPurchaseRate,
@@ -498,7 +469,7 @@ setProducts(productList);
     });
    
     setProductBarcode(item.barcode);
-    // setStripPerBox(item.stripPerBox);
+    
     setIsProductStrip(item.isStrip || false); 
     setEditingIndex(index);
   };
@@ -521,15 +492,11 @@ setProducts(productList);
         </Space>
       ),
     },
-    { title: 'Product Id', dataIndex: 'productId'},
+
       { title: 'Product', dataIndex: 'productName' },
     { title: 'Batch No', dataIndex: 'batchNo' },
     { title: 'Barcode', dataIndex: 'barcode' },
     { title: 'Quantity', dataIndex: 'quantity' },
-
-    { title: 'Manufacture Date', dataIndex: 'manufactureDate' },
-    { title: 'Expiry Notification', dataIndex: 'expiryNotification' },
-    { title: 'Expire Date', dataIndex: 'expiryDate' },
 
  
     { title: 'Purchase Rate', dataIndex: 'purchaseRate' },
@@ -542,13 +509,6 @@ setProducts(productList);
     { title: 'Final Sale Rate', dataIndex: 'finalSaleRate' },
     { title: 'Minimum Sale Rate', dataIndex: 'minSaleRate' },
 
-     { title: 'Per Strip Rate', dataIndex: 'perStripRate',
-      render: (value) => value !== undefined && value !== null ? parseFloat(value).toFixed(2) : '',
-      },
-    { title: 'Strip Discount', dataIndex: 'stripDiscount' },
-    { title: 'Final Strip Rate', dataIndex: 'finalStripRate' },
-    { title: 'Minimum Strip Rate', dataIndex: 'minStripSaleRate' },
-    
     
   ];
 
@@ -563,17 +523,16 @@ const handleSubmit = async () => {
 
    const payload = {
       ...formData,
-      supplierId: formData.suppliersId,
+      supplierId: formData.supplierId,
       invoiceNo: purchaseNo,
       totalItems: cartItems.length,
       totalAmount,
       discount: formData.supplierDiscount ?? 0,
-
       finalAmount: netAmount,
       paidAmount : formData.paidAmount ?? 0,
       remaining: remainingAmount,
       supplierRemainingAmount,
-      date: purchaseDate ? purchaseDate.format("DD-MM-YYYY") : null,
+      date: purchaseDate ? purchaseDate.format("YYYY-MM-DD") : null,
       descriptions : '',
       report : null,
       paymentMethodId : formData.paymentMethodId ?? 0,
@@ -642,14 +601,14 @@ const handleSubmit = async () => {
         finalPurchaseRate: 0,
         finalSaleRate: 0,
         finalStripRate: 0,
-         manufactureDate: dayjs(),
+         
          dates: [startDate, endDate],
       }}
     >         
                <>
   {/* First Row */}
   <Row gutter={[16, 16]}>
-    <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+     <Col xs={24} sm={12} md={6} lg={6} xl={6}>
       <Form.Item
         name="productId"
         label="Product Name"
@@ -688,7 +647,7 @@ const handleSubmit = async () => {
       </Form.Item>
     </Col>
 
-    <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+     <Col xs={24} sm={12} md={6} lg={6} xl={6}>
       <Form.Item
         name="batchNo"
         label="Batch No"
@@ -698,7 +657,7 @@ const handleSubmit = async () => {
       </Form.Item>
     </Col>
 
-    <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+    <Col xs={24} sm={12} md={6} lg={6} xl={6}>
       <Form.Item
         // name="barcode"
         label="Barcode"
@@ -714,11 +673,7 @@ const handleSubmit = async () => {
         />
       </Form.Item>
     </Col>
-  </Row>
-
-  {/* Second Row */}
-  <Row gutter={[16, 16]}>
-    <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+       <Col xs={24} sm={12} md={6} lg={6} xl={6}>
       <Form.Item
         name="quantity"
         label="Quantity"
@@ -727,344 +682,164 @@ const handleSubmit = async () => {
         <Input type="number" placeholder="Enter quantity" />
       </Form.Item>
     </Col>
-
-    <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-      <Form.Item
-        name="manufactureDate"
-        label="Manufacture Date"
-      >
-        <DatePicker
-          style={{ width: '100%' }}
-          format="DD-MM-YYYY"
-          placeholder="Select Manufacture date"
-          suffixIcon={<CalendarOutlined />}
-        />
-      </Form.Item>
-    </Col>
-
-    <Col xs={24} sm={24} md={8} lg={8} xl={8}>
-      <Form.Item
-        name="dates"
-        label="Expiry Notification & Expire Date"
-        rules={[{ required: true, message: 'Please select dates' }]}
-      >
-        <RangePicker
-          style={{ width: '100%' }}
-          format="DD-MM-YYYY"
-          placeholder={["Notification Date", "Expire Date"]}
-          suffixIcon={<CalendarOutlined />}
-        />
-      </Form.Item>
-    </Col>
   </Row>
-</>
 
-         <Row gutter={[16, 0]} justify="space-between">
-  {/* Purchase Details Card */}
-  <Col xs={24} sm={24} md={8} lg={8} xl={8}>
-  <Card
-    title="Purchase Details"
-     style={{ height: '100%' }}
-    headStyle={{
-      backgroundColor: '#f0f2f5', 
-      fontWeight: 'bold',
-      minHeight: '25px',
-    }}
-    bodyStyle={
-      {
-         padding: '10px'
-      }
-    }
-  >
-    <Row align="middle" style={{ marginBottom: '16px' }}>
-      <Col span={8}>
-        <Text strong>Purchase Rate:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="purchaseRate"
-        rules={[{ required: true, message: 'Please enter purchase rate' }]}
-             noStyle>
-          <InputNumber
-            prefix={<span>Rs.</span>}
-            style={{ width: '100%' }}
-            min={0}
-            step="1"
-            precision={2}
-            placeholder="Enter purchase rate"
-            parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
-          />
-        </Form.Item>
-      </Col>
+  
 
 
-
-    </Row>
-
-    <Row align="middle" style={{ marginBottom: '16px' }}>
-      <Col span={8}>
-        <Text strong>Discount %:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="purchaseDiscount" noStyle>
-          <InputNumber
-            prefix={<span>%</span>}
-            style={{ width: '100%' }}
-            min={0}
-            max={100}
-            step="0.01"
-            precision={2}
-            placeholder="Enter discount %"
-            onFocus={() => {
-            const value = form.getFieldValue("purchaseDiscount");
-            if (value === 0) {
-                form.setFieldsValue({ purchaseDiscount: null });
-               }
-               }}
-          />
-        </Form.Item>
-      </Col>
-    </Row>
-
-    <Row align="middle" style={{ marginBottom: '16px' }}>
-      <Col span={8}>
-        <Text strong>Final Rate:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="finalPurchaseRate" noStyle>
-          <InputNumber
-            prefix={<span>Rs.</span>}
-            style={{ width: '100%' }}
-            disabled
-            precision={2}
-            value={calculatedValues.finalPurchaseRate}
-          />
-        </Form.Item>
-      </Col>
-    </Row>
-
-    <Row align="middle" style={{ marginBottom: '0px' }}>
-      <Col span={8}>
-        <Text strong>Total Amount:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="totalPurchaseAmount" noStyle>
-          <InputNumber
-            prefix={<span>Rs.</span>}
-            style={{ width: '100%' }}
-            disabled
-            precision={2}
-            value={calculatedValues.finalPurchaseRate}
-          />
-        </Form.Item>
-      </Col>
-    </Row>
-  </Card>
-</Col>
-
-
-  {/* Sale Details Card */}
-  <Col xs={24} sm={24} md={8} lg={8} xl={8}>
-    <Card title="Sale Details" style={{ height: '100%' }}
-    headStyle={{
-      backgroundColor: '#f0f2f5', 
-      fontWeight: 'bold',
-      minHeight: '25px',
-    }}
-    bodyStyle={
-      {
-         padding: '10px'
-      }}>
-      <Row align="middle" style={{ marginBottom: '16px' }}>
-        <Col span={8}>
-          <Text strong style={{ fontSize: '13px' }}>Sale Rate:</Text>
-        </Col>
-        <Col span={16}>
-          <Form.Item
-            name="saleRate"
-            rules={[{ required: true, message: 'Please enter sale rate' }]}
-            noStyle
-          >
-            <InputNumber
-              prefix={<span>Rs.</span>}
-              style={{ width: '100%', height: '32px' }}
-              min={0}
-              step="1"
-              precision={2}
-              placeholder="Enter sale rate"
-              onBlur={() => {
-      const values = form.getFieldsValue();
-      if (
-        values.saleRate !== undefined &&
-        values.purchaseRate !== undefined &&
-        values.saleRate < values.purchaseRate
-      ) {
-        Toaster.error("Sale rate cannot be less than purchase rate");
-        form.setFieldsValue({ saleRate: undefined }); // optional: reset the invalid value
-      }
-    }}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Row align="middle" style={{ marginBottom: '16px' }}>
-        <Col span={8}>
-          <Text strong style={{ fontSize: '13px' }}>Discount %:</Text>
-        </Col>
-        <Col span={16}>
-          <Form.Item
-            name="saleDiscount"
-            rules={[{ required: true, message: 'Please enter sale discount' }]}
-            noStyle
-          >
-            <InputNumber
-              prefix={<span>%</span>}
-              style={{ width: '100%', height: '32px' }}
-              min={0}
-              max={100}
-              step="0.01"
-              precision={2}
-              placeholder="Enter discount %"
-               onFocus={() => {
-            const value = form.getFieldValue("saleDiscount");
-            if (value === 0) {
-                form.setFieldsValue({ saleDiscount: null });
-               }
-               }}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Row align="middle" style={{ marginBottom: '16px' }}>
-        <Col span={8}>
-          <Text strong style={{ fontSize: '13px' }}>Final Amount:</Text>
-        </Col>
-        <Col span={16}>
-          <Form.Item name="finalSaleRate" noStyle>
-            <InputNumber
-              prefix={<span>Rs.</span>}
-              style={{ width: '100%', height: '32px' }}
-              disabled
-              precision={2}
-              value={calculatedValues.finalSaleRate}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Row align="middle" style={{ marginBottom: '0px' }}>
-        <Col span={8}>
-          <Text strong style={{ fontSize: '13px' }}>Minimum Rate:</Text>
-        </Col>
-        <Col span={16}>
-          <Form.Item
-            name="minSaleRate"
-            rules={[{ required: true, message: 'Please enter min sale rate' }]}
-            noStyle
-          >
-            <InputNumber
-              value={calculatedValues.finalSaleRate}
-              prefix={<span>Rs.</span>}
-              style={{ width: '100%', height: '32px' }}
-              min={0}
-              step="0.01"
-              precision={2}
-              placeholder="Enter min sale rate"
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-    </Card>
+<Row gutter={[16, 16]}>
+  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+    <Form.Item
+      name="purchaseRate"
+      label="Purchase Rate"
+      rules={[{ required: true, message: 'Please enter purchase rate' }]}
+    >
+      <InputNumber
+        prefix={<span>Rs.</span>}
+        style={{ width: '100%' }}
+        min={0}
+        step="1"
+        precision={2}
+        placeholder="Enter purchase rate"
+        parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+      />
+    </Form.Item>
   </Col>
 
-  {/* Strip Details Card */}
-  <Col xs={24} sm={24} md={8} lg={8} xl={8}>
-  <Card title="Strip Details" headStyle={{
-    backgroundColor: '#f0f2f5',
-    fontWeight: 'bold',
-    minHeight: '20px',
-  }}  bodyStyle={
-      {
-         padding: '10px'
-      }}>
-    <Row align="middle" style={{ marginBottom: '16px' }}>
-      <Col span={8}>
-        <Text strong style={{ fontSize: '13px' }}>{perStripRateLabel}:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="perStripRate" noStyle>
-          <InputNumber
-            prefix={<span>Rs.</span>}
-            style={{ width: '100%', height: '32px' }}
-            min={0}
-            step="1"
-            precision={2}
-            placeholder="Enter strip rate"
-            disabled
-          />
-        </Form.Item>
-      </Col>
-    </Row>
+  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+    <Form.Item name="purchaseDiscount" label="Discount %">
+      <InputNumber
+        prefix={<span>%</span>}
+        style={{ width: '100%' }}
+        min={0}
+        max={100}
+        step="0.01"
+        precision={2}
+        placeholder="Enter discount %"
+        onFocus={() => {
+          const value = form.getFieldValue("purchaseDiscount");
+          if (value === 0) {
+            form.setFieldsValue({ purchaseDiscount: null });
+          }
+        }}
+      />
+    </Form.Item>
+  </Col>
 
-    <Row align="middle" style={{ marginBottom: '16px' }}>
-      <Col span={8}>
-        <Text strong style={{ fontSize: '13px' }}>Discount %:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="stripDiscount" noStyle>
-          <InputNumber
-            prefix={<span>%</span>}
-            style={{ width: '100%', height: '32px' }}
-            min={0}
-            max={100}
-            step="0.01"
-            precision={2}
-            placeholder="Enter discount %"
-            disabled={!isProductStrip} 
-          />
-        </Form.Item>
-      </Col>
-    </Row>
+  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+    <Form.Item name="finalPurchaseRate" label="Final Rate">
+      <InputNumber
+        prefix={<span>Rs.</span>}
+        style={{ width: '100%' }}
+        disabled
+        precision={2}
+        value={calculatedValues.finalPurchaseRate}
+      />
+    </Form.Item>
+  </Col>
 
-    <Row align="middle" style={{ marginBottom: '16px' }}>
-      <Col span={8}>
-        <Text strong style={{ fontSize: '13px' }}>Final Amount:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="finalStripRate" noStyle>
-          <InputNumber
-            prefix={<span>Rs.</span>}
-            style={{ width: '100%', height: '32px' }}
-            disabled 
-            precision={2}
-            value={calculatedValues.finalStripRate}
-          />
-        </Form.Item>
-      </Col>
-    </Row>
-
-    <Row align="middle" style={{ marginBottom: '0px' }}>
-      <Col span={8}>
-        <Text strong style={{ fontSize: '13px' }}>Minimum Rate:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="minStripSaleRate" noStyle>
-          <InputNumber
-            prefix={<span>Rs.</span>}
-            style={{ width: '100%', height: '32px' }}
-            precision={2}
-            value={calculatedValues.minStripSaleRate}
-            disabled={!isProductStrip} 
-          />
-        </Form.Item>
-      </Col>
-    </Row>
-  </Card>
-</Col>
+  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+    <Form.Item name="totalPurchaseAmount" label="Total Amount">
+      <InputNumber
+        prefix={<span>Rs.</span>}
+        style={{ width: '100%' }}
+        disabled
+        precision={2}
+        value={calculatedValues.finalPurchaseRate}
+      />
+    </Form.Item>
+  </Col>
 </Row>
+<Row gutter={[16, 16]}>
+  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+    <Form.Item
+      name="saleRate"
+      label="Sale Rate"
+      rules={[{ required: true, message: 'Please enter sale rate' }]}
+    >
+      <InputNumber
+        prefix={<span>Rs.</span>}
+        style={{ width: '100%', height: '32px' }}
+        min={0}
+        step="1"
+        precision={2}
+        placeholder="Enter sale rate"
+        onBlur={() => {
+          const values = form.getFieldsValue();
+          if (
+            values.saleRate !== undefined &&
+            values.purchaseRate !== undefined &&
+            values.saleRate < values.purchaseRate
+          ) {
+            Toaster.error("Sale rate cannot be less than purchase rate");
+            form.setFieldsValue({ saleRate: undefined });
+          }
+        }}
+      />
+    </Form.Item>
+  </Col>
+
+  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+    <Form.Item
+      name="saleDiscount"
+      label="Discount %"
+      rules={[{ required: true, message: 'Please enter sale discount' }]}
+    >
+      <InputNumber
+        prefix={<span>%</span>}
+        style={{ width: '100%', height: '32px' }}
+        min={0}
+        max={100}
+        step="0.01"
+        precision={2}
+        placeholder="Enter discount %"
+        onFocus={() => {
+          const value = form.getFieldValue("saleDiscount");
+          if (value === 0) {
+            form.setFieldsValue({ saleDiscount: null });
+          }
+        }}
+      />
+    </Form.Item>
+  </Col>
+
+  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+    <Form.Item name="finalSaleRate" label="Final Amount">
+      <InputNumber
+        prefix={<span>Rs.</span>}
+        style={{ width: '100%', height: '32px' }}
+        disabled
+        precision={2}
+        value={calculatedValues.finalSaleRate}
+      />
+    </Form.Item>
+  </Col>
+
+  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+    <Form.Item
+      name="minSaleRate"
+      label="Minimum Rate"
+      rules={[{ required: true, message: 'Please enter min sale rate' }]}
+    >
+      <InputNumber
+        prefix={<span>Rs.</span>}
+        style={{ width: '100%', height: '32px' }}
+        min={0}
+        step="0.01"
+        precision={2}
+        placeholder="Enter min sale rate"
+        value={calculatedValues.finalSaleRate}
+      />
+    </Form.Item>
+  </Col>
+</Row>
+
+
+</>
+
+        
 <Row gutter={[0, 0]} style={{ marginTop: '12px',marginBottom: '-8px'  }} justify="end"> 
-  <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+  <Col xs={24} sm={24} md={6} lg={6} xl={6}>
     <Form.Item>
       <Button
        type="default"
@@ -1152,7 +927,7 @@ const handleSubmit = async () => {
   <Row gutter={[16, 16]}>
     <Col xs={24} sm={12} md={6} lg={6} xl={6}>
       <Form.Item
-        name="suppliersId"
+        name="supplierId"
         label="Supplier"
       >
         <Space.Compact style={{ width: '100%' }}>
@@ -1359,4 +1134,4 @@ const handleSubmit = async () => {
   );
 };
 
-export default PurchaseItem;
+export default Purchase;

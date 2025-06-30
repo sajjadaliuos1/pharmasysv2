@@ -13,14 +13,15 @@ import {
 import dayjs from 'dayjs';
 
 import ReusableDropdown from '../../common/ReusableDropdown';  
-import {  getBoxProduct,getNewInvoice,getPayment, getCustomer, getStripProduct, createSale, getOpenInvoice } from '../../../api/API';  
+import {  getBoxProduct,getSalebyInvoice,getPayment, getCustomer, getStripProduct, createSale } from '../../../api/API';  
 import { Toaster } from '../../common/Toaster';
  
 
 
-const Sale = () => {
+const SaleReturn = () => {
   const [form] = Form.useForm();
    const [form1] = Form.useForm();
+      const [formSearch] = Form.useForm();
  
   const [loadingCustomer, setLoadingCustomer] = useState(false);
   const [loadingPaymentMethod, setLoadingPaymentMethod] = useState(false);
@@ -34,11 +35,11 @@ const Sale = () => {
   const [remainingQuantity, setRemainingQuantity] = useState(0);
   const [BatchNo, setBatchNo] = useState('');   
   const [minSaleRate,setMinSaleRate] = useState('')
-  const [finalPurchaseRate,setFinalPurchaseRate] = useState('')
+   const [finalPurchaseRate,setFinalPurchaseRate] = useState('')
 
   
   const [customers, setCustomers] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState([]);
+   const [paymentMethod, setPaymentMethod] = useState([]);
   const [customerMap, setCustomerMap] = useState(new Map());
 
 
@@ -56,125 +57,81 @@ const [customerRemainingAmount, setCustomerRemainingAmount] = useState('');
 
 const [showPaymentMethod, setShowPaymentMethod] = useState(false);
 
-
-const [invoiceNumbers, setInvoiceNumbers] = useState([]);
-const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
-const [loadingInvoices, setLoadingInvoices] = useState(false);
- 
-
-const [newInvChecking, setNewInvChecking] = useState();
-
-
-
   useEffect(() => {
     fetchBoxProduct();
-     fetchCustomer();
-    fetchInvoiceNo();
+     fetchCustomer();    
     fetchPaymentMethod();
   }, []);
+ 
   
- 
-useEffect(() => {
-  const discountedTotal = cartItems.reduce((sum, item) => {
-      return sum + parseFloat(item.totalAmount || item.saleItemAmount || 0);
-  }, 0);
-
-  const rounded = applyRoundOff(discountedTotal).toFixed(2);
-
-  const allValues = form1.getFieldsValue();
-
-  if (allValues.totalAmount !== rounded) {
-    // Update totalAmount
-    form1.setFieldsValue({ totalAmount: rounded });
-
-    // Immediately update all dependent fields
-    handleForm1Change({ totalAmount: rounded }, {
-      ...allValues,
-      totalAmount: rounded
-    });
-  }
-}, [cartItems]);
-
- 
-
 const totalItemAmount = useMemo(() => {
   return cartItems.reduce((sum, item) => sum +  parseFloat(item.saleItemAmount || 0), 0).toFixed(2);
 }, [cartItems]);
 
  
-// Fetch invoice number
-const fetchInvoiceNo = async () => {
+ 
+const handleSearch = async () => {
   try {
-    setLoadingCustomer(true);
-    const invoiceNo = await getInvoiceNo();
-    if (invoiceNo) {
-      setNewInvoiceNo(invoiceNo);
-      setNewInvChecking(invoiceNo);
-      setSelectedInvoiceId(`${invoiceNo}`);
-      form.setFieldsValue({ invoiceId: `${invoiceNo}` });
-       
-    } else {
-      Toaster.warning("Error in getting Purchase No.");
+    const formData = await formSearch.validateFields();
+    const invoiceNo = parseInt(formData.search, 10);
+
+    if (isNaN(invoiceNo)) {
+      Toaster.error('Invalid invoice number');
+      return;
     }
-  } catch (err) {
-    Toaster.error("Failed to load Purchase No. Please try again.");
-  } finally {
-    setLoadingCustomer(false);
-  }
-}; 
 
+    const result = await getSalebyInvoice(invoiceNo);
+    console.log("Get Record against Inv No", result);
 
-const getInvoiceNo = async () => {
-  try {
-    const response = await getNewInvoice();
-    if (response.data && response.data > 0) {
-      return response.data;
-    } else {
-      Toaster.warning("something went wrong in getting invoice number");
-      return null;
+    if (!result.data || result.data.status !== "Success") {
+      Toaster.error("No record found for this invoice number.");
+      return;
     }
-  } catch (error) {
-    console.error("Error getting invoice number:", error);
-    Toaster.error("error in getting invoice number");
-    return null;
-  }
-};
 
-const fetchInvoicesByCustomer = async (customerId) => {
-  try {
-    setLoadingInvoices(true);
-    const response = await getOpenInvoice(customerId); 
+    const saleData = result.data.data;
 
-    if (response.data && response.data.data) {
-      const invoiceList = response.data.data.map(inv => ({
-        value: inv.openInvoiceId || inv.saleId, 
-        label: `${inv.invoiceNo} - Rs. ${inv.totalAmount}`,
-        text : `${inv.invoiceNo}`,
-        amount:`${inv.totalAmount}`,
-    }));
-      setInvoiceNumbers(invoiceList);
-    
-     const first = invoiceList[0];
-      setSelectedInvoiceId(first.value);
-      setNewInvoiceNo(first.text);
-       setCustomerRemainingAmount(first.amount);
-      form.setFieldsValue({ invoiceId: first.value });
-
-    } else {
-      setInvoiceNumbers([]);
-      setSelectedInvoiceId(null);
-      form.setFieldsValue({ invoiceId: null });
-      Toaster.warning("No invoices found for this customer.");
-    }
-  } catch (err) {
-    console.error("Error fetching invoices:", err);
-    Toaster.error("Failed to load invoices.");
-  } finally {
-    setLoadingInvoices(false);
-  }
-};
-
+    // 1. Set values to the form
+    form1.setFieldsValue({
+      customerId: saleData.customerId,
+      CustomerName: saleData.customerName,
+      totalAmount: saleData.totalAmount?.toFixed(2),
+      supplierDiscount: saleData.discountAmount?.toFixed(2),
+      netAmount: saleData.finalAmount?.toFixed(2),
+      customerOldAmount: saleData.customerOldAmount?.toFixed(2),
+      totalAmountWithOld: (saleData.finalAmount + saleData.customerOldAmount).toFixed(2),
+      paidAmount: saleData.paidAmount?.toFixed(2),
+      remainingAmount: saleData.remaining?.toFixed(2),
+      paymentMethodId: saleData.paymentMethodId ?? undefined
+    });
   
+    if (saleData.paymentMethodId && paymentMethodMap.has(saleData.paymentMethodId)) {
+      const selectedMethod = paymentMethodMap.get(saleData.paymentMethodId);
+      setPaymentMethodRemainingAmount(selectedMethod.remaining || '');
+    } else {
+      setPaymentMethodRemainingAmount('');
+    }
+    const saleDetails = Array.isArray(saleData.saleDetails) ? saleData.saleDetails : [];
+    const mappedTableData = saleDetails.map((item, index) => ({
+  key: index,
+  productName: item.productName,
+  batchNo: item.purchaseInventoryId,
+  unitSaleRate: item.unitSaleRate,
+  discountPercent: item.discountPercent,
+  finalRate: item.afterDiscountAmount,
+  saleQuantity: item.netQuantity,
+  finalAmount: item.netAmount
+}));
+
+    setCartItems(mappedTableData); 
+
+    Toaster.success("Record loaded successfully");
+
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    Toaster.error("Please fill all required fields.");
+  }
+};
+
   const stripProductCache = useRef(null);
   const boxProductCache = useRef(null);  
   const fetchBoxProduct = async () => {
@@ -249,28 +206,12 @@ stripProductCache.current = productList;
         ...c,
         label: `${c.customerName} (Rs. ${c.remaining})`
       }));
-      setCustomers(customerList);     
+      setCustomers(customerList);
+
+      // use for dropdown to get record in fast....
         const map = new Map();
         customerList.forEach(s => map.set(s.customerId, s));
         setCustomerMap(map);
-
-        if (customerList.length > 0) {
-        const firstCustomer = customerList[0];
-        const { customerId, customerName, remaining = 0 } = firstCustomer;
-
-        setCustomerName(customerName);
-        setCustomerRemainingAmount(remaining);
-
-        form1.setFieldsValue({
-          customerId,
-          customerOldAmount: remaining,
-          paidAmount: 0,
-          netAmount: totalItemAmount,
-          totalAmountWithOld: (parseFloat(totalItemAmount || 0) + parseFloat(remaining || 0)).toFixed(2)
-        });
-      setShowPaymentMethod(false);
-      fetchInvoicesByCustomer(customerId);
-      }
     
       } else {
         Toaster.warning("No suppliers found or unexpected response format.");
@@ -308,70 +249,22 @@ stripProductCache.current = productList;
   };
 
    
-const createNewInvoiceNo = async () => {
-  try {
-    const invoiceNo = await getInvoiceNo();
+ 
 
-    if (!invoiceNo) {
-      Toaster.warning("Could not fetch new invoice number.");
-      return;
-    }
-
-    const newInvoiceValue = `${invoiceNo}`;
-    const alreadyExists = invoiceNumbers.some(inv => inv.value === newInvoiceValue);
-    setCustomerRemainingAmount(0);
-    if (alreadyExists) {
-      Toaster.info("Invoice already created.");
-    } else {
-      const newInvoice = {
-        value: newInvoiceValue,
-        label: `${invoiceNo} - Rs. 0`,
-         text : newInvoiceValue,
-        amount: 0,
-      };
-      setInvoiceNumbers(prev => [newInvoice, ...prev]);
-    }
-
-    setNewInvoiceNo(invoiceNo);
-    setSelectedInvoiceId(newInvoiceValue);
-    form.setFieldsValue({ invoiceId: newInvoiceValue });
-
-  } catch (err) {
-    console.error("Error creating new invoice:", err);
-    Toaster.error("Failed to create new invoice number.");
-  }
-};
-
-
-  const columns = [
-  {
-    title: 'Actions',
-    render: (_, __, index) => (
-      <Space>
-        <Button icon={<EditOutlined />} onClick={() => handleEdit(index)} />
-        <Button icon={<DeleteOutlined />} onClick={() => handleDelete(index)} danger />
-      </Space>
-    ),
-  },
-
+ const columns = [
   { title: 'Product', dataIndex: 'productName' },
   { title: 'Batch No', dataIndex: 'batchNo' },
   { title: 'Sale Rate', dataIndex: 'unitSaleRate' },
   { title: 'Discount %', dataIndex: 'discountPercent' },
   { title: 'Net Rate', dataIndex: 'finalRate' },
-  { title: 'Qty', dataIndex: 'saleQuantity' },  
-  { 
-    title: 'Total Amount', 
-    dataIndex: 'saleItemAmount',
+  { title: 'Qty', dataIndex: 'saleQuantity' },
+  {
+    title: 'Amount',
+    dataIndex: 'finalAmount',
     render: (value) => `Rs. ${parseFloat(value || 0).toFixed(2)}`
-  }, 
-  // { 
-  //   title: 'Show Amount After Final Discount', 
-  //   dataIndex: 'finalAmount',
-  //   render: (value) => `Rs. ${parseFloat(value || 0).toFixed(2)}`
-  // }, 
-
+  },
 ];
+
 
 
 
@@ -498,7 +391,7 @@ if (finalRate < minSaleRate) {
   });
 };
 
- const handleAddOrUpdate = () => {
+  const handleAddOrUpdate = () => {
   form.validateFields().then(values => {
     const enteredQuantity = parseFloat(values.saleQuantity || values.quantity ||  0);
     const unitSaleRate = parseFloat(values.unitSaleRate || values.saleRate || 0);
@@ -590,28 +483,24 @@ if (finalRate < minSaleRate) {
       }
     }
 
-    // Apply additional discount if any
-    const cartWithDiscount = reapplyAdditionalDiscount(updatedCart);
+      const cartWithDiscount = reapplyAdditionalDiscount(updatedCart);
     setCartItems(cartWithDiscount);
 
-    // Calculate the new total from cart items
-    const newTotal = cartWithDiscount.reduce((sum, item) => {
-      return sum + parseFloat(item.saleItemAmount || 0);
-    }, 0);
-    
-    // Apply round-off immediately
-    const roundedTotal = applyRoundOff(newTotal).toFixed(2);
-    
-    // Update form1 with rounded total
-    form1.setFieldsValue({
-      totalAmount: roundedTotal
-    });
+     setTimeout(() => {
+      const newTotal = updatedCart.reduce((sum, item) => {
+        return sum + parseFloat(item.saleItemAmount || 0);
+      }, 0);
+      
+      form1.setFieldsValue({
+        totalAmount: newTotal.toFixed(2)
+      });
 
-    // Trigger form1 change to update all dependent fields
-    handleForm1Change({}, {
-      ...form1.getFieldsValue(),
-      totalAmount: roundedTotal
-    });
+     
+      handleForm1Change({}, {
+        ...form1.getFieldsValue(),
+        totalAmount: newTotal.toFixed(2)
+      });
+    }, 0);
  
    form.resetFields([
   'saleDate',
@@ -623,6 +512,7 @@ if (finalRate < minSaleRate) {
   'totalAmount'
 ]);
 
+
     setSelectedPurchaseInventoryId(null);
     setRemainingQuantity(0);
     setBatchNo('');
@@ -632,6 +522,7 @@ if (finalRate < minSaleRate) {
   });
 };
 
+  
 
 const handleEdit = async(index) => {
   const item = cartItems[index];
@@ -675,28 +566,23 @@ const handleDelete = (index) => {
   const updatedCart = [...cartItems];
   updatedCart.splice(index, 1);
   
-  // Apply additional discount if any
-  const cartWithDiscount = reapplyAdditionalDiscount(updatedCart);
+   const cartWithDiscount = reapplyAdditionalDiscount(updatedCart);
   setCartItems(cartWithDiscount);
 
-  // Calculate the new total from updated cart
-  const newTotal = cartWithDiscount.reduce((sum, item) => {
-    return sum + parseFloat(item.totalAmount || item.saleItemAmount || 0);
-  }, 0);
-  
-  // Apply round-off immediately
-  const roundedTotal = applyRoundOff(newTotal).toFixed(2);
-  
-  // Update form1 with rounded total
-  form1.setFieldsValue({
-    totalAmount: roundedTotal
-  });
+   setTimeout(() => {
+    const newTotal = updatedCart.reduce((sum, item) => {
+      return sum + parseFloat(item.totalAmount || 0);
+    }, 0);
+    
+    form1.setFieldsValue({
+      totalAmount: newTotal.toFixed(2)
+    });
 
-  // Trigger form1 change to update all dependent fields
-  handleForm1Change({}, {
-    ...form1.getFieldsValue(),
-    totalAmount: roundedTotal
-  });
+     handleForm1Change({}, {
+      ...form1.getFieldsValue(),
+      totalAmount: newTotal.toFixed(2)
+    });
+  }, 0);
 };
 
  
@@ -734,10 +620,10 @@ const handleForm1Change = (changedValues, allValues) => {
   const remaining = Math.max(0, finalTotal - paidAmount);
 
   
-  if (changedValues.supplierDiscount !== undefined) {
-    const updatedCartItems = calculateAdditionalDiscountByRate(cartItems, additionalDiscount);
-    setCartItems(updatedCartItems); 
-  }
+//   if (changedValues.supplierDiscount !== undefined) {
+//     const updatedCartItems = calculateAdditionalDiscountByRate(cartItems, additionalDiscount);
+//     setCartItems(updatedCartItems); 
+//   }
 
   setTimeout(() => {
     form1.setFieldsValue({
@@ -760,6 +646,7 @@ const applyRoundOff = (amount) => {
   } else {
     return Math.ceil(numAmount / 10) * 10;
   }
+ 
 };
 
 const reportJson = (date, total,discount,net,old,payable,paid,remaining) => {
@@ -817,10 +704,6 @@ const handleSubmit = async () => {
       Toaster.error('Customer must pay full amount if selected as the first record.');
       return;
     }
-     
-    const isInvoiceOpenValue = customerIndex !== 0;
-
-
 
     if (!cartItems || cartItems.length === 0) {
       Toaster.error('Please add at least one item to the cart');
@@ -861,10 +744,6 @@ const handleSubmit = async () => {
 const jsDate = saleDate ? saleDate.toDate() : null;
 
 
-const convertedInvoiceNo = parseInt(InvoiceNo, 10); 
-const isInvoiceNumberNew = convertedInvoiceNo === newInvChecking;
- 
-
 const jsonReport = reportJson(jsDate,parseFloat(formData.totalAmount),
 parseFloat(formData.supplierDiscount || 0),
 parseFloat(formData.netAmount),parseFloat(formData.customerOldAmount || 0), payableAmount,paidAmount,
@@ -883,29 +762,21 @@ parseFloat(formData.remainingAmount));
       netPayableAmount: parseFloat(formData.totalAmountWithOld),
       paidAmount,
       remaining: parseFloat(formData.remainingAmount),   
-      // date: jsDate,
-      date: jsDate.toISOString().split('T')[0],
+      date: jsDate,
       report: JSON.stringify(jsonReport),
       paymentMethodId: formData.paymentMethodId || null,
-       isInvoiceNew: isInvoiceNumberNew,
-       isInvoiceOpen: isInvoiceOpenValue,
       saleDetails: cartItems,
     };
-
-setLoadingSave(false);
-    console.log('Payload to be sent:', payload);
- 
   await createSale(payload);
- 
+
+
+
     Toaster.success('Validation successful. Ready to submit to API.');
     form1.resetFields();            
 setCartItems([]);               
 setCustomerRemainingAmount(0); 
 setShowPaymentMethod(false);   
-
-
-     fetchCustomer();
-    fetchInvoiceNo();
+     fetchCustomer();    
     fetchPaymentMethod();
 
 stripProductCache.current = null;
@@ -939,7 +810,7 @@ const [isChecked, setIsChecked] = useState(false);
     <div style={{ display: 'flex', fontSize:'30px', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
   
   <span style={{ fontWeight: 500 }}>
-   Add Sale
+  Return Sale
   </span>
   
 </div>
@@ -953,6 +824,35 @@ const [isChecked, setIsChecked] = useState(false);
   bodyStyle={{ padding: '5px 15px 0 15px' }} 
   >
  
+
+
+<Form
+form={formSearch}
+ layout="vertical"
+            name="search_form">
+                <Row gutter={[16, 0]} style={{ marginBottom: '16px' }}>
+  <Col span={18}>
+    <Form.Item
+      name="search"
+      label="Search Record by Invoice No"
+      rules={[{ required: true, message: 'Please enter invoice number' }]}
+    >
+      <Input type="number" placeholder="Enter Invoice Number" />
+    </Form.Item>
+  </Col>
+  <Col span={6} style={{ display: 'flex', alignItems: 'end' }}>
+    <Button 
+      type="primary" 
+      htmlType="button" 
+      style={{ width: '100%' }} 
+      onClick={handleSearch}  
+    >
+      Search Record
+    </Button>
+  </Col>
+</Row>
+            </Form>
+
         <Form
             form={form}
             layout="vertical"
@@ -960,347 +860,11 @@ const [isChecked, setIsChecked] = useState(false);
             onFinish={handleAddOrUpdate}
             onValuesChange={(changedValues, allValues) => {
               handleValuesChange(changedValues, allValues);
-            }}
-            initialValues={{ saleDate: dayjs() }}
-                >       
-                <Row gutter={[24, 0]}>
-
-            <Col span={12}>
-                <Form.Item
-                  name="customerId"
-                  label="Customer"
-                    >
-                  <Space.Compact style={{ width: '100%' }}>
-                    <ReusableDropdown
-                      data={customers}
-                      valueField="customerId" 
-                    labelField="label"     
-                    value={form1.getFieldValue("customerId")}
-                      placeholder="Select Customer"
-                      loading={loadingCustomer}
-                      style={{ width: 'calc(100% - 43px)' }}
-                      defaultOption={false}                     
-                    onChange={(customerId) => {
-                     const selectedCustomer = customerMap.get(customerId);
-                     const customerName = selectedCustomer ? selectedCustomer.customerName : "";
-                    const remaining = selectedCustomer ? selectedCustomer.remaining || 0 : 0;
-                    setCustomerName(customerName);
-
-                    // setCustomerRemainingAmount(remaining);
-                    fetchInvoicesByCustomer(customerId);
-                    
-                    form1.setFieldsValue({
-                    customerId,
-                    customerOldAmount: remaining,
-                    paidAmount: 0,
-                    netAmount: totalItemAmount,
-                    totalAmountWithOld: (parseFloat(totalItemAmount || 0) + parseFloat(remaining || 0)).toFixed(2)
-                      });
-
-                setShowPaymentMethod(false);
-}}
-
-                    />
-                    <Button
-                      type="primary"
-                    //   onClick={() => setShowSuppliersModal(true)}
-                    >
-                      +
-                    </Button>
-                  </Space.Compact>
-                </Form.Item>
-              </Col>
-               
-
- <Form.Item
-  name="invoiceId"
-  label="Invoice Number"
-  rules={[{ required: true, message: 'Please select an invoice number' }]}
->
-  <Select
-    placeholder="Select Invoice"
-    options={invoiceNumbers}
-    loading={loadingInvoices}
-    value={selectedInvoiceId}
-    onChange={(value) => {
-      setSelectedInvoiceId(value);
-      form.setFieldsValue({ invoiceId: value });
-      const selectedOption = invoiceNumbers.find(item => item.value === value);
-    if (selectedOption) {
-      setNewInvoiceNo(selectedOption.text);  
-       setCustomerRemainingAmount(selectedOption.amount);
-    } else {
-      setNewInvoiceNo(''); // fallback
-    }
-  }}
-    allowClear
-  />
-</Form.Item>
-
-
-
- <Col span={6}>
-                <Form.Item     
-    label="Invoice No"
-    rules={[{ required: true, message: 'Invoice number required' }]}
-  >
-    <Input type="number"
-   value={InvoiceNo} disabled
-     placeholder="Invoice Number" />
-  </Form.Item>       
-     
-              </Col>               
-              <Form.Item
-               label=" "     
-               >
-           <Button 
-                      type="default" text=""
-                       onClick={() => createNewInvoiceNo()}
-                    >
-                      New
-                    </Button>
-</Form.Item>
+            }}            
+                >     
  
-    {/* <Col span={6}>
-                <Form.Item
-                  name="saleDate"
-                   
-                  label="Sale Date">
-                  <DatePicker
-                    style={{ width: '100%' }}
-                    format="DD-MM-YYYY"
-                    placeholder="Select Sale date"
-                    suffixIcon={<CalendarOutlined />}
-                  />
-                </Form.Item>
-              </Col> */}
-  <Col span={12}>
-   <Form.Item
-  name="purchaseInventoryId"
-label={`Product Name - ${remainingQuantity}`}
-
->
-  <Space.Compact style={{ width: '100%' }}>
-     
-    <Checkbox
-      checked={isChecked}
-      className="custom-checkbox"
-      onChange={async (e) => {
-        const checked = e.target.checked;
-        setIsChecked(checked);        
-        setSelectedPurchaseInventoryId(undefined);
-        form.resetFields([
-      'purchaseInventoryId',
-      'saleRate',
-      'saleDiscount',
-      'finalRate',
-      'quantity',
-      'totalAmount'
-    ]);
-    setRemainingQuantity('');
-    setBatchNo('');
-    setMinSaleRate('');    
-    setFinalPurchaseRate('');
-    setProducts([]); 
-        setLoadingproduct(true);
-        try {
-           if (checked) {
-        await fetchStripProduct();     
-      } else { 
-        await fetchBoxProduct(); 
-      }
-        } catch (error) {
-          console.error("API Error:", error);
-        } finally {
-          setLoadingproduct(false);
-        }
-      }}
-    />
-
-    
-    <Select
-      showSearch
-      placeholder="Search a product"
-      optionFilterProp="label"
-      style={{ width: '100%' }}
-      value={selectedPurchaseInventoryId}
-      onChange={(PurchaseInventoryId) => {
-        setSelectedPurchaseInventoryId(PurchaseInventoryId);      
-        form.setFieldsValue({ purchaseInventoryId: PurchaseInventoryId });
-        const selectedProduct = productMap.get(PurchaseInventoryId);
-       
-        if (selectedProduct) {
-           setRemainingQuantity(selectedProduct.remainingQuantity);
-           setBatchNo(selectedProduct.batchNo);
-            setMinSaleRate(selectedProduct.minimumSaleRate);
-            if( isChecked) {
-              var finalPurchaseRate = selectedProduct.finalPurchaseRate || 0;
-              var stripPerBox = selectedProduct.stripPerBox || 0;
-              finalPurchaseRate = finalPurchaseRate / stripPerBox;
-              setFinalPurchaseRate(finalPurchaseRate.toFixed(2));                
-            }
-            else{
-            setFinalPurchaseRate(selectedProduct.finalPurchaseRate);
-            }
-
-    const saleRate = selectedProduct.saleRate || 0;
-    const discount = selectedProduct.saleDiscountPercent || 0;
-    const finalRate = saleRate - (saleRate * discount / 100);
-    const quantity = 1;
-    const totalAmount = finalRate * quantity;
-    form.setFieldsValue({
-      saleRate,
-      saleDiscount: discount,
-      finalRate: finalRate.toFixed(2),
-      quantity,
-      totalAmount: totalAmount.toFixed(2)
-    });
-
-           
-          } else {
-         setRemainingQuantity('');
-         setBatchNo('');
-         setMinSaleRate('');
-          setFinalPurchaseRate('');
-         form.resetFields([
-      'saleRate',
-      'saleDiscount',
-      'finalRate',
-      'quantity',
-      'totalAmount'
-    ]);
-        
-        }
-      }}
-     filterOption={(input, option) => {
-    const selected = product.find(p => p.purchaseInventoryId === option?.value);
-    const name = selected?.productName?.toLowerCase() || '';
-    const barcode = selected?.barcode?.toLowerCase() || '';
-    return name.includes(input.toLowerCase()) || barcode.includes(input.toLowerCase());
-  }}
-      optionLabelProp="label"
-      notFoundContent={loadingproduct ? <Spin size="small" /> : 'No products found'}
-    >
-      {product.map(product => (
-        <Option
-           key={product.purchaseInventoryId}        
-          value={product.purchaseInventoryId}
-          label={product.productName}    
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-             
-            <div>
-              <div style={{ fontWeight: 500 }}>{`${product.productName} - ${product.remainingQuantity}`}</div>
-              <div style={{ fontSize: 12, color: 'gray' }}>
-                Rate: {product.saleRate.toFixed(2)}  | B.No: {product.batchNo} | BC: {product.barcode}
-              </div>
-            </div>
-          </div>
-        </Option>
-      ))}
-    </Select>
-  </Space.Compact>
-</Form.Item>
-  </Col>
-
-             
-               <Col span={6}>
-                <Form.Item
-                  name="saleRate"
-                 label={` Sale Rate - ${finalPurchaseRate}`}
-                  rules={[{ required: true, message: 'Please enter sale rate' }]}
-                >
-                 <InputNumber
-            prefix={<span>Rs.</span>}
-            style={{ width: '100%' }}
-            min={0}
-            
-            step="1"
-            precision={2}
-            placeholder="Enter sale rate"
-         
-          />
-                </Form.Item>
-              </Col>
-              <Col span={6}>
-                <Form.Item
-                   name="saleDiscount"
-                  label="Discount %"
-                   rules={[{ required: true, message: 'Please enter sale discount' }]}
-                >
-      <InputNumber
-            prefix={<span>%</span>}
-            style={{ width: '100%' }}
-            min={0}
-            max={100}     
-            step="0.01"
-            precision={2}
-            placeholder="Enter discount %"
-            onFocus={() => {
-            const value = form.getFieldValue("saleDiscount");
-            if (value === 0) {
-                form.setFieldsValue({ saleDiscount: null });
-               }
-               }}
-            
-          />
-                </Form.Item>
-              </Col>
-         
-    </Row>
-               <Row gutter={[16, 0]}>
-                
-   <Col span={6}>
-    <Form.Item
-    name="quantity"
-    label="Quantity"
-    rules={[{ required: true, message: 'Please enter quantity' }]}
-  >
-    <Input type="number" placeholder="Enter quantity" />
-  </Form.Item>
-  </Col>
-  <Col span={6}> 
-        <Form.Item
-    name="finalRate"
-    label={`Unit Rate - Rs. ${minSaleRate}`}
-    rules={[{ required: true, message: 'Please enter quantity' }]}
-  >
-    <Input type="number"
-     disabled
-     placeholder="Final Rate" />
-  </Form.Item>
-</Col>
-
-   <Col span={6}>
-    <Form.Item
-    name="totalAmount"
-    label="Total Amount"
-    
-    rules={[{ required: true, message: 'Please enter Total Amount' }]}
-  >
-    <Input disabled type="number" placeholder="Total Amount" />
-  </Form.Item>
-  </Col>
-
-  {/* <Col span={6}>
-    <Form.Item       
-      label="Batch No"
-      rules={[{ required: true, message: 'Please enter batch number' }]}
-    >
-      <Input value={BatchNo} disabled placeholder="Batch number" />
-    </Form.Item>
-  </Col> */}
-
- <Col span={6}>
-<Form.Item
- label=" "
->
-          <Button type="default" style={{width: '100%'}} htmlType="submit">
-            {editingIndex !== null ? 'Update Item' : 'Add to Cart'}
-          </Button>
-        </Form.Item>
-         </Col>
-   </Row>
+ 
+               
              
           </Form>
            <Row gutter={[16, 16]}>
@@ -1329,7 +893,8 @@ label={`Product Name - ${remainingQuantity}`}
     const additionalDiscountTotal = cartItems.reduce((sum, item) => {
       return sum + parseFloat(item.additionalDiscount || 0);
     }, 0);
-    
+    const totalAllDiscounts = (parseFloat(itemLevelDiscount) + additionalDiscountTotal).toFixed(2);
+
     form1.setFieldsValue({
       totalAmount: applyRoundOff(discountedTotal).toFixed(2)
     });
@@ -1345,9 +910,9 @@ label={`Product Name - ${remainingQuantity}`}
         padding: '0px',
         borderTop: '1px solid #e0e0e0',
         fontSize: '15px',
-         
+        // lineHeight: 1.6
       }}>
-         
+        
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -1367,7 +932,7 @@ label={`Product Name - ${remainingQuantity}`}
           <span>Item Level Discount:</span>
           <span>- Rs. {itemLevelDiscount}</span>
         </div>
-       
+         
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -1438,7 +1003,17 @@ initialValues={{
     <Input />
   </Form.Item>
 
-          
+           <Col span={12}>
+               <Form.Item
+    name="CustomerName" 
+    label="Customer Name"
+    rules={[{ required: true, message: 'Customer Name required' }]}
+  >
+    <Input type="text"
+    disabled
+     placeholder="Customer Name" />
+  </Form.Item>  
+              </Col>
 
 <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 16 }}>
   <Col span={6}>
@@ -1465,12 +1040,12 @@ initialValues={{
         min={0}
         step={1}
         precision={2}
-          onFocus={() => {
-            const value = form1.getFieldValue("supplierDiscount");
-            if (value === 0) {
-                form1.setFieldsValue({ supplierDiscount: null });
-               }
-               }}
+        //   onFocus={() => {
+        //     const value = form1.getFieldValue("supplierDiscount");
+        //     if (value === 0) {
+        //         form1.setFieldsValue({ supplierDiscount: null });
+        //        }
+        //        }}
       />
     </Form.Item>
   </Col>
@@ -1615,4 +1190,4 @@ initialValues={{
   );
 };
 
-export default Sale;
+export default SaleReturn;

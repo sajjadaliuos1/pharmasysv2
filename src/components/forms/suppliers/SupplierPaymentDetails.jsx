@@ -3,17 +3,17 @@ import { AgGridReact } from "ag-grid-react";
 import "../../common/style.css";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+
 import { ModuleRegistry } from 'ag-grid-community';
-import { AllCommunityModule } from "ag-grid-community";
-import {  message, Button, Empty, Space, Tooltip} from "antd";
+ import { AllCommunityModule } from "ag-grid-community";
+import {  message, Button, Empty } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import { InfoCircleOutlined } from '@ant-design/icons';
-import PurchaseListModal from "./PurchaseListModal";
 
-import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { getPurchaseByDateRange } from "../../../api/API";
+import {getSupplerPaymentByDateRange } from "../../../api/API";
+
+import { useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 
 ModuleRegistry.registerModules([
@@ -21,16 +21,14 @@ ModuleRegistry.registerModules([
  
 ]);
 
-const  PurchaseList = () => {
+const  SupplierPaymentDetails = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
-  const [purchaseDetailsId, setPurchaseDetailsId] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingRecord, setEditingRecord] = useState(null);
+
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
@@ -39,113 +37,69 @@ const  PurchaseList = () => {
    dayjs().subtract(30, 'day'), // 30 days ago
   dayjs() // Today
   ]);
-  
+
+  const location = useLocation();
+  const { supplierId , supplerName } = location.state || {};
+
+
    const getColumnDefs = useCallback(() => {
     return [
       {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
+        minWidth: 80,       
       },
       {
-        headerName: "Purchase No",
-        field: "invoiceNo",
+        headerName: "Paid",
+        field: "paid",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
+
        {
-        headerName: "Name",
-        field: "supplierName",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-       {
-        headerName: "Total Items",
-        field: "totalItems",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-          
-     {
-        headerName: "Total Amount",
-        field: "totalAmount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-           {
-        headerName: "Discount",
+        headerName: "Dicount",
         field: "discount",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
-                 {
-        headerName: "Paid Amount",
-        field: "paidAmount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-    //        {
-    //     headerName: "finalAmount",
-    //     field: "finalAmount",
-    //     sortable: true,
-    //     filter: true,
-    //     minWidth: 140,
-    //   },
-                 {
+       {
         headerName: "Remaining",
         field: "remaining",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
-        {
+         {
+        headerName: "Payment Type",
+        field: "paymentMethod",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      }, 
+     {
+        headerName: "Description",
+        field: "description",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
+      },
+           {
         headerName: "Date",
         field: "date",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
-            {
-              headerName: "Actions",
-              field: "actions",
-              sortable: false,
-              pinned: 'right',
-              filter: false,
-              minWidth: 60,
-              cellRenderer: (params) => {
-                return (
-                  <Space size="middle">
-                    <Tooltip title="Details">
-                      <Button 
-                        icon={<InfoCircleOutlined />} 
-                        onClick={() => {
-                          setPurchaseDetailsId(params.data.purchaseId); 
-                          setIsModalVisible(true);
-                        }}
-                        size="small"
-                    />
-                     
-                    </Tooltip>
-                  </Space>
-                );
-              },
-            }
     ];
   }, [screenSize]);
   
   const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
 
-// Updated fetchPaymentDetailData function
 const fetchPaymentDetailData = useCallback(async () => {
-  if (loadingRef.current) return;  // Add paymentId check
+  if (loadingRef.current || !supplierId) return;  
+  
   loadingRef.current = true;
   setLoading(true);
   
@@ -154,8 +108,8 @@ const fetchPaymentDetailData = useCallback(async () => {
       const startDate = dateRange[0].format('YYYY-MM-DD');
       const endDate = dateRange[1].format('YYYY-MM-DD');
       
-      const response = await getPurchaseByDateRange(startDate, endDate);
-      console.log('API Response: asasa', response.data);
+      const response = await getSupplerPaymentByDateRange(supplierId, startDate, endDate);
+      console.log('API Response:', response.data);
       
       if (!response?.data) {
         throw new Error("Invalid response from server");
@@ -164,8 +118,7 @@ const fetchPaymentDetailData = useCallback(async () => {
       const data = response.data.data || [];
       setRowData(data);
       setFilteredData(data);
-      
-      // Simplified message logic
+ 
       messageApi[data.length ? 'success' : 'info']({ 
         content: data.length 
           ? 'Payment records loaded successfully' 
@@ -191,19 +144,18 @@ const fetchPaymentDetailData = useCallback(async () => {
     setLoading(false);
     loadingRef.current = false;
   }
-}, [messageApi, dateRange]);  // Added paymentId to dependencies
+}, [messageApi, dateRange, supplierId]); 
 
-// Consolidated refresh function
 const handleRefreshData = useCallback(async () => {
-  await fetchPaymentDetailData();  // Reuse the same logic
+  await fetchPaymentDetailData();  
 }, [fetchPaymentDetailData]);
 
-// useEffect hook
+
 useEffect(() => {
-  if (dateRange[0] && dateRange[1]) {
+  if (supplierId && dateRange[0] && dateRange[1]) {
     handleRefreshData();
   }
-}, [dateRange, handleRefreshData]);
+}, [supplierId, dateRange, handleRefreshData]);
 
   const handleExportPDF = useCallback(() => {
       const fileName = prompt("Enter file name for PDF:", "category-data");
@@ -213,8 +165,6 @@ useEffect(() => {
       doc.text('Category Report', 14, 22);
       doc.setFontSize(11);
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-      
-      // Include serial number and exclude actions column
       const columns = ['S.No', 'Name','Description', 'Amount In', 'Amount Out', 'Remaining'];
       
       
@@ -239,7 +189,7 @@ useEffect(() => {
 
   const handleExportExcel = useCallback(() => {
     if (gridRef.current?.api) {
-      // Export only specific columns, excluding the actions column
+     
       const columnsToExport = columnDefs
         .filter(col => col.field !== 'actions')
         .map(col => ({ 
@@ -251,8 +201,8 @@ useEffect(() => {
         fileName: 'payment-data.csv',
         sheetName: 'Payment',
         columnKeys: columnsToExport
-          .filter(col => col.field) // Only include columns with field property
-          .map(col => col.field),   // Extract field names for columnKeys
+          .filter(col => col.field) 
+          .map(col => col.field),  
         skipColumnHeaders: false,
         skipHeader: false
       });
@@ -310,7 +260,7 @@ const handleDateChange = (dates) => {
 };
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: `Purchase Details`,
+    title: ` Supplier Payment Details of ${supplerName}`,
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -350,8 +300,7 @@ const handleDateChange = (dates) => {
       }
       
       const searchLower = searchText.toLowerCase();
-      const filtered = rowData.filter(row =>
-        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
+      const filtered = rowData.filter(row =>    
         (row.typeName && row.typeName.toLowerCase().includes(searchLower))
       );
   
@@ -369,7 +318,7 @@ const handleDateChange = (dates) => {
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
  
-  
+ 
 
   const renderLoadingState = () => (
     <div style={{ 
@@ -413,7 +362,6 @@ const handleDateChange = (dates) => {
   );
   
   return (
-    
     <div className="container mt-2">
     <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
       {contextHolder}
@@ -456,22 +404,10 @@ const handleDateChange = (dates) => {
           )}
         </div>
       )}
-      
-<PurchaseListModal 
-      width={500}
-      zIndex={3000}
-  visible={isModalVisible}
-  onCancel={() => {
-    setIsModalVisible(false);
-  }}
-  loading={loading}
-    purchaseId={purchaseDetailsId} 
-/>
 
-    </div>
-    
+       </div>    
     </div>
   );
 };
 
-export default PurchaseList;
+export default SupplierPaymentDetails;

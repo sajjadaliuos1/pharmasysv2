@@ -1,27 +1,22 @@
-
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
 import "../../common/style.css";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-
 import { ModuleRegistry } from 'ag-grid-community';
- import { AllCommunityModule } from "ag-grid-community";
-import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
+import { AllCommunityModule } from "ag-grid-community";
+import { message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-
-
+import { EditOutlined, DeleteOutlined, InfoCircleOutlined, DollarCircleOutlined } from '@ant-design/icons';
+import { useNavigate } from "react-router-dom";
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
 import { deleteSupplier, getSuppliers } from "../../../api/API";
 import SupplierListModal from "./SupplierListModal";
+import SupplierTransaction from "./SupplierTransaction";
 
-ModuleRegistry.registerModules([
-  AllCommunityModule, 
- 
-]);
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 const SupplierList = () => {
   const [rowData, setRowData] = useState([]);
@@ -34,217 +29,36 @@ const SupplierList = () => {
   const [editingRecord, setEditingRecord] = useState(null);
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
-  const loadingRef = useRef(false); 
-  
+  const loadingRef = useRef(false);
+  const [isTransactionModalVisible, setIsTransactionModalVisible] = useState(false);
+  const [transactionRecord, setTransactionRecord] = useState(null);
+ const navigate = useNavigate();
   const AddnewModal = useCallback((record) => {
-    setEditingRecord(record ? { ...record } : { supplierId: '', name: '', contact :'', address: '', amount: '', discount : '', paid :'', remaining :'', description : '', date :''});
+    setEditingRecord(record ? { ...record } : {
+      supplierId: '', name: '', contact: '', address: '', amount: '',
+      discount: '', paid: '', remaining: '', description: '', date: ''
+    });
     setIsModalVisible(true);
   }, []);
 
-  const handleEdit = useCallback((id) => {
-    const record = rowData.find(suplier => suplier.supplierId === id);
-    if (record) {
-      AddnewModal(record);
-    }
-  }, [AddnewModal, rowData]);
-
-  const handleDelete = useCallback(async (id) => {
-    console.log("Delete category id:", id);
-    try {
-      const response = await deleteSupplier(id);
-      if(response.data.status === "Success"){
-        // Update the local data without calling API again
-        // const updatedData = rowData.filter(item => item.typeId !== id);
-      handleRefreshData();
-        // setRowData(updatedData);
-        // setFilteredData(updatedData);
-
-        
-        // Just update the states, don't try to update the grid directly
-        // The grid will automatically update when filteredData changes
-        
-        Toaster.success(response.data.message);
-      } else {
-        Toaster.error(response.data.message);
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to delete data');
-      messageApi.error({ content: `Failed to delete data: ${err.message || 'Unknown error'}`, key: 'deletingData' });
-      console.error('Error deleting data:', err);
-    }
-  }, [rowData, messageApi]);
-
-   const getColumnDefs = useCallback(() => {
-    return [
-      {
-        headerName: 'S.No',
-        valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
-      },
-    
-      {
-        headerName: "Supplier Name",
-        field: "name",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-            {
-        headerName: "Contact",
-        field: "contact",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-            {
-        headerName: "Address",
-        field: "address",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-            {
-        headerName: "Amount",
-        field: "amount",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-            {
-        headerName: "Discount",
-        field: "discount",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-            {
-        headerName: "Paid",
-        field: "paid",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-            {
-        headerName: "Remaining",
-        field: "remaining",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-            {
-        headerName: "Description",
-        field: "description",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
-      },
-
-      {
-        headerName: "Actions",
-        field: "actions",
-        sortable: false,
-        filter: false,
-        //  pinned: 'right', 
-        minWidth: 110,
-        cellRenderer: (params) => {
-          return (
-            <Space size="middle">
-              <Tooltip title="Edit">
-                <Button 
-                  icon={<EditOutlined />} 
-                  text={params.data.supplierId}
-                  onClick={() => handleEdit(params.data.supplierId)} 
-                  size="small"
-                />
-              </Tooltip>
-              <Popconfirm
-                title="Are you sure you want to delete?"
-                onConfirm={() => handleDelete(params.data.supplierId)}
-                okText="Yes"
-                cancelText="No"
-              >
-                  <Tooltip title="Delete"> 
-                <Button 
-                  icon={<DeleteOutlined />} 
-                  danger 
-                  size="small"
-                /> </Tooltip>
-              </Popconfirm>
-            </Space>
-          );
-        },
-        // suppressSizeToFit: true,
-      }
-    ];
-  }, [screenSize, handleEdit, handleDelete]);
-  
-  const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
-
-  const fetchInvoiceData = useCallback(async () => {
-    if (loadingRef.current) return;
-    
-    loadingRef.current = true;
-    setLoading(true);
-    
-    try {
-      const response = await getSuppliers();
-      // Handle potential null response safely
-      if (!response || !response.data) {
-        throw new Error("Invalid response from server");
-      }
-      
-      const data = response?.data?.data || [];
-      setRowData(data);
-      setFilteredData(data);
-      
-      if (data.length > 0) {
-        messageApi.success({ content: 'Data loaded successfully', key: 'loadingData' });
-      } else {
-        messageApi.info({ content: 'No category data available', key: 'loadingData' });
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to fetch data');
-      messageApi.error({ content: `Failed to fetch data: ${err.message || 'Unknown error'}`, key: 'loadingData' });
-      console.error('Error fetching data:', err);
-    } finally {
-      setLoading(false);
-      loadingRef.current = false; 
-    }
-  }, [messageApi]);
-
+  // 💡 FIXED: Define this function BEFORE any usage
   const handleRefreshData = useCallback(async () => {
     if (loadingRef.current) return;
-    
     setLoading(true);
     loadingRef.current = true;
 
     try {
       const response = await getSuppliers();
-    
-      if (!response) {
-        throw new Error("Failed to fetch categories");
-      }
-      
+      if (!response) throw new Error("Failed to fetch categories");
+
       const data = response?.data?.data || [];
-      
       setRowData(data);
       setFilteredData(data);
-      
+
       if (gridRef.current?.api) {
         gridRef.current.api.setRowData(data);
         gridRef.current.api.refreshCells();
       }
-      
     } catch (error) {
       console.error("Error refreshing data:", error);
       Toaster.error("Failed to fetch categories");
@@ -254,81 +68,163 @@ const SupplierList = () => {
     }
   }, []);
 
+  const handleEdit = useCallback((id) => {
+    const record = rowData.find(supplier => supplier.supplierId === id);
+    if (record) AddnewModal(record);
+  }, [AddnewModal, rowData]);
+
+const handleDetails = useCallback((id, name) => {
+  navigate('/SupplierPaymentDetails', { 
+    state: { 
+      supplierId: id,
+      supplerName: name
+    }
+  });
+}, [navigate]);
+  const handleDelete = useCallback(async (id) => {
+    try {
+      const response = await deleteSupplier(id);
+      if (response.data.status === "Success") {
+        handleRefreshData();
+        Toaster.success(response.data.message);
+      } else {
+        Toaster.error(response.data.message);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete data');
+      messageApi.error(`Failed to delete data: ${err.message || 'Unknown error'}`);
+    }
+  }, [messageApi, handleRefreshData]);
+
+  const handleTransactionModalSave = useCallback(() => {
+    Toaster.success("Transaction processed successfully!");
+    setIsTransactionModalVisible(false);
+    handleRefreshData();
+  }, [handleRefreshData]);
+
+  const getColumnDefs = useCallback(() => [
+    {
+      headerName: 'S.No',
+      valueGetter: (params) => params.node.rowIndex + 1,
+      minWidth: 80,
+    },
+    { headerName: "Supplier Name", field: "name", sortable: true, filter: true, minWidth: 140 },
+    { headerName: "Contact", field: "contact", sortable: true, filter: true, minWidth: 140 },
+    { headerName: "Address", field: "address", sortable: true, filter: true, minWidth: 140 },
+    { headerName: "Amount", field: "amount", sortable: true, filter: true, minWidth: 140 },
+    { headerName: "Discount", field: "discount", sortable: true, filter: true, minWidth: 140 },
+    { headerName: "Paid", field: "paid", sortable: true, filter: true, minWidth: 140 },
+    { headerName: "Remaining", field: "remaining", sortable: true, filter: true, minWidth: 140 },
+    { headerName: "Description", field: "description", sortable: true, filter: true, minWidth: 140 },
+    {
+      headerName: "Actions",
+      field: "actions",
+      sortable: false,
+      filter: false,
+      pinned: 'right',
+      minWidth: 180,
+      cellRenderer: (params) => (
+        <Space size="middle">
+          <Tooltip title="Edit">
+            <Button icon={<EditOutlined />} onClick={() => handleEdit(params.data.supplierId)} size="small" />
+          </Tooltip>
+          <Popconfirm
+            title="Are you sure you want to delete?"
+            onConfirm={() => handleDelete(params.data.supplierId)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Tooltip title="Delete">
+              <Button icon={<DeleteOutlined />} danger size="small" />
+            </Tooltip>
+          </Popconfirm>
+          <Tooltip title="Transaction">
+            <Button
+              icon={<DollarCircleOutlined />}
+              onClick={() => {
+                setTransactionRecord(params.data);
+                setIsTransactionModalVisible(true);
+              }}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip title="Details">
+                         <Button 
+                           icon={<InfoCircleOutlined />} 
+                           onClick={() => handleDetails(params.data.supplierId, params.data.name)} 
+                           size="small"
+                         >
+                           {params.data.typeId}
+                         </Button>
+                       </Tooltip>
+        </Space>
+      )
+    }
+  ], [handleEdit, handleDelete]);
+
+  const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
+
+  const fetchInvoiceData = useCallback(async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    setLoading(true);
+    try {
+      const response = await getSuppliers();
+      const data = response?.data?.data || [];
+      setRowData(data);
+      setFilteredData(data);
+      if (data.length > 0) {
+        messageApi.success('Data loaded successfully');
+      } else {
+        messageApi.info('No category data available');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to fetch data');
+      messageApi.error(`Failed to fetch data: ${err.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  }, [messageApi]);
+
   const handleExportPDF = useCallback(() => {
-    const fileName = prompt("Enter file name for PDF:", "category-data");
+    const fileName = prompt("Enter file name for PDF:", "supplier-data");
     if (!fileName) return;
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Category Report', 14, 22);
-    doc.setFontSize(11);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-    
-    // Include serial number and exclude actions column
-    const columns = ['S.No', 'Category ID', 'Category Name'];
-    
+    doc.setFontSize(18).text('Supplier Report', 14, 22);
+    doc.setFontSize(11).text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+    const columns = ['S.No', 'Supplier ID', 'Supplier Name'];
     const rows = rowData.map((row, index) => [
       index + 1,
       row.supplierId || '',
       row.name || '',
-        row.contact || '',
-        row.address || '',
-        row.amount || '',
-        row.discount || '',
-        row.paid || '',
-        row.remaining || '',
-        row.description || '',
-        row.date || ''
     ]);
-
-    doc.autoTable({
-      head: [columns],
-      body: rows,
-      startY: 40,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [66, 139, 202] }
-    });
+    doc.autoTable({ head: [columns], body: rows, startY: 40, styles: { fontSize: 8 } });
     doc.save(`${fileName}.pdf`);
   }, [rowData]);
 
   const handleExportExcel = useCallback(() => {
     if (gridRef.current?.api) {
-      // Export only specific columns, excluding the actions column
-      const columnsToExport = columnDefs
-        .filter(col => col.field !== 'actions')
-        .map(col => ({ 
-          field: col.field,
-          headerName: col.headerName
-        }));
-      
+      const columnsToExport = columnDefs.filter(col => col.field !== 'actions').map(col => col.field);
       gridRef.current.api.exportDataAsCsv({
         fileName: 'supplier-list.csv',
-        sheetName: 'Supplier List',
-        columnKeys: columnsToExport
-          .filter(col => col.field) // Only include columns with field property
-          .map(col => col.field),   // Extract field names for columnKeys
-        skipColumnHeaders: false,
-        skipHeader: false
+        columnKeys: columnsToExport,
+        skipColumnHeaders: false
       });
     }
   }, [columnDefs]);
 
   const setAutoHeight = useCallback(() => {
-    if (gridRef.current && gridRef.current.api) {
+    if (gridRef.current?.api) {
       gridRef.current.api.setGridOption("domLayout", "autoHeight");
-      const gridElement = document.querySelector("#myGrid");
-      if (gridElement) {
-        gridElement.style.height = "";
-      }
+      document.querySelector("#myGrid").style.height = "";
     }
   }, []);
 
   const setFixedHeight = useCallback(() => {
-    if (gridRef.current && gridRef.current.api) {
+    if (gridRef.current?.api) {
       gridRef.current.api.setGridOption("domLayout", "normal");
-      const gridElement = document.querySelector("#myGrid");
-      if (gridElement) {
-        gridElement.style.height = "500px";
-      }
+      document.querySelector("#myGrid").style.height = "500px";
     }
   }, []);
 
@@ -342,14 +238,13 @@ const SupplierList = () => {
 
   const handleTableSizeChange = useCallback(({ key }) => {
     messageApi.info(`Table layout set to: ${key}`);
-    switch(key) {
+    switch (key) {
       case "Auto Height": setAutoHeight(); break;
       case "Fixed Height": setFixedHeight(); break;
       case "Fullscreen": handleFullscreen(); break;
       default: break;
     }
   }, [messageApi, setAutoHeight, setFixedHeight, handleFullscreen]);
-
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
     title: "Supplier List Management",
@@ -363,158 +258,106 @@ const SupplierList = () => {
     rowData,
     screenSize
   });
-  
+
   const defaultColDef = useMemo(() => ({
-   
     filter: true,
     resizable: true,
     suppressSizeToFit: false
   }), []);
 
   const popupParent = useMemo(() => document.body, []);
-  
+
   useEffect(() => {
     setLoading(true);
     fetchInvoiceData();
-    
-    return () => {
-      loadingRef.current = false;
-    };
+    return () => { loadingRef.current = false };
   }, [fetchInvoiceData]);
 
   useEffect(() => {
-    const filterData = () => {
-      if (!searchText.trim()) {
-        setFilteredData(rowData);
-        return;
-      }
-      
-      const searchLower = searchText.toLowerCase();
-      const filtered = rowData.filter(row =>
-        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
-        (row.name && row.name.toLowerCase().includes(searchLower))
-      );
-  
-      setFilteredData(filtered);
-    };
-    
     const handler = setTimeout(() => {
-      filterData();
-      
-      if (gridRef.current?.api) {
-        gridRef.current.api.onFilterChanged();
-      }
+      const searchLower = searchText.toLowerCase();
+      const filtered = rowData.filter(row => row.name?.toLowerCase().includes(searchLower));
+      setFilteredData(filtered);
+      gridRef.current?.api?.onFilterChanged();
     }, 300);
-    
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
- 
-  const handleModalSave = useCallback(() => { 
-    Toaster.success(editingRecord?.typeId ? "Supplier List updated successfully!" : "Supplier List added successfully!");
-   
+
+  const handleModalSave = useCallback(() => {
+    Toaster.success(editingRecord?.typeId ? "Supplier updated!" : "Supplier added!");
     setIsModalVisible(false);
-     
     handleRefreshData();
   }, [editingRecord?.typeId, handleRefreshData]);
-  
 
   const renderLoadingState = () => (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column',
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      padding: '80px 0',
-      minHeight: '400px',
-      background: '#f9f9f9',
-      borderRadius: '8px'
-    }}>
-    <Loader /> 
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
+      <Loader />
     </div>
   );
 
   const renderErrorState = () => (
-    <div style={{ 
-      padding: '40px 20px', 
-      textAlign: 'center', 
-      background: '#fff1f0',
-      border: '1px solid #ffccc7',
-      borderRadius: '8px' 
-    }}>
-      <h3 style={{ color: '#cf1322', marginBottom: '15px' }}>Error Loading Data</h3>
-      <p style={{ color: '#555', marginBottom: '20px' }}>{error}</p>
-      <Button type="primary" onClick={handleRefreshData}>Try Again</Button>
+    <div style={{ padding: 40, textAlign: 'center' }}>
+      <h3 style={{ color: 'red' }}>Error Loading Data</h3>
+      <p>{error}</p>
+      <Button onClick={handleRefreshData}>Try Again</Button>
     </div>
   );
 
   const renderEmptyState = () => (
-    <Empty
-      image={Empty.PRESENTED_IMAGE_SIMPLE}
-      description={
-        <span>
-          No categories found matching your search criteria
-        </span>
-      }
-    >
-    </Empty>
+    <Empty description="No suppliers found" />
   );
-  
+
   return (
-    
     <div className="container mt-2">
-    <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
-      {contextHolder}
-      {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}     
-      {loading ? renderLoadingState() : error ? renderErrorState() : (
-        <div 
-          id="myGrid" 
-          className="ag-theme-alpine" 
-          style={{
-            height:'515px',
-            minHeight: '515px',
-            maxHeight: '520px',
-            width: '100%',
-            fontSize: '14px'
-          }}
-        >
-          {filteredData.length === 0 ? renderEmptyState() : (
-            <AgGridReact
-              gridOptions={{ suppressMenuHide: true }}
-              columnDefs={columnDefs}
-              ref={gridRef}
-              rowData={filteredData}
-              defaultColDef={defaultColDef}
-              pagination={true}
-              popupParent={popupParent}
-              paginationPageSize={10}
-              paginationPageSizeSelector={[ 10, 20, 50, 100]}
-              domLayout='normal'
-              suppressCellFocus={true}
-              animateRows={true}
-              enableCellTextSelection={true}
-              onGridReady={params => {
-                params.api.sizeColumnsToFit();
-                if (screenSize === 'xs') {
-                  params.api.setGridOption('rowHeight', 40);
-                }
-              }}
-              onFirstDataRendered={params => params.api.sizeColumnsToFit()}
-            />
-          )}
-        </div>
-      )}
-      
-      <SupplierListModal
-        visible={isModalVisible}
-        title={editingRecord?.typeId ? `Edit Supplier List` : 'Add New Supplier List'}
-        button={editingRecord?.typeId ? 'Update' : 'Save'}
-        onCancel={() => setIsModalVisible(false)}
-        initialValues={editingRecord}
-        setIsModalVisible={setIsModalVisible}
-        onSave={handleModalSave}
-      />
-    </div>
-    
+      <div className="category-management-container" style={{ padding: 0, maxWidth: '100%' }}>
+        {contextHolder}
+        {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}
+        {loading ? renderLoadingState() : error ? renderErrorState() : (
+          <div id="myGrid" className="ag-theme-alpine" style={{ height: '515px', width: '100%' }}>
+            {filteredData.length === 0 ? renderEmptyState() : (
+              <AgGridReact
+                gridOptions={{ suppressMenuHide: true }}
+                columnDefs={columnDefs}
+                ref={gridRef}
+                rowData={filteredData}
+                defaultColDef={defaultColDef}
+                pagination={true}
+                popupParent={popupParent}
+                paginationPageSize={10}
+                paginationPageSizeSelector={[10, 20, 50, 100]}
+                domLayout='normal'
+                suppressCellFocus={true}
+                animateRows={true}
+                enableCellTextSelection={true}
+                onGridReady={params => {
+                  params.api.sizeColumnsToFit();
+                  if (screenSize === 'xs') {
+                    params.api.setGridOption('rowHeight', 40);
+                  }
+                }}
+              />
+            )}
+          </div>
+        )}
+        <SupplierListModal
+          visible={isModalVisible}
+          title={editingRecord?.typeId ? "Edit Supplier" : "Add Supplier"}
+          button={editingRecord?.typeId ? "Update" : "Save"}
+          onCancel={() => setIsModalVisible(false)}
+          initialValues={editingRecord}
+          setIsModalVisible={setIsModalVisible}
+          onSave={handleModalSave}
+        />
+        <SupplierTransaction
+          visible={isTransactionModalVisible}
+          title="Process Transaction"
+          button="Save Transaction"
+          onCancel={() => setIsTransactionModalVisible(false)}
+          initialValues={transactionRecord}
+          setIsModalVisible={setIsTransactionModalVisible}
+          onSave={handleTransactionModalSave}
+        />
+      </div>
     </div>
   );
 };

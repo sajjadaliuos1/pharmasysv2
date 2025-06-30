@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Space, Form, Button, Input, message, Checkbox, Row, Col } from 'antd';
-
 import { createProduct, getCategories, getSubCategories, getUom } from '../../../api/API';
 import ReusableDropdown from '../../common/ReusableDropdown';
-
 import CategoryModal from '../../setting/Category/CategoryModol';
 import { Toaster } from '../../common/Toaster';
 import SubCategoryModal from '../../setting/SubCategory/SubCategoryModol';
@@ -30,40 +28,35 @@ useEffect(() => {
     fetchCategories();
     fetchSubCategories();
     fetchUom();
-console.log("initital Value", initialValues);
- 
-    if (initialValues.productId !== "") {
-
-      // form.setFieldsValue({ categoryId: initialValues.categoryId });
 
 
+    if (initialValues && initialValues.productId !== "") {
       form.setFieldsValue({
         ...initialValues,
         categoryId: initialValues.categoryId,
-        barcod: initialValues.barcode || "",
+        productId: initialValues.productId,
+        barcode: initialValues.barcode,
         isStrip: initialValues.isStrip || false,
+        stockAlert : initialValues.stockAlert,
       });
-      setIsStripChecked(initialValues.isStrip || false);
-      setCategoryId(initialValues.categoryId); 
-      setSubCategoryId(initialValues.subCategoryId); 
-      setUomId(initialValues.uomId); 
-    } else {
-      
-      
 
+      setIsStripChecked(initialValues.isStrip || false);
+      setCategoryId(initialValues.categoryId);
+      setSubCategoryId(initialValues.subCategoryId);
+      setUomId(initialValues.uomId);
+    } else {
       form.resetFields();
       form.setFieldsValue({
         isStrip: false,
-         categoryId: null,
+        categoryId: null,
       });
       setIsStripChecked(false);
-       setCategoryId(null); 
-       setSubCategoryId(null);
-       setUomId(null);
+      setCategoryId(null);
+      setSubCategoryId(null);
+      setUomId(null);
     }
   }
 }, [visible, initialValues, form]);
-
 
   const fetchCategories = async () => {
     try {
@@ -294,8 +287,7 @@ console.log("initital Value", initialValues);
       <Col xs={24} sm={24} md={12} lg={12} xl={12}>
       <Form.Item
           name="subCategoryId"
-          label="Sub Category"
-          rules={[{ required: true, message: 'Please select a sub Category' }]}
+          label="Sub Category"          
         >
           <Space.Compact style={{ width: '100%' }}>
            <ReusableDropdown
@@ -344,24 +336,12 @@ console.log("initital Value", initialValues);
           name="barcode"
           label="Barcode"
         >
-          <Space.Compact style={{ width: '100%' }}>
-            <Input
-              id="barcodeInput"
-              placeholder="Enter barcode"
-              maxLength={100}
+          
+            <Input              
+              placeholder="Enter barcode"           
             />
-            <Button
-              type="primary"
-              onClick={() => {
-                const barcodeInput = document.getElementById('barcodeInput');
-                if (barcodeInput) {
-                  barcodeInput.focus();
-                }
-              }}
-            >
-              +
-            </Button>
-          </Space.Compact>
+             
+          
         </Form.Item>
       </Col>
     </Row>
@@ -372,7 +352,7 @@ console.log("initital Value", initialValues);
           name="stockAlert"
           label="Stock Alert"
           rules={[
-            { required: true, message: 'Please enter stock alert value', whitespace: true },
+            { required: true, message: 'Please enter stock alert value' },
           ]}
         >
           <Input type='number' placeholder="Enter Stock Alert" maxLength={100} onWheel={preventWheelChange} />
@@ -440,17 +420,26 @@ console.log("initital Value", initialValues);
         </Form.Item>
       </Col>
       
-      <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-  <Form.Item label="Allow Strip Sale" style={{ marginBottom: 0 }}> 
-    <Space align="start" style={{ width: '100%', display: 'flex' }}> 
-      <Form.Item name="isStrip" valuePropName="checked" noStyle> 
-        <Checkbox onChange={handleCheckboxChange}>
+       
+
+
+
+
+
+  <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+      <Form.Item
+          name=""
+          label="Allow Strip Sale?"
+           
+        >
+          <Space.Compact style={{ width: '100%' }}>
+             <Form.Item name="isStrip" valuePropName="checked" noStyle> 
+        <Checkbox className='custom-checkbox' onChange={handleCheckboxChange}>
         
         </Checkbox>
       </Form.Item>
 
-      
-      {isStripChecked && (
+            {isStripChecked && (
         <Form.Item
           name="stripPerBox"
           rules={[
@@ -466,16 +455,18 @@ console.log("initital Value", initialValues);
           />
         </Form.Item>
       )}
-    </Space>
-  </Form.Item>
-</Col>
+          </Space.Compact>
+        </Form.Item>
+       
+      </Col>
+
     </Row>
   </Form>
   
   {/* Modals */}
   <CategoryModal
     visible={isCategoryModalVisible}
-    title="Add New Category"
+    title="Add Category"
     button="Add"
     onCancel={() => setIsCategoryModalVisible(false)}
     onSave={handleSaveCategory}
@@ -484,7 +475,7 @@ console.log("initital Value", initialValues);
   
   <SubCategoryModal
     visible={isSubCategoryModalVisible}
-    title="Add New Category"
+    title="Add Sub Category"
     button="Add"
     onCancel={() => setIsSubCategoryModalVisible(false)}
     onSave={handleSaveSubCategory}
@@ -493,7 +484,7 @@ console.log("initital Value", initialValues);
   
   <UomModal
     visible={isUomModalVisible}
-    title="Add New Unit of Measurement"
+    title="Add Unit of Measurement"
     button="Add"
     onCancel={() => setIsUomModalVisible(false)}
     onSave={handleUom}

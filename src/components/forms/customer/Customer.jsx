@@ -1,4 +1,3 @@
-
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
 import "../../common/style.css";
@@ -10,7 +9,7 @@ import { ModuleRegistry } from 'ag-grid-community';
 import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined,CheckCircleTwoTone,DollarCircleOutlined } from '@ant-design/icons';
 
 
 import { Toaster } from "../../common/Toaster";
@@ -42,7 +41,7 @@ const Customer = () => {
   }, []);
 
   const handleEdit = useCallback((id) => {
-    const record = rowData.find(suplier => suplier.CustomerId === id);
+    const record = rowData.find(customer => customer.customerId === id);
     if (record) {
       AddnewModal(record);
     }
@@ -53,16 +52,7 @@ const Customer = () => {
     try {
       const response = await deleteCustomer(id);
       if(response.data.status === "Success"){
-        // Update the local data without calling API again
-        // const updatedData = rowData.filter(item => item.typeId !== id);
       handleRefreshData();
-        // setRowData(updatedData);
-        // setFilteredData(updatedData);
-
-        
-        // Just update the states, don't try to update the grid directly
-        // The grid will automatically update when filteredData changes
-        
         Toaster.success(response.data.message);
       } else {
         Toaster.error(response.data.message);
@@ -89,7 +79,6 @@ const Customer = () => {
         field: "customerName",
         sortable: true,
         filter: true,
-       
         minWidth: 140,
       },
             {
@@ -97,7 +86,6 @@ const Customer = () => {
         field: "contact",
         sortable: true,
         filter: true,
-       
         minWidth: 140,
       },
             {
@@ -105,7 +93,6 @@ const Customer = () => {
         field: "address",
         sortable: true,
         filter: true,
-       
         minWidth: 140,
       },
             {
@@ -113,7 +100,6 @@ const Customer = () => {
         field: "amount",
         sortable: true,
         filter: true,
-       
         minWidth: 140,
       },
             {
@@ -129,7 +115,6 @@ const Customer = () => {
         field: "paid",
         sortable: true,
         filter: true,
-       
         minWidth: 140,
       },
             {
@@ -137,7 +122,6 @@ const Customer = () => {
         field: "remaining",
         sortable: true,
         filter: true,
-       
         minWidth: 140,
       },
             
@@ -147,8 +131,8 @@ const Customer = () => {
         field: "actions",
         sortable: false,
         filter: false,
-        //  pinned: 'right', 
-        minWidth: 110,
+         pinned: 'right', 
+        minWidth: 180,
         cellRenderer: (params) => {
           return (
             <Space size="middle">
@@ -173,6 +157,18 @@ const Customer = () => {
                   size="small"
                 /> </Tooltip>
               </Popconfirm>
+              <Button  
+                                icon={<CheckCircleTwoTone   />} 
+                                text={params.data.customerId}
+                                onClick={() => handleEdit(params.data.customerId)} 
+                                size="small"
+                              />
+                                <Button 
+                                icon={<DollarCircleOutlined   />} 
+                                text={params.data.customerId}
+                                onClick={() => handleEdit(params.data.customerId)} 
+                                size="small"
+                              />
             </Space>
           );
         },
