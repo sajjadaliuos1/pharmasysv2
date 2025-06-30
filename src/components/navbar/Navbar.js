@@ -4,16 +4,28 @@ import { useAuthContext } from '../../context/AuthContext';
 import './navbar.css';
 import { 
   FaRegUser, 
-  FaStore, 
  
+ FaBalanceScale ,
+  FaList,
   FaTachometerAlt,
   FaShoppingBasket,
   FaListAlt,
-  FaLayerGroup,
+  FaCog,
   FaUniversity,
   FaCreditCard,
   FaUserEdit,
-  FaHandshake
+  FaHandshake,
+  FaBoxOpen, 
+  FaTruck,  
+  FaCartArrowDown,
+  FaShoppingCart ,
+  FaStore,
+  FaClipboardList,
+  FaTruckLoading,
+  FaUserFriends,
+  FaUser,
+  FaFileInvoiceDollar, 
+  FaUndo
 } from 'react-icons/fa';
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { GrUserWorker} from "react-icons/gr";
@@ -77,57 +89,59 @@ const Navbar = () => {
           { path: '/', label: 'Dashboard', icon: <FaTachometerAlt /> },
           {
             label: 'Setting',
-            icon: <FaStore />,
+            icon: <FaCog  />,
             dropdown: true,
             links: [
               { path: '/shop', label: 'Shop', icon: <FaStore /> },
               { path: '/category', label: 'Category', icon: <FaListAlt /> },
-              { path: '/subCategory', label: 'Sub Category', icon: <FaLayerGroup /> },
-              { path: '/uom', label: 'Unit of M', icon: <FaLayerGroup /> },
-              { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },
-              { path: '/bank', label: 'Bank', icon: <FaUniversity /> },
-              { path: '/registerForm', label: 'Register Form', icon: <FaUserEdit /> },
+              { path: '/subCategory', label: 'Sub Category', icon: <FaList  /> },
+              { path: '/uom', label: 'UOM', icon: <FaBalanceScale  /> },
+              { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },              
             ],
           },
           {
             label: 'Product',
-            icon: <FaStore />,
+            icon: <FaBoxOpen  />,
             dropdown: true,
             links: [
-              { path: '/productList', label: 'product', icon: <FaStore /> },
+              { path: '/productList', label: 'product', icon: <FaClipboardList  /> },
             ],
           },
           {
             label: 'Supplier',
-            icon: <FaStore />,
+            icon: <FaTruck />,
             dropdown: true,
             links: [
-              { path: '/supplier', label: 'Suppliers', icon: <FaStore /> },
+              { path: '/supplier', label: 'Suppliers', icon: <FaTruckLoading  /> },
             ],
           },
            {
             label: 'Customer',
-            icon: <FaStore />,
+            icon: <FaUserFriends  />,
             dropdown: true,
             links: [
-              { path: '/customer', label: 'Customer', icon: <FaStore /> },
+              { path: '/customer', label: 'Customer', icon: <FaUser  /> },
             ],
           },
           {
             label: 'Purchase',
-            icon: <FaStore />,
+            icon: <FaCartArrowDown  />,
             dropdown: true,
-            links: [
-              { path: '/purchase', label: 'Purchase', icon: <FaStore /> },
+            links: [              
+              { path: '/purchaseRecrod', label: 'Purchase', icon: <FaFileInvoiceDollar  /> },
+              { path: '/purchase', label: 'Purchase', icon: <FaCartArrowDown  /> },
+              { path: '/purchaseList', label: 'Purchase List', icon: <FaList  /> },
             ],
           },
           {
             label: 'Sale',
-            icon: <FaStore />,
+            icon: <FaShoppingCart />,
             dropdown: true,
             links: [
-              { path: '/sale', label: 'Sale', icon: <FaStore /> },
-               { path: '/invoicerecord', label: 'Invoice Record', icon: <FaStore /> },
+               { path: '/sale', label: 'Sale', icon: <FaShoppingCart  /> },
+               { path: '/saleReturn', label: 'Sale Return', icon: <FaUndo  /> },
+               { path: '/saleRecord', label: 'Sale Record', icon: <FaFileInvoiceDollar /> },
+                
             ],
           },
         ];

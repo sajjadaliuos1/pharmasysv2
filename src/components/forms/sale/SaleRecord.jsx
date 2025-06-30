@@ -9,11 +9,11 @@ import {  message, Button, Empty, Space, Tooltip} from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
 import { InfoCircleOutlined } from '@ant-design/icons';
-import PurchaseListModal from "./PurchaseListModal";
+import SaleRecordDetail from "./SaleRecordDetail";
 
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { getPurchaseByDateRange } from "../../../api/API";
+import { getSaleDateRange } from "../../../api/API";
 import dayjs from 'dayjs';
 
 ModuleRegistry.registerModules([
@@ -21,10 +21,10 @@ ModuleRegistry.registerModules([
  
 ]);
 
-const  PurchaseList = () => {
+const  SaleRecord = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
-  const [purchaseDetailsId, setPurchaseDetailsId] = useState(null);
+  const [saleId, setSaleId] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,7 +50,7 @@ const  PurchaseList = () => {
         //  pinned: 'left', 
       },
       {
-        headerName: "Purchase No",
+        headerName: "Invoice No",
         field: "invoiceNo",
         sortable: true,
         filter: true,
@@ -58,7 +58,7 @@ const  PurchaseList = () => {
       },
        {
         headerName: "Name",
-        field: "supplierName",
+        field: "customerName",
         sortable: true,
         filter: true,
         minWidth: 140,
@@ -80,7 +80,7 @@ const  PurchaseList = () => {
       },
            {
         headerName: "Discount",
-        field: "discount",
+        field: "discountAmount",
         sortable: true,
         filter: true,
         minWidth: 140,
@@ -92,20 +92,14 @@ const  PurchaseList = () => {
         filter: true,
         minWidth: 140,
       },
-    //        {
-    //     headerName: "finalAmount",
-    //     field: "finalAmount",
-    //     sortable: true,
-    //     filter: true,
-    //     minWidth: 140,
-    //   },
+  
                  {
         headerName: "Remaining",
         field: "remaining",
         sortable: true,
         filter: true,
         minWidth: 140,
-      },
+      },              
         {
         headerName: "Date",
         field: "date",
@@ -127,7 +121,7 @@ const  PurchaseList = () => {
                       <Button 
                         icon={<InfoCircleOutlined />} 
                         onClick={() => {
-                          setPurchaseDetailsId(params.data.purchaseId); 
+                          setSaleId(params.data.saleId); 
                           setIsModalVisible(true);
                         }}
                         size="small"
@@ -154,7 +148,7 @@ const fetchPaymentDetailData = useCallback(async () => {
       const startDate = dateRange[0].format('YYYY-MM-DD');
       const endDate = dateRange[1].format('YYYY-MM-DD');
       
-      const response = await getPurchaseByDateRange(startDate, endDate);
+      const response = await getSaleDateRange(startDate, endDate);
       console.log('API Response: asasa', response.data);
       
       if (!response?.data) {
@@ -310,7 +304,7 @@ const handleDateChange = (dates) => {
 };
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: `Purchase Details`,
+    title: `Sale Details`,
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -457,7 +451,7 @@ const handleDateChange = (dates) => {
         </div>
       )}
       
-<PurchaseListModal 
+<SaleRecordDetail 
       width={500}
       zIndex={3000}
   visible={isModalVisible}
@@ -465,7 +459,7 @@ const handleDateChange = (dates) => {
     setIsModalVisible(false);
   }}
   loading={loading}
-    purchaseId={purchaseDetailsId} 
+    saleId={saleId} 
 />
 
     </div>
@@ -474,4 +468,4 @@ const handleDateChange = (dates) => {
   );
 };
 
-export default PurchaseList;
+export default SaleRecord;

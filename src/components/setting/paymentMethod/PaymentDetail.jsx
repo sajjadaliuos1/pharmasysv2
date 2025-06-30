@@ -3,16 +3,19 @@ import { AgGridReact } from "ag-grid-react";
 import "../../common/style.css";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+
 import { ModuleRegistry } from 'ag-grid-community';
-import { AllCommunityModule } from "ag-grid-community";
+ import { AllCommunityModule } from "ag-grid-community";
 import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import TransactionModal from "./TransactionModol";
+
+
+
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
 import { deletePayment,getPaymentByDateRange } from "../../../api/API";
-import PaymentModal from "./PaymentModol";
+
 import { useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 
@@ -60,8 +63,17 @@ const  PaymentDetail = () => {
     try {
       const response = await deletePayment(id);
       if(response.data.status === "Success"){
-          handleRefreshData();
-         Toaster.success(response.data.message);
+        // Update the local data without calling API again
+        // const updatedData = rowData.filter(item => item.typeId !== id);
+      handleRefreshData();
+        // setRowData(updatedData);
+        // setFilteredData(updatedData);
+
+        
+        // Just update the states, don't try to update the grid directly
+        // The grid will automatically update when filteredData changes
+        
+        Toaster.success(response.data.message);
       } else {
         Toaster.error(response.data.message);
       }
@@ -444,26 +456,9 @@ const handleDateChange = (dates) => {
         </div>
       )}
       
-      <PaymentModal
-        visible={isModalVisible}
-        title={editingRecord?.paymentMethodId ? `Edit Record` : 'Add New Record'}
-        button={editingRecord?.paymentMethodId ? 'Update' : 'Save'}
-        onCancel={() => setIsModalVisible(false)}
-        initialValues={editingRecord}
-        setIsModalVisible={setIsModalVisible}
-        onSave={handleModalSave}
-        
-      />
+    
 
-              <TransactionModal
-                visible={isModalVisible}
-                title="Process Transaction"
-                button="Save Transaction"
-                onCancel={() => setIsModalVisible(false)}
-                initialValues={rowData}
-                setIsModalVisible={setIsModalVisible}
-                
-              />
+            
 
     </div>
     

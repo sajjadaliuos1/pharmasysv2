@@ -32,19 +32,39 @@ const ProductList = () => {
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
+  const [editingId, setEditingId] = useState(null);
   
   const AddnewModal = useCallback((record) => {
     setEditingRecord(record ? { ...record } : { productId: '', categoryId: '', categoryName:'',subCategoryId: '',uomId:'',productName:'',barcode:'',discountPercent:'',stockAlert:'',location:'',description:'',isStrip:'',stripPerBox:'' });
     setIsModalVisible(true);
+    setEditingId(null);
   }, []);
 
-  const handleEdit = useCallback((id) => {
+  
+  const handleEdit = useCallback(async (id) => {
+  console.log('handleEdit called with id:', id); 
+  setEditingId(id); 
+  try {
+       await new Promise(resolve => setTimeout(resolve, 50));
+    
     const record = rowData.find(item => item.productId === id);
+    console.log('Found record:', record);
     if (record) {
       AddnewModal(record);
+    } else {
+      messageApi.error('Product not found');
     }
-  }, [AddnewModal, rowData]);
+  } catch (error) {
+    console.error('Error in handleEdit:', error);
+    messageApi.error('An error occurred while editing');
+  } finally {
+  }
+}, [AddnewModal, rowData, messageApi]);
 
+  const handleModalCancel = useCallback(() => {
+  setIsModalVisible(false);
+  setEditingId(null);
+}, []);
   const handleDelete = useCallback(async (id) => {     
     try {
       const response = await deleteProduct(id);
@@ -61,12 +81,14 @@ const ProductList = () => {
     }
   }, [rowData, messageApi]);
 
-   const getColumnDefs = useCallback(() => {
+const getColumnDefs = useCallback(() => {
   return [
     {
       headerName: 'S.No',
       valueGetter: (params) => params.node.rowIndex + 1,
       minWidth: 80,
+      width: 80,
+      maxWidth: 80,
     },
     {
       headerName: "Product Name",
@@ -100,16 +122,6 @@ const ProductList = () => {
       field: "stockAlert",
       minWidth: 100,
     },
-    // {
-    //   headerName: "Location",
-    //   field: "location",
-    //   minWidth: 120,
-    // },
-    // {
-    //   headerName: "Description",
-    //   field: "description",
-    //   minWidth: 150,
-    // },
     
     {
       headerName: "Strip/Box",
@@ -126,6 +138,7 @@ const ProductList = () => {
               icon={<EditOutlined />}
               onClick={() => handleEdit(params.data.productId)}
               size="small"
+              loading={editingId === params.data.productId}
             />
           </Tooltip>
           <Popconfirm
@@ -147,7 +160,7 @@ const ProductList = () => {
       minWidth: 130,
     }
   ];
-}, [useScreenSize, handleEdit, handleDelete]);
+}, [useScreenSize, handleEdit, handleDelete,editingId]);
 
   
   const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
@@ -368,6 +381,20 @@ const ProductList = () => {
     setIsModalVisible(false);     
     handleRefreshData();
   }, [editingRecord?.typeId, handleRefreshData]);
+
+
+
+//     const handleModalCancel = useCallback(() => 
+//       { 
+//         console.log("Modal cancelled",editingRecord);
+//       editingRecord.barcode  = ''; 
+//       editingRecord.productName  = '';
+//  editingRecord.stockAlert  = '';
+//   editingRecord.location  = '';
+//    editingRecord.description  = '';
+ 
+
+//   }, []);
   
 
   const renderLoadingState = () => (
@@ -460,7 +487,8 @@ const ProductList = () => {
         visible={isModalVisible}
         title={editingRecord?.productId ? `Edit Product` : 'Add Product'}
         button={editingRecord?.productId ? 'Update' : 'Save'}
-        onCancel={() => setIsModalVisible(false)}
+        // onCancel={() => setIsModalVisible(false)}
+      onCancel={handleModalCancel}
         initialValues={editingRecord}
         setIsModalVisible={setIsModalVisible}
         onSave={handleModalSave}

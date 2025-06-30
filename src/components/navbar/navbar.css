@@ -412,3 +412,41 @@
   background-color: rgba(243, 156, 18, 0.1) !important;
 }
 
+
+
+/* Header Backgrounds */
+.quantity-header {
+  background-color: #e8f5e9; /* soft green */
+  font-weight: bold;
+}
+
+.purchase-header {
+  background-color: #e3f2fd; /* soft blue */
+  font-weight: bold;
+}
+
+.sale-header {
+  background-color: #fff3e0; /* soft orange */
+  font-weight: bold;
+}
+
+/* Cell Backgrounds */
+.quantity-cell {
+  background-color: #f1f8e9; /* very light green */
+  color: #2e7d32;
+}
+
+.purchase-cell {
+  background-color: #e1f5fe; /* very light blue */
+  color: #0277bd;
+}
+
+.sale-cell {
+  background-color: #fff8e1; /* very light yellow/orange */
+  color: #ef6c00;
+}
+
+.profit-cell {
+  background-color: #fce4ec; /* light pink */
+  color: #c2185b;
+}
