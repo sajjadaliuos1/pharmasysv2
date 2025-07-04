@@ -5,16 +5,17 @@ import {
    Select, Checkbox, Spin
 } from 'antd';
 import {
-
+PrinterOutlined,
   EditOutlined,
   DeleteOutlined,
-  CalendarOutlined,
+  
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 import ReusableDropdown from '../../common/ReusableDropdown';  
 import {  getBoxProduct,getNewInvoice,getPayment, getCustomer, getStripProduct, createSale, getOpenInvoice } from '../../../api/API';  
 import { Toaster } from '../../common/Toaster';
+import CustomerModal from '../customer/CustomerModal';
  
 
 
@@ -28,7 +29,7 @@ const Sale = () => {
   const [loadingSave, setLoadingSave] = useState(false);
   const [product, setProducts] = useState([]);
   const [productMap, setProductMap] = useState(new Map());
-  
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedPurchaseInventoryId, setSelectedPurchaseInventoryId] = useState(null);
  
   const [remainingQuantity, setRemainingQuantity] = useState(0);
@@ -173,7 +174,10 @@ const fetchInvoicesByCustomer = async (customerId) => {
     setLoadingInvoices(false);
   }
 };
-
+ const handleSaveCustomer = () => {
+  fetchCustomer(); 
+    setShowCustomerModal(false);  
+  };
   
   const stripProductCache = useRef(null);
   const boxProductCache = useRef(null);  
@@ -194,10 +198,10 @@ const fetchInvoicesByCustomer = async (customerId) => {
          boxProductCache.current = productList;    
 
          const map = new Map();
-        productList.forEach(s => map.set(s.purchaseInventoryId, s));
-         setProductMap(map);
-        
-      } else {
+         productList.forEach(s => map.set(s.purchaseInventoryId, s));
+         setProductMap(map);        
+      } 
+      else {
         Toaster.warning("No product found or unexpected response format.");
       }
     } catch (err) {
@@ -295,6 +299,14 @@ stripProductCache.current = productList;
         const map = new Map();
         paymentList.forEach(s => map.set(s.paymentMethodId, s));
         setPaymentMethodMap(map);
+    
+      if (paymentList.length > 0 && !form1.getFieldValue("PaymentMethodId")) {
+      const firstPaymentMethod = paymentList[0];
+      const firstId = firstPaymentMethod.paymentMethodId;
+       
+      form1.setFieldsValue({ paymentMethodId: firstId });
+       setPaymentMethodRemainingAmount(firstPaymentMethod?.remaining || '');
+    }
     
       } else {
         Toaster.warning("No payment Method found or unexpected response format.");
@@ -797,8 +809,10 @@ const reportJson = (date, total,discount,net,old,payable,paid,remaining) => {
   }
   }
 };
-
- 
+ const handlePrint =  () => {
+  // const newInv = parseInt(newInvChecking, 10);
+Toaster.success(newInvChecking-1);
+ }
 const handleSubmit = async () => {
   try {    
     const formData = await form1.validateFields();       
@@ -856,7 +870,7 @@ const handleSubmit = async () => {
     }
 
     setLoadingSave(true);
-
+    setIsChecked(false);
  const saleDate = form.getFieldValue('saleDate');
 const jsDate = saleDate ? saleDate.toDate() : null;
 
@@ -892,11 +906,11 @@ parseFloat(formData.remainingAmount));
       saleDetails: cartItems,
     };
 
-setLoadingSave(false);
+
     console.log('Payload to be sent:', payload);
  
   await createSale(payload);
- 
+
     Toaster.success('Validation successful. Ready to submit to API.');
     form1.resetFields();            
 setCartItems([]);               
@@ -907,6 +921,7 @@ setShowPaymentMethod(false);
      fetchCustomer();
     fetchInvoiceNo();
     fetchPaymentMethod();
+
 
 stripProductCache.current = null;
 boxProductCache.current = null;
@@ -1001,12 +1016,12 @@ const [isChecked, setIsChecked] = useState(false);
 }}
 
                     />
-                    <Button
-                      type="primary"
-                    //   onClick={() => setShowSuppliersModal(true)}
-                    >
-                      +
-                    </Button>
+                     <Button
+                               type="primary"
+                               onClick={() => setShowCustomerModal(true)}
+                             >
+                               +
+                             </Button>
                   </Space.Compact>
                 </Form.Item>
               </Col>
@@ -1105,8 +1120,10 @@ label={`Product Name - ${remainingQuantity}`}
         setLoadingproduct(true);
         try {
            if (checked) {
+            console.log("checked");
         await fetchStripProduct();     
       } else { 
+                    console.log("Unchecked");
         await fetchBoxProduct(); 
       }
         } catch (error) {
@@ -1426,11 +1443,11 @@ label={`Product Name - ${remainingQuantity}`}
   onValuesChange={handleForm1Change}
 initialValues={{
     totalAmount: '0.00',
-    supplierDiscount: '0.00',
+    supplierDiscount: '',
     netAmount: '0.00',
     customerOldAmount: '0.00',
     totalAmountWithOld: '0.00',
-    paidAmount: '0.00',
+    paidAmount: '',
     remainingAmount: '0.00'
   }}>
              <Col gutter={[16, 16]}>
@@ -1464,7 +1481,8 @@ initialValues={{
         style={{ width: '100%' }}
         min={0}
         step={1}
-        precision={2}
+         precision={2}
+          placeholder="0.00"
           onFocus={() => {
             const value = form1.getFieldValue("supplierDiscount");
             if (value === 0) {
@@ -1473,6 +1491,7 @@ initialValues={{
                }}
       />
     </Form.Item>
+    
   </Col>
 </Row> 
      
@@ -1524,9 +1543,16 @@ initialValues={{
     <Form.Item name="paidAmount" noStyle>
       <InputNumber
         style={{ width: '100%' }}
-        min={0}
+       min={0}
         step={1}
-        precision={2}
+         precision={2}
+        placeholder="0.00"
+        onFocus={() => {
+            const value = form1.getFieldValue("paidAmount");
+            if (value === 0) {
+                form1.setFieldsValue({ paidAmount: null });
+               }
+               }}
       />
     </Form.Item>
   </Col>
@@ -1550,7 +1576,7 @@ initialValues={{
                 <Row gutter={6} > <Col span={24} >
                 <Form.Item
                   name="paymentMethodId"
-                  label={`Payment Method - ${paymentMethodRemainingAmount}`}
+                  label={`Payment Method: ${paymentMethodRemainingAmount}`}
                    style={{ width: '100%' }}
                     >
                      <ReusableDropdown
@@ -1561,13 +1587,14 @@ initialValues={{
                       loading={loadingPaymentMethod}
                       style={{ width: '100%' }}
                       defaultOption={false} 
+                       value={form1.getFieldValue("paymentMethodId")}
                      onChange={(paymentMethodId) => {
                         form1.setFieldsValue({ paymentMethodId });  
-
-                      const selectedMethod = paymentMethodMap.get(paymentMethodId);
-                        if (selectedMethod) {
-
-                      setPaymentMethodRemainingAmount(selectedMethod.remaining || '');
+ 
+                         const selected = paymentMethod.find((item) => item.paymentMethodId === paymentMethodId);  
+                      if (selected) {
+ 
+                      setPaymentMethodRemainingAmount(selected.remaining || '');
                         } else {
                        setPaymentMethodRemainingAmount('');
                           }
@@ -1580,25 +1607,32 @@ initialValues={{
               </>
               
               )}
-
-
  
 
- <Row gutter={6}>
-                <Col span={24}>
-                 <Button 
-                    key="submit"
-                    type="primary"
-                    onClick={handleSubmit} 
-                     style={{width: '100%'}}
-                     loading={loadingSave}
-                     disabled={loadingSave}
-                  >
-                  Add Record
-                   </Button>  </Col>
-                 
-              </Row>
-              
+             <Row gutter={6}>
+              <Col>
+    <Button
+      icon={<PrinterOutlined />}
+     onClick={handlePrint}
+    />
+  </Col>
+  <Col flex="auto">
+    <Button 
+      key="submit"
+      type="primary"
+      onClick={handleSubmit} 
+      style={{ width: '100%' }}
+      loading={loadingSave}
+      disabled={loadingSave}
+    >
+      {loadingSave ? <Spin /> : 'Add Record'}
+    </Button>
+  </Col>
+
+  
+</Row>
+           
+
 
             </Col>
 
@@ -1608,7 +1642,17 @@ initialValues={{
     </Card>
       </Col>
  
-       
+         <CustomerModal
+               visible={showCustomerModal}
+               title="Add Payment Method"
+               button="Add Payment Method"
+               onCancel={() => setShowCustomerModal(false)}
+               onSave={handleSaveCustomer}
+               setIsModalVisible={setShowCustomerModal}
+               centered={false}
+               destroyOnClose={true}
+               footer={null} 
+             />
 
     
     </Row>

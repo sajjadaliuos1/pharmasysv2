@@ -105,6 +105,8 @@ const Navbar = () => {
             dropdown: true,
             links: [
               { path: '/productList', label: 'product', icon: <FaClipboardList  /> },
+              { path: '/productLowStockItem', label: 'Low Stock Product', icon: <FaList  /> },
+              { path: '/productAvailableStock', label: 'Available Stock', icon: <FaList  /> },
             ],
           },
           {
@@ -131,6 +133,7 @@ const Navbar = () => {
               { path: '/purchaseRecrod', label: 'Purchase', icon: <FaFileInvoiceDollar  /> },
               { path: '/purchase', label: 'Purchase', icon: <FaCartArrowDown  /> },
               { path: '/purchaseList', label: 'Purchase List', icon: <FaList  /> },
+              
             ],
           },
           {
@@ -141,6 +144,16 @@ const Navbar = () => {
                { path: '/sale', label: 'Sale', icon: <FaShoppingCart  /> },
                { path: '/saleReturn', label: 'Sale Return', icon: <FaUndo  /> },
                { path: '/saleRecord', label: 'Sale Record', icon: <FaFileInvoiceDollar /> },
+                
+            ],
+          },
+          {
+            label: 'Expense',
+            icon: <FaShoppingCart />,
+            dropdown: true,
+            links: [
+               { path: '/expense', label: 'Expense', icon: <FaShoppingCart  /> },
+             { path: '/expenseCategory', label: 'Expense Category', icon: <FaShoppingCart  /> },
                 
             ],
           },

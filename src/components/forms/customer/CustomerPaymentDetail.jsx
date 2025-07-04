@@ -1,3 +1,4 @@
+
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
 import "../../common/style.css";
@@ -6,13 +7,14 @@ import "jspdf-autotable";
 
 import { ModuleRegistry } from 'ag-grid-community';
  import { AllCommunityModule } from "ag-grid-community";
-import {  message, Button, Empty } from "antd";
+import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
 
-import Loader from "../../common/Loader";
-import { getPaymentByDateRange } from "../../../api/API";
 
+import { Toaster } from "../../common/Toaster";
+import Loader from "../../common/Loader";
+import { getCustomerPaymentByDateRange } from "../../../api/API";
 import { useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 
@@ -21,14 +23,15 @@ ModuleRegistry.registerModules([
  
 ]);
 
-const  PaymentDetail = () => {
+const  CustomerPaymentDetail = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
-
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
@@ -39,7 +42,7 @@ const  PaymentDetail = () => {
   ]);
 
     const location = useLocation();
-  const { paymentId , paymentName } = location.state || {};
+  const { customerId , customerName } = location.state || {};
 
 
    const getColumnDefs = useCallback(() => {
@@ -47,33 +50,35 @@ const  PaymentDetail = () => {
       {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,       
+        minWidth: 80,
+        // width: 80,
+        //  pinned: 'left', 
       },
       {
-        headerName: "Amount In",
-        field: "amountIn",
+        headerName: "Amount In/ sale",
+        field: "amount",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
        {
-        headerName: "Amount out",
-        field: "amountOut",
+        headerName: "Discount",
+        field: "discount",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
        {
-        headerName: "Remaining",
-        field: "remaining",
+        headerName: "Amount Out / Paid",
+        field: "paid",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
           
      {
-        headerName: "Description",
-        field: "description",
+        headerName: "Remaining",
+        field: "remaining",
         sortable: true,
         filter: true,
         minWidth: 140,
@@ -92,7 +97,7 @@ const  PaymentDetail = () => {
 
 // Updated fetchPaymentDetailData function
 const fetchPaymentDetailData = useCallback(async () => {
-  if (loadingRef.current || !paymentId) return;  // Add paymentId check
+  if (loadingRef.current || !customerId) return;  // Add paymentId check
   
   loadingRef.current = true;
   setLoading(true);
@@ -102,7 +107,7 @@ const fetchPaymentDetailData = useCallback(async () => {
       const startDate = dateRange[0].format('YYYY-MM-DD');
       const endDate = dateRange[1].format('YYYY-MM-DD');
       
-      const response = await getPaymentByDateRange(paymentId, startDate, endDate);
+      const response = await getCustomerPaymentByDateRange(customerId, startDate, endDate);
       console.log('API Response:', response.data);
       
       if (!response?.data) {
@@ -139,19 +144,19 @@ const fetchPaymentDetailData = useCallback(async () => {
     setLoading(false);
     loadingRef.current = false;
   }
-}, [messageApi, dateRange, paymentId]);  // Added paymentId to dependencies
+}, [messageApi, dateRange, customerId]);  // Added paymentId to dependencies
 
 // Consolidated refresh function
 const handleRefreshData = useCallback(async () => {
   await fetchPaymentDetailData();  // Reuse the same logic
 }, [fetchPaymentDetailData]);
 
-
+// useEffect hook
 useEffect(() => {
-  if (paymentId && dateRange[0] && dateRange[1]) {
+  if (customerId && dateRange[0] && dateRange[1]) {
     handleRefreshData();
   }
-}, [paymentId, dateRange, handleRefreshData]);
+}, [customerId, dateRange, handleRefreshData]);
 
   const handleExportPDF = useCallback(() => {
       const fileName = prompt("Enter file name for PDF:", "category-data");
@@ -258,7 +263,7 @@ const handleDateChange = (dates) => {
 };
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: `Payment Details of ${paymentName}`,
+    title: `Payment Details of ${customerName}`,
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -298,7 +303,8 @@ const handleDateChange = (dates) => {
       }
       
       const searchLower = searchText.toLowerCase();
-      const filtered = rowData.filter(row =>    
+      const filtered = rowData.filter(row =>
+        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
         (row.typeName && row.typeName.toLowerCase().includes(searchLower))
       );
   
@@ -316,7 +322,14 @@ const handleDateChange = (dates) => {
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
  
- 
+  const handleModalSave = useCallback(() => { 
+    Toaster.success(editingRecord?.paymentMethodId ? "Payment updated successfully!" : "Payment added successfully!");
+   
+    setIsModalVisible(false);
+     
+    handleRefreshData();
+  }, [editingRecord?.paymentMethodId, handleRefreshData]);
+  
 
   const renderLoadingState = () => (
     <div style={{ 
@@ -360,6 +373,7 @@ const handleDateChange = (dates) => {
   );
   
   return (
+    
     <div className="container mt-2">
     <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
       {contextHolder}
@@ -402,10 +416,11 @@ const handleDateChange = (dates) => {
           )}
         </div>
       )}
-
-       </div>    
+      
+    </div>
+    
     </div>
   );
 };
 
-export default PaymentDetail;
+export default CustomerPaymentDetail;

@@ -2,16 +2,15 @@ import React, { useState, useEffect,useMemo  } from 'react';
  
 import {
   Card,  Table,  Form,  Input,  Button,  DatePicker,  InputNumber,  Row,  Col,  Space,  message,
-  Typography,
+  Typography,Spin
 } from 'antd';
 import {
-  PlusOutlined,
+  
   EditOutlined,
-  CloseOutlined,
-  DeleteOutlined,
+   DeleteOutlined,
   BarcodeOutlined,
   CalendarOutlined,
-  SaveOutlined
+  
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { Toaster } from "../../common/Toaster";
@@ -19,7 +18,7 @@ import ProductModal from '../product/ProductModal'; // Assuming correct path
 import ReusableDropdown from '../../common/ReusableDropdown'; // Assuming correct path
 import { purchaseOrder, getSuppliers,getPurchaseNo,getPurchaseProduct,getPayment } from '../../../api/API'; // Assuming correct API functions
 import SupplierListModal from '../suppliers/SupplierListModal'; // Assuming correct path
- 
+ import PaymentModal from '../../setting/paymentMethod/PaymentModol';
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 const PurchaseItem = () => {
@@ -43,7 +42,7 @@ const PurchaseItem = () => {
    const [paymentMethod, setPaymentMethod] = useState([]);
   const [supplierMap, setSupplierMap] = useState(new Map());
   const [paymentMethodMap, setPaymentMethodMap] = useState(new Map());
-
+const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentMethodRemainingAmount, setPaymentMethodRemainingAmount] = useState('');
   const [purchaseNo, setPurchaseNo] = useState([]);
     const [calculatedValues, setCalculatedValues] = useState({
@@ -59,7 +58,7 @@ const PurchaseItem = () => {
 const [supplierRemainingAmount, setSupplierRemainingAmount] = useState('');
 const [netAmount, setNetAmount] = useState(0);
 const [totalAmount, setTotalAmount] = useState(0);
-const [paidAmount, setPaidAmount] = useState(0);
+
 const [remainingAmount, setRemainingAmount] = useState(0);
 const [showPaymentMethod, setShowPaymentMethod] = useState(false);
 
@@ -73,7 +72,7 @@ const [purchaseDate, setPurchaseDate] = useState(dayjs());
  
 useEffect(() => {
   // Run calculation only when supplierRemainingAmount is updated
-  const values = form.getFieldsValue();
+  const values = form1.getFieldsValue();
 
   const purchaseAmount = totalPurchaseAmount;  
   const discount = parseFloat(values.supplierDiscount) || 0;
@@ -235,11 +234,16 @@ setProducts(productList);
          const paymentList = response.data.data;
       setPaymentMethod(paymentList);
 
-      ////// use for dropdown to get record in fast....
+ 
         const map = new Map();
         paymentList.forEach(s => map.set(s.paymentMethodId, s));
         setPaymentMethodMap(map);
     
+        if (paymentList.length > 0) {
+        const firstItem = paymentList[0];
+        form1.setFieldsValue({ paymentMethodId: firstItem.paymentMethodId });
+        setPaymentMethodRemainingAmount(firstItem.remaining || '');
+      }
       } else {
         message.warn("No payment Method found or unexpected response format.");
       }
@@ -253,22 +257,22 @@ setProducts(productList);
 
    
 
-  const handleSaveProduct = (newProduct) => {
+  const handleSaveProduct = async (newProduct) => {
     setShowProductModal(false);
-    if (newProduct && newProduct.typeId) { 
-      form.setFieldsValue({ productId: newProduct.typeId });
-      fetchProduct(); 
-    }
+    await fetchProduct();
+    Toaster.success("Added Successfully")
   };
 
-  const handleSaveSupplier = (newSupplier) => {
+  const handleSaveSupplier = () => {
+    fetchSuppliers(); 
     setShowSuppliersModal(false);
-    if (newSupplier && newSupplier.supplierId) {
-      form.setFieldsValue({ suppliersId: newSupplier.supplierId });
-      fetchSuppliers(); 
-    }
   };
 
+
+  const handleSavePayment = () => {
+      fetchPaymentMethod(); 
+    setShowPaymentModal(false);  
+  };
    const handlePurchaseChange = (allValues) => {
     const purchaseRate = parseFloat(allValues.purchaseRate) || 0;
     const purchaseDiscount = allValues.purchaseDiscount === null || allValues.purchaseDiscount === undefined ? 0 : parseFloat(allValues.purchaseDiscount);
@@ -373,15 +377,15 @@ setProducts(productList);
  const handleAddOrUpdate = (values) => {
  
   const formattedNotificationDate = values.dates?.[0]
-    ? values.dates[0].format("DD-MM-YYYY")
+    ? values.dates[0].format("YYYY-MM-DD")
     : null;
 
   const formattedExpireDate = values.dates?.[1]
-    ? values.dates[1].format("DD-MM-YYYY")
+    ? values.dates[1].format("YYYY-MM-DD")
     : null;
 
   const formattedManufactureDate = values.manufactureDate
-    ? values.manufactureDate.format("DD-MM-YYYY")
+    ? values.manufactureDate.format("YYYY-MM-DD")
     : null;
 
   const newItem = {
@@ -392,7 +396,7 @@ setProducts(productList);
     purchaseDiscountAmount:0,
     totalPurchaseAmount : values.totalPurchaseAmount,
     minimumSaleRate: values.minSaleRate || 0,
-    stripRate : values.perStripRate,
+    stripRate: !isFinite(values.perStripRate) ? 0 : values.perStripRate,
     minimumStripRate: values.minStripSaleRate || 0,
     remainingOpenStrip: 0,
     remainingQuantity: values.quantity || 0,
@@ -447,8 +451,6 @@ setProducts(productList);
   setEditingIndex(null);
 };
 
-
- 
   const handleEdit = (index) => {
     const item = cartItems[index];
      setSelectedProductId(item.productId);
@@ -458,7 +460,7 @@ setProducts(productList);
   } else {
     setStripPerBox('');
   }
-  const format = "DD-MM-YYYY";
+  const format = "YYYY-MM-DD";
     form.setFieldsValue({
       purchaseRate: item.purchaseRate,
       saleRate: item.saleRate,
@@ -469,10 +471,6 @@ setProducts(productList);
       manufactureDate: item.manufactureDate
       ? dayjs(item.manufactureDate, format)
       : null,
-
-      // purchaseDate: item.purchaseDate
-      // ? dayjs(item.purchaseDate, format)
-      // : null,
 
       dates: item.expiryNotification && item.expiryDate
       ? [
@@ -521,15 +519,11 @@ setProducts(productList);
         </Space>
       ),
     },
-    { title: 'Product Id', dataIndex: 'productId'},
+    // { title: 'Product Id', dataIndex: 'productId'},
       { title: 'Product', dataIndex: 'productName' },
     { title: 'Batch No', dataIndex: 'batchNo' },
     { title: 'Barcode', dataIndex: 'barcode' },
     { title: 'Quantity', dataIndex: 'quantity' },
-
-    { title: 'Manufacture Date', dataIndex: 'manufactureDate' },
-    { title: 'Expiry Notification', dataIndex: 'expiryNotification' },
-    { title: 'Expire Date', dataIndex: 'expiryDate' },
 
  
     { title: 'Purchase Rate', dataIndex: 'purchaseRate' },
@@ -549,31 +543,43 @@ setProducts(productList);
     { title: 'Final Strip Rate', dataIndex: 'finalStripRate' },
     { title: 'Minimum Strip Rate', dataIndex: 'minStripSaleRate' },
     
+        { title: 'Manufacture Date', dataIndex: 'manufactureDate' },
+    { title: 'Expiry Notification', dataIndex: 'expiryNotification' },
+    { title: 'Expire Date', dataIndex: 'expiryDate' },
     
   ];
 
-
+const [loading, setLoading] = useState(false);
 const handleSubmit = async () => {
   try {
+    setLoading(true);
     const formData = await form1.validateFields(); 
     if (cartItems.length === 0) {
-      message.error("Please add at least one product to the table.");
+      Toaster.error("Please add at least one product to the table.");
       return;
-    }
+    }    
+    if (!formData.supplierId || formData.supplierId === 0) {
+  Toaster.warning("Please select a supplier.");
+  return;
+}
+
+  if ( formData.paidAmount > paymentMethodRemainingAmount ) {
+  Toaster.warning("Insufficient balance in the selected payment method.");
+  return;
+}
 
    const payload = {
       ...formData,
-      supplierId: formData.suppliersId,
+      supplierId: formData.supplierId,
       invoiceNo: purchaseNo,
       totalItems: cartItems.length,
       totalAmount,
       discount: formData.supplierDiscount ?? 0,
-
       finalAmount: netAmount,
       paidAmount : formData.paidAmount ?? 0,
       remaining: remainingAmount,
       supplierRemainingAmount,
-      date: purchaseDate ? purchaseDate.format("DD-MM-YYYY") : null,
+      date: purchaseDate ? purchaseDate.format("YYYY-MM-DD") : null,
       descriptions : '',
       report : null,
       paymentMethodId : formData.paymentMethodId ?? 0,
@@ -581,27 +587,32 @@ const handleSubmit = async () => {
       PurchaseDetails: cartItems 
     };
 
-    console.log("Final Payload:", payload);
-
-    const response = await purchaseOrder(payload);
-    console.log("Payload response:", response);
- 
-
+    const response = await purchaseOrder(payload);     
     if (response.data.status === "Success") {
-      message.success("Record submitted successfully!");
+      Toaster.success("Record submitted successfully!");
+      
       form1.resetFields();
+      setTotalPurchaseAmount();
+      setNetAmount();
+      setSupplierRemainingAmount();
+      setRemainingAmount();
+      setSuppliers([]);
       setCartItems([]);
       setPaymentMethodRemainingAmount('');
-      Toaster.success("Failed to fetch categories");
-    } else {
-     
-       Toaster.error("Failed to fetch categories");
-       
-      message.error("Submission failed.");
+      setNetAmount(0);
+      setTotalAmount(0);
+      setSupplierRemainingAmount('');
+      fetchSuppliers();
+      fetchPurchaseNo();
+      fetchPaymentMethod();
+    } else {     
+       Toaster.error("Error to save Record");
     }
   } catch (error) {
     console.error("Error submitting form:", error);
     message.error("Please fill all required fields.");
+  }finally {
+    setLoading(false);
   }
 };
 
@@ -1152,7 +1163,7 @@ const handleSubmit = async () => {
   <Row gutter={[16, 16]}>
     <Col xs={24} sm={12} md={6} lg={6} xl={6}>
       <Form.Item
-        name="suppliersId"
+        name="supplierId"
         label="Supplier"
       >
         <Space.Compact style={{ width: '100%' }}>
@@ -1169,6 +1180,7 @@ const handleSubmit = async () => {
               const selectedSupplier = supplierMap.get(supplierId);
               if (selectedSupplier) {
                 setSupplierRemainingAmount(selectedSupplier.remaining || '');
+                
               } else {
                 setSupplierRemainingAmount('');
               }
@@ -1265,12 +1277,12 @@ const handleSubmit = async () => {
   {showPaymentMethod && (
     <Col span={6}>
       <label style={{ fontWeight: 500 }}>
-        Payment Method - {paymentMethodRemainingAmount}
+        Payment Method: {paymentMethodRemainingAmount}
       </label>
     </Col>
   )}
 
-  {/* Dropdown + + Button */}
+
   {showPaymentMethod && (
     <Col span={12}>
       <Form.Item name="paymentMethodId" noStyle>
@@ -1283,6 +1295,7 @@ const handleSubmit = async () => {
             loading={loadingPaymentMethod}
             style={{ width: 'calc(100% - 43px)' }}
             defaultOption={false}
+            value={form1.getFieldValue("paymentMethodId")}
             onChange={(paymentMethodId) => {
               form1.setFieldsValue({ paymentMethodId });
               const selectedMethod = paymentMethodMap.get(paymentMethodId);
@@ -1291,7 +1304,7 @@ const handleSubmit = async () => {
           />
           <Button
             type="primary"
-            onClick={() => setShowSuppliersModal(true)}
+            onClick={() => setShowPaymentModal(true)}
           >
             +
           </Button>
@@ -1314,8 +1327,9 @@ const handleSubmit = async () => {
         type="primary"
         onClick={handleSubmit}
         style={{ width: '100%' }}
+        disabled={loading}
       >
-        Add Record
+        {loading ? <Spin /> : 'Submit Purchase'}
       </Button>
     </Form.Item>
   </Col>
@@ -1351,6 +1365,18 @@ const handleSubmit = async () => {
         onCancel={() => setShowSuppliersModal(false)}
         onSave={handleSaveSupplier}
         setIsModalVisible={setShowSuppliersModal}
+        centered={false}
+        destroyOnClose={true}
+        footer={null} 
+      />
+
+      <PaymentModal
+        visible={showPaymentModal}
+        title="Add Payment Method"
+        button="Add Payment Method"
+        onCancel={() => setShowPaymentModal(false)}
+        onSave={handleSavePayment}
+        setIsModalVisible={setShowPaymentModal}
         centered={false}
         destroyOnClose={true}
         footer={null} 

@@ -2,11 +2,11 @@ import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { Modal, Typography } from 'antd';
 import { AgGridReact } from "ag-grid-react";
 import { message } from "antd";
-import { getPurchaseDetailsById } from "../../../api/API";
+import { getProductInventoryDetail } from "../../../api/API";
 
 const { Title } = Typography;
 
-const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex, purchaseId }) => {
+const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails,  width, zIndex, productId }) => {
   const gridRef = useRef(null);
   const [error, setError] = useState(null);
   const [rowData, setRowData] = useState([]);
@@ -14,22 +14,22 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
   const [messageApi, contextHolder] = message.useMessage();
   
   // Extract data safely
-  const mainData = purchaseDetails?.data || purchaseDetails || {};
+  const mainData = productDetails?.data || productDetails || {};
   const itemsData = mainData?.items || rowData; // Use fetched rowData if items not available
 
   // Fetch purchase details when modal opens and purchaseId is available
   useEffect(() => {
-    if (visible && purchaseId) {
-      fetchPurchaseDetails(purchaseId);
+    if (visible && productId) {
+      productInventoryDetail(productId);
     }
-  }, [visible, purchaseId]); // Dependencies: modal visibility and purchaseId
+  }, [visible, productId]); // Dependencies: modal visibility and purchaseId
 
   // For purchase details modal
-  const fetchPurchaseDetails = useCallback(async (purchaseId) => {
-    if (!purchaseId) return;
+  const productInventoryDetail = useCallback(async (productId) => {
+    if (!productId) return;
      
     try {
-      const response = await getPurchaseDetailsById(purchaseId);
+      const response = await getProductInventoryDetail(productId);
       console.log('Purchase Details Response:', response.data);
       if (!response?.data) {
         throw new Error("Invalid response from server");
@@ -203,7 +203,7 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
       <Modal
         title={
           <Title level={4} style={{ margin: 0 }}>
-            Purchase Details - Invoice #{mainData?.purchaseId || purchaseId || 'N/A'}
+            Purchase Details - Invoice #{mainData?.productId || productId || 'N/A'}
           </Title>
         }
         open={visible}
@@ -258,4 +258,4 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
   );
 };
 
-export default PurchaseListModal;
+export default ProductAvailableStockDetailModal;

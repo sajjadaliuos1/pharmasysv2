@@ -231,16 +231,16 @@ const columnDefs = useMemo(() => [
               defaultColDef={defaultColDef}
               pagination={false}
               popupParent={popupParent}
-              domLayout='autoHeight'
+              domLayout='normal'
               suppressCellFocus={true}
               animateRows={true}
               enableCellTextSelection={true}
               rowSelection="multiple"
               suppressRowClickSelection={true}
-              onGridReady={params => {
-                params.api.sizeColumnsToFit();
-              }}
-              onFirstDataRendered={params => params.api.sizeColumnsToFit()}
+              // onGridReady={params => {
+              //   params.api.sizeColumnsToFit();
+              // }}
+              // onFirstDataRendered={params => params.api.sizeColumnsToFit()}
               noRowsOverlayComponent={() => (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
                   <div style={{ fontSize: '16px', marginBottom: '8px' }}>📦</div>

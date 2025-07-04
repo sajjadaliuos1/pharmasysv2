@@ -2,8 +2,6 @@ import React from "react";
 import { HashRouter, BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Home from "../components/home/Home";
 import Login from "../components/home/Login";
-// import NotFound from "../pages/NotFound";
- 
 import ToastProvider from "../components/common/Toaster";
 import Navbar from "../components/navbar/Navbar"
 import "../components/navbar/navbar.css"
@@ -23,15 +21,16 @@ import SaleReturn from "../components/forms/sale/SaleReturn";
 import PurchaseList from "../components/forms/purchase/PurchaseList";
 import SaleRecord from "../components/forms/sale/SaleRecord";
 import SaleRecordDetail from "../components/forms/sale/SaleRecordDetail";
-import SupplierPaymentDetails from "../components/forms/suppliers/SupplierPaymentDetails";
-
-// Mock authentication function
+import CustomerPaymentDetail from "../components/forms/customer/CustomerPaymentDetail";
+import SupplierPaymentDetails from "../components/forms/suppliers/SupplierPaymentDetails"; 
+import ExpenseCategory from "../components/forms/expense/ExpenseCategory";
+import ProductLowStockItem from "../components/forms/product/ProductLowStockItem";
+import ProductAvailableStock from "../components/forms/product/ProductAvailableStock";
+import Expense from "../components/forms/expense/Expense";
 const isAuthenticated = () => {
-  // Replace with your actual authentication logic
-  return !!localStorage.getItem("authToken"); // Example: Check if a token exists in localStorage
+  return !!localStorage.getItem("authToken"); 
 };
 
-// ProtectedRoute Component
 const ProtectedRoute = () => {
   return isAuthenticated() ? <Outlet /> : <Navigate to="/login" replace />;
 };
@@ -45,10 +44,7 @@ const AppRoutes = () => {
       <div className="content">
       <Routes>
         <Route path="/login" element={<Login />} />
-
-        <Route element={<ProtectedRoute />}>
-         
- 
+        <Route element={<ProtectedRoute />}>         
         <Route path="/" element={<Home />} />
         <Route path="/category" element={<Category />} /> 
         <Route path="/subCategory" element={<SubCategory />} /> 
@@ -66,7 +62,12 @@ const AppRoutes = () => {
         <Route path="/purchaseRecrod" element={<Purchase/>} />
         <Route path="/saleRecord" element={<SaleRecord/>} />
         <Route path="/saleRecordDetail" element={<SaleRecordDetail/>} />
+        <Route path="/customerPaymentDetail" element={<CustomerPaymentDetail />} />
         <Route path="/supplierpaymentDetails" element={<SupplierPaymentDetails />} />
+        <Route path="productLowStockItem" element={<ProductLowStockItem />}/>
+        <Route path="/expense" element={<Expense />} />
+        <Route path="/productAvailableStock" element={<ProductAvailableStock />} />
+        <Route path="/expenseCategory" element={<ExpenseCategory />} />
         </Route>
       </Routes>
       </div>

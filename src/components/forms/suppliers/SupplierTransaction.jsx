@@ -4,6 +4,7 @@ import { SupplierPayment, getPayment } from '../../../api/API';
 import { DollarCircleOutlined } from '@ant-design/icons';
 import preventWheelChange from '../../common/PreventWheel';
 import ReusableDropdown from '../../common/ReusableDropdown';
+import { Toaster } from '../../common/Toaster';
 
 const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, button }) => {
   const [form] = Form.useForm();
@@ -16,6 +17,7 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
 
   const [paymentMethod, setPaymentMethod] = useState([]);
   const [paymentMethodMap, setPaymentMethodMap] = useState(new Map());
+  
   const [paymentMethodRemainingAmount, setPaymentMethodRemainingAmount] = useState('');
   const [loadingPaymentMethod, setLoadingPaymentMethod] = useState(false);
 
@@ -39,8 +41,8 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
       form.setFieldsValue({ PaymentMethodId: firstId });
       
       // Update remaining amount if you have the payment method map
-      const selected = paymentMethodMap.get(firstId);
-      setPaymentMethodRemainingAmount(selected?.remaining || '');
+      // const selected = paymentMethodMap.get(firstId);
+      setPaymentMethodRemainingAmount(firstPaymentMethod?.remaining || '');
     }
     
   } catch (error) {
@@ -100,6 +102,14 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
       
       if (paidAmount === 0 && discountAmount === 0) {
         message.error('Please enter either Paid amount or Discount amount');
+        setBtnLoading(false);
+        return;
+      }
+
+//setPaymentMethodRemainingAmount
+ if (paymentMethodRemainingAmount < paidAmount) {
+        Toaster.error('Paid amount exceeds the available balance in the selected payment method');
+        
         setBtnLoading(false);
         return;
       }
@@ -326,7 +336,7 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
           <Col xs={24} sm={24} md={12} lg={12} xl={12}>
             <Form.Item
               name="PaymentMethodId"
-              label="Payment Method"
+              label={`Payment Method - ${paymentMethodRemainingAmount}`}
               rules={[{ required: true, message: 'Please select Payment Method' }]}
             >
               <ReusableDropdown
@@ -340,7 +350,7 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
                  value={form.getFieldValue("paymentMethodId")}
                 onChange={(id) => {
                   form.setFieldsValue({ PaymentMethodId: id });
-                  const selected = paymentMethodMap.get(id);
+                  const selected = paymentMethod.find((item) => item.paymentMethodId === id);
                   setPaymentMethodRemainingAmount(selected?.remaining || '');
                 }}
               />
