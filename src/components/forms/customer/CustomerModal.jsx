@@ -2,6 +2,7 @@ import React, { useEffect,useState } from 'react';
 import { Modal, Form, Button, Input, message, Row, Col, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import { createCustomer } from '../../../api/API';
+import { Toaster } from "../../common/Toaster";
 
 
 const CustomerModal = ({ visible, title, onCancel, initialValues, onSave,button, setIsModalVisible }) => {
@@ -46,6 +47,9 @@ const CustomerModal = ({ visible, title, onCancel, initialValues, onSave,button,
       const payload = {
         ...values,
         customerId: values.customerId ? Number(values.customerId) : 0,
+        amount:0,
+        paid:0,
+        remaining:0,
         date: values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'), // Use current date if no date selected
       };
 
@@ -62,6 +66,8 @@ const CustomerModal = ({ visible, title, onCancel, initialValues, onSave,button,
       if (response.data.status === "Success") {      
         // Reset form and notify parent component
         form.resetFields();
+        Toaster.success(response.data.message || "Customer saved successfully");
+        setIsModalVisible(false);
         
         // Call parent's onSave callback to trigger grid refresh
         if (typeof onSave === 'function') {
@@ -69,7 +75,8 @@ const CustomerModal = ({ visible, title, onCancel, initialValues, onSave,button,
         }
       } else {
         // Show error message from API
-        message.error(response.data.message || "Operation failed");
+        Toaster.error(response.data.message || "Operation failed");
+        
       }
     } catch (err) {
       // Handle API errors
@@ -85,7 +92,7 @@ const CustomerModal = ({ visible, title, onCancel, initialValues, onSave,button,
       open={visible}
       title={title}
       onCancel={onCancel}
-      width={800}
+      // width={800}
       zIndex={3000}
       footer={[
         <Button key="cancel" onClick={onCancel}>
@@ -111,8 +118,8 @@ const CustomerModal = ({ visible, title, onCancel, initialValues, onSave,button,
       >
         <Form.Item name="customerId" noStyle />
         
-        <Row gutter={[16, 0]}>
-        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+        {/* <Row gutter={[16, 0]}> */}
+        {/* <Col xs={24} sm={24} md={12} lg={12} xl={12}> */}
             <Form.Item
               name="customerName"
               label="Customer Name"
@@ -123,28 +130,43 @@ const CustomerModal = ({ visible, title, onCancel, initialValues, onSave,button,
             >
               <Input placeholder="Enter Customer name" maxLength={100} />
             </Form.Item>
-          </Col>
+          {/* </Col> */}
           
-          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          {/* <Col xs={24} sm={24} md={12} lg={12} xl={12}> */}
             <Form.Item
               name="contact"
               label="Contact"
             >
               <Input placeholder="Enter Contact" maxLength={100} />
             </Form.Item>
-          </Col>
-        </Row>
+          {/* </Col> */}
+        {/* </Row>
 
-        <Row gutter={[16, 0]}>
-          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+        <Row gutter={[16, 0]}> */}
+          {/* <Col xs={24} sm={24} md={12} lg={12} xl={12}> */}
             <Form.Item
               name="address"
               label="Address"
             >
               <Input placeholder="Enter address" maxLength={100} />
             </Form.Item>
-          </Col>
-          
+          {/* </Col> */}
+                    {/* <Col xs={24} sm={24} md={12} lg={12} xl={12}> */}
+            <Form.Item
+              name="date"
+              label="Date"
+            >
+              <DatePicker 
+                placeholder="Select Date" 
+                style={{ width: '100%' }}
+                format="YYYY-MM-DD"
+              />
+            </Form.Item>
+            
+          {/* </Col> */}
+
+          {/* </Row> */}
+ {/*         
           <Col xs={24} sm={24} md={12} lg={12} xl={12}>
             
               <Form.Item
@@ -181,21 +203,7 @@ const CustomerModal = ({ visible, title, onCancel, initialValues, onSave,button,
         </Row>
 
         <Row gutter={[16,0]}>
-           
-          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-            <Form.Item
-              name="date"
-              label="Date"
-            >
-              <DatePicker 
-                placeholder="Select Date" 
-                style={{ width: '100%' }}
-                format="YYYY-MM-DD"
-              />
-            </Form.Item>
-            
-          </Col>
-        </Row>
+        </Row>*/}
 
       </Form>
     </Modal>

@@ -16,6 +16,8 @@ import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
 import { deleteCustomer, getCustomer } from "../../../api/API";
 import CustomerModal from "./CustomerModal";
+import CustomerTransactionModal from "./CustomerTransactionModal";
+import { useNavigate } from "react-router-dom";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
@@ -34,7 +36,28 @@ const Customer = () => {
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
+  const navigate = useNavigate();
   
+    const [isTransactionModalVisible, setIsTransactionModalVisible] = useState(false);
+      const [transactionRecord, setTransactionRecord] = useState(null);
+
+      const showTransactionModal = useCallback((record) => {
+        setTransactionRecord(record ? { ...record } : { customerId: '',invoiceNo: '', amount: '', discount: '',paid:'', remaining: '', date:'',paymentMethodId:'' });
+        setIsTransactionModalVisible(true);
+      }, []);
+
+        const handleTransaction = useCallback((id) => {
+          const record = rowData.find(item => item.customerId === id);
+          if (record) {
+            showTransactionModal(record);
+          }
+        }, [showTransactionModal, rowData]);
+          const handleTransactionModalSave = useCallback(() => { 
+            Toaster.success("Transaction processed successfully!");
+            setIsTransactionModalVisible(false);
+            // handleRefreshData();
+          }, []);
+
   const AddnewModal = useCallback((record) => {
     setEditingRecord(record ? { ...record } : { CustomerId: '', customerName: '', contact :'', address: '', amount: '', discount : '', paid :'', remaining :'', date :''});
     setIsModalVisible(true);
@@ -46,6 +69,15 @@ const Customer = () => {
       AddnewModal(record);
     }
   }, [AddnewModal, rowData]);
+
+  const handleDetails = useCallback((id, name) => {
+    navigate('/customerPaymentDetail', { 
+      state: { 
+        customerId: id,
+        customerName: name
+      }
+    });
+  }, [navigate]);
 
   const handleDelete = useCallback(async (id) => {
     console.log("Delete category id:", id);
@@ -160,13 +192,13 @@ const Customer = () => {
               <Button  
                                 icon={<CheckCircleTwoTone   />} 
                                 text={params.data.customerId}
-                                onClick={() => handleEdit(params.data.customerId)} 
+                                onClick={() => handleTransaction(params.data.customerId)} 
                                 size="small"
                               />
                                 <Button 
                                 icon={<DollarCircleOutlined   />} 
                                 text={params.data.customerId}
-                                onClick={() => handleEdit(params.data.customerId)} 
+                  onClick={() => handleDetails(params.data.customerId, params.data.customerName)}
                                 size="small"
                               />
             </Space>
@@ -501,6 +533,16 @@ const Customer = () => {
         setIsModalVisible={setIsModalVisible}
         onSave={handleModalSave}
       />
+
+          <CustomerTransactionModal
+          visible={isTransactionModalVisible}
+          title="Process Transaction"
+          button="Save Transaction"
+          onCancel={() => setIsTransactionModalVisible(false)}
+          initialValues={transactionRecord}
+          setIsModalVisible={setIsTransactionModalVisible}
+          onSave={handleTransactionModalSave}
+        />
     </div>
     
     </div>

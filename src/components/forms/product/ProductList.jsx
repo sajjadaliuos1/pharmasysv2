@@ -131,6 +131,7 @@ const getColumnDefs = useCallback(() => {
     {
       headerName: "Actions",
       field: "actions",
+      pinned: 'right',  
       cellRenderer: (params) => (
         <Space size="middle">
           <Tooltip title="Edit">

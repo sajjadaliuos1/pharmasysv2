@@ -11,7 +11,7 @@ const PaymentModal = ({ visible, title, onCancel, initialValues, onSave, button,
   const [remaining, setRemaining] = useState(0);
   const [isUpdate, setIsUpdate] = useState(false);
 
-  // Set form fields when modal is opened
+
   useEffect(() => {
     if (visible) {
       const hasInitial = !!initialValues?.paymentMethodId;
@@ -199,9 +199,7 @@ const PaymentModal = ({ visible, title, onCancel, initialValues, onSave, button,
         <Form.Item 
           name="description" 
           label="Description"  
-          rules={[
-            { required: true, message: 'Please enter description', whitespace: true },
-          ]}
+          
         >
           <Input.TextArea placeholder="Enter Description"
           maxLength={200} 

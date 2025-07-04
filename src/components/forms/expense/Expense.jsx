@@ -6,31 +6,31 @@ import "jspdf-autotable";
 
 import { ModuleRegistry } from 'ag-grid-community';
  import { AllCommunityModule } from "ag-grid-community";
-import {  message, Button, Empty } from "antd";
+import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-
 import Loader from "../../common/Loader";
-import { getPaymentByDateRange } from "../../../api/API";
-
-import { useLocation } from 'react-router-dom';
+import { geExpense } from "../../../api/API";
 import dayjs from 'dayjs';
+import ExpenseModal from "./ExpenseModal";
+import { Toaster } from "../../common/Toaster";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
  
 ]);
 
-const  PaymentDetail = () => {
+const Expense = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
-
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const loadingRef = useRef(false); 
   const [dateRange, setDateRange] = 
   useState([
@@ -38,34 +38,38 @@ const  PaymentDetail = () => {
   dayjs() // Today
   ]);
 
-    const location = useLocation();
-  const { paymentId , paymentName } = location.state || {};
-
+  
+  const AddnewModal = useCallback((record) => {
+    // setEditingRecord(record ? { ...record } : { typeId: '', typeName: '' });
+    setIsModalVisible(true);
+  }, []);
 
    const getColumnDefs = useCallback(() => {
     return [
       {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,       
+        minWidth: 80,
+        // width: 80,
+        //  pinned: 'left', 
       },
       {
-        headerName: "Amount In",
-        field: "amountIn",
+        headerName: "Expense Name",
+        field: "expenseCategory",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
        {
-        headerName: "Amount out",
-        field: "amountOut",
+        headerName: "Amount",
+        field: "amount",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
        {
-        headerName: "Remaining",
-        field: "remaining",
+        headerName: "Payment Method",
+        field: "paymentMethod",
         sortable: true,
         filter: true,
         minWidth: 140,
@@ -92,7 +96,6 @@ const  PaymentDetail = () => {
 
 // Updated fetchPaymentDetailData function
 const fetchPaymentDetailData = useCallback(async () => {
-  if (loadingRef.current || !paymentId) return;  // Add paymentId check
   
   loadingRef.current = true;
   setLoading(true);
@@ -102,8 +105,8 @@ const fetchPaymentDetailData = useCallback(async () => {
       const startDate = dateRange[0].format('YYYY-MM-DD');
       const endDate = dateRange[1].format('YYYY-MM-DD');
       
-      const response = await getPaymentByDateRange(paymentId, startDate, endDate);
-      console.log('API Response:', response.data);
+      const response = await geExpense(startDate, endDate);
+      console.log('API Response: expenseeeeee', response.data);
       
       if (!response?.data) {
         throw new Error("Invalid response from server");
@@ -116,8 +119,8 @@ const fetchPaymentDetailData = useCallback(async () => {
       // Simplified message logic
       messageApi[data.length ? 'success' : 'info']({ 
         content: data.length 
-          ? 'Payment records loaded successfully' 
-          : 'No records found for selected criteria',
+          ? 'Expense records loaded successfully' 
+          : 'No records found',
         key: 'loadingData'
       });
     } else {
@@ -139,31 +142,31 @@ const fetchPaymentDetailData = useCallback(async () => {
     setLoading(false);
     loadingRef.current = false;
   }
-}, [messageApi, dateRange, paymentId]);  // Added paymentId to dependencies
+}, [messageApi, dateRange,]);  // Added paymentId to dependencies
 
 // Consolidated refresh function
 const handleRefreshData = useCallback(async () => {
   await fetchPaymentDetailData();  // Reuse the same logic
 }, [fetchPaymentDetailData]);
 
-
+// useEffect hook
 useEffect(() => {
-  if (paymentId && dateRange[0] && dateRange[1]) {
+  if ( dateRange[0] && dateRange[1]) {
     handleRefreshData();
   }
-}, [paymentId, dateRange, handleRefreshData]);
+}, [ dateRange, handleRefreshData]);
 
   const handleExportPDF = useCallback(() => {
-      const fileName = prompt("Enter file name for PDF:", "category-data");
+      const fileName = prompt("Enter file name for PDF:", "Epense-data");
       if (!fileName) return;
       const doc = new jsPDF();
       doc.setFontSize(18);
-      doc.text('Category Report', 14, 22);
+      doc.text('Expense Report', 14, 22);
       doc.setFontSize(11);
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
       
       // Include serial number and exclude actions column
-      const columns = ['S.No', 'Name','Description', 'Amount In', 'Amount Out', 'Remaining'];
+      const columns = ['S.No', 'Expense Name','Amount', 'Payment Method', 'Description', 'Date'];
       
       
       const rows = rowData.map((row, index) => [
@@ -196,8 +199,8 @@ useEffect(() => {
         }));
       
       gridRef.current.api.exportDataAsCsv({
-        fileName: 'payment-data.csv',
-        sheetName: 'Payment',
+        fileName: 'expense-data.csv',
+        sheetName: 'Expense',
         columnKeys: columnsToExport
           .filter(col => col.field) // Only include columns with field property
           .map(col => col.field),   // Extract field names for columnKeys
@@ -258,11 +261,11 @@ const handleDateChange = (dates) => {
 };
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: `Payment Details of ${paymentName}`,
+    title: `Expense Details`,
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-    // onAddNew: () => AddnewModal(null),
+    onAddNew: () => AddnewModal(null),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
     dateRange,
@@ -298,8 +301,9 @@ const handleDateChange = (dates) => {
       }
       
       const searchLower = searchText.toLowerCase();
-      const filtered = rowData.filter(row =>    
-        (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+      const filtered = rowData.filter(row =>
+        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
+        (row.expenseCategory && row.expenseCategory.toLowerCase().includes(searchLower))
       );
   
       setFilteredData(filtered);
@@ -316,7 +320,13 @@ const handleDateChange = (dates) => {
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
  
- 
+    const handleModalSave = useCallback(() => { 
+    Toaster.success(editingRecord?.typeId ? "Category updated successfully!" : "Category added successfully!");
+   
+    setIsModalVisible(false);
+     
+    handleRefreshData();
+  }, [editingRecord?.typeId, handleRefreshData]);
 
   const renderLoadingState = () => (
     <div style={{ 
@@ -360,6 +370,7 @@ const handleDateChange = (dates) => {
   );
   
   return (
+    
     <div className="container mt-2">
     <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
       {contextHolder}
@@ -402,10 +413,21 @@ const handleDateChange = (dates) => {
           )}
         </div>
       )}
+      
+      
+      <ExpenseModal
+        visible={isModalVisible}
+        title={'New Expense'}
+        button={editingRecord?.typeId ? 'Update' : 'Save'}
+        onCancel={() => setIsModalVisible(false)}
+        initialValues={editingRecord}
+        setIsModalVisible={setIsModalVisible}
+        onSave={handleModalSave}
+      />
 
-       </div>    
+    </div>
+    
     </div>
   );
 };
-
-export default PaymentDetail;
+export default Expense;
