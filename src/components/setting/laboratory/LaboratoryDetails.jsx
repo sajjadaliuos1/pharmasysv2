@@ -3,46 +3,58 @@ import { AgGridReact } from "ag-grid-react";
 import "../../common/style.css";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { useNavigate } from "react-router-dom";
+
 import { ModuleRegistry } from 'ag-grid-community';
-import { AllCommunityModule } from "ag-grid-community";
+ import { AllCommunityModule } from "ag-grid-community";
 import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
+
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { deletePayment, getPayment } from "../../../api/API";
+import { deleteCategory, getCategories } from "../../../api/API";
 
+import LaboratoryModal from "./LaboratoryModol";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
+ 
 ]);
 
-const InvoiceRecord = () => {
+const LaboratoryDetails = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
- 
-  
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
   
+  const AddnewModal = useCallback((record) => {
+    setEditingRecord(record ? { ...record } : { typeId: '', typeName: '' });
+    setIsModalVisible(true);
+  }, []);
 
-  
+  const handleEdit = useCallback((id) => {
+    const record = rowData.find(item => item.typeId === id);
+    if (record) {
+      AddnewModal(record);
+    }
+  }, [AddnewModal, rowData]);
 
   const handleDelete = useCallback(async (id) => {
-    console.log("Delete id:", id);
+    console.log("Delete category id:", id);
     try {
-      const response = await deletePayment(id);
+      const response = await deleteCategory(id);
       if(response.data.status === "Success"){
-        handleRefreshData();
-        Toaster.success(response.data.message);
+      handleRefreshData();
+    Toaster.success(response.data.message);
       } else {
         Toaster.error(response.data.message);
       }
@@ -53,99 +65,86 @@ const InvoiceRecord = () => {
     }
   }, [rowData, messageApi]);
 
-  const getColumnDefs = useCallback(() => {
+   const getColumnDefs = useCallback(() => {
     return [
       {
         headerName: 'S.No',
-        valueGetter: (params) => params.node.rowIndex + 1,
+        valueGetter: (params) => params.node.rowIndex + 1, 
         minWidth: 80,
-      },
-      {
-        headerName: "Invoice No",
-        field: "paymentMethodId",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-      {
-        headerName: "Payment Name",
-        field: "name",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-      {
-        headerName: "Return",
-        children: [
-          {
-            headerName: "Return Qty",
-            field: "returnQty",
-            editable: true,
-            cellEditor: 'agNumberCellEditor',
-            minWidth: 120,
-          },
-          {
-            headerName: "Return Amount",
-            field: "returnAmount",
-            valueGetter: (p) => (p.data.returnQty || 0) * (p.data.saleRate || 0),
-            valueFormatter: (p) => Number(p.value || 0).toFixed(2),
-            minWidth: 140,
-          }
-        ]
+        // width: 80,
+        //  pinned: 'left', 
       },
     
       {
-        headerName: "Sale",
-        children: [
-          {
-            headerName: "Sale Rate * Qty",
-            valueGetter: (p) => `${p.data.saleRate || 0} * ${p.data.qty || 0}`,
-            minWidth: 160,
-          },
-          {
-            headerName: "Total",
-            field: "total",
-            valueGetter: (p) => (p.data.saleRate || 0) * (p.data.qty || 0),
-            valueFormatter: (p) => Number(p.value || 0).toFixed(2),
-            minWidth: 120,
-          }
-        ]
+        headerName: "Test Name",
+        field: "typeName",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+      {
+        headerName: "Test Amount",
+        field: "typeName",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+       {
+        headerName: "Processing Time",
+        field: "typeName",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
+      },
+       {
+        headerName: "Description",
+        field: "typeName",
+        sortable: true,
+        filter: true,
+       
+        minWidth: 140,
       },
       {
         headerName: "Actions",
         field: "actions",
         sortable: false,
         filter: false,
-        minWidth: 180,
+        //  pinned: 'right', 
+        // minWidth: 110,
         cellRenderer: (params) => {
           return (
             <Space size="middle">
               <Tooltip title="Edit">
                 <Button 
                   icon={<EditOutlined />} 
+                  text={params.data.typeId}
+                  onClick={() => handleEdit(params.data.typeId)} 
                   size="small"
                 />
               </Tooltip>
               <Popconfirm
                 title="Are you sure you want to delete?"
-                onConfirm={() => console.log("Delete", params.data.paymentMethodId)}
+                onConfirm={() => handleDelete(params.data.typeId)}
                 okText="Yes"
                 cancelText="No"
               >
-                <Tooltip title="Delete">
-                  <Button 
-                    icon={<DeleteOutlined />} 
-                    danger 
-                    size="small"
-                  />
-                </Tooltip>
+                  <Tooltip title="Delete"> 
+                <Button 
+                  icon={<DeleteOutlined />} 
+                  danger 
+                  size="small"
+                /> </Tooltip>
               </Popconfirm>
             </Space>
           );
         },
+        // suppressSizeToFit: true,
       }
     ];
-  }, []);
+  }, [screenSize, handleEdit, handleDelete]);
   
   const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
 
@@ -156,8 +155,8 @@ const InvoiceRecord = () => {
     setLoading(true);
     
     try {
-      const response = await getPayment();
-        console.log("Response from getPayment:", response);
+      const response = await getCategories();
+      // Handle potential null response safely
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
       }
@@ -169,7 +168,7 @@ const InvoiceRecord = () => {
       if (data.length > 0) {
         messageApi.success({ content: 'Data loaded successfully', key: 'loadingData' });
       } else {
-        messageApi.info({ content: 'No data available', key: 'loadingData' });
+        messageApi.info({ content: 'No category data available', key: 'loadingData' });
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch data');
@@ -188,7 +187,7 @@ const InvoiceRecord = () => {
     loadingRef.current = true;
 
     try {
-      const response = await getPayment();
+      const response = await getCategories();
     
       if (!response) {
         throw new Error("Failed to fetch categories");
@@ -214,22 +213,21 @@ const InvoiceRecord = () => {
   }, []);
 
   const handleExportPDF = useCallback(() => {
-    const fileName = prompt("Enter file name for PDF:", "payment-data");
+    const fileName = prompt("Enter file name for PDF:", "category-data");
     if (!fileName) return;
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text('payment Report', 14, 22);
+    doc.text('Category Report', 14, 22);
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-    const columns = ['S.No', 'Name','Description', 'Amount In', 'Amount Out', 'Remaining'];
+    
+    // Include serial number and exclude actions column
+    const columns = ['S.No', 'Category ID', 'Category Name'];
     
     const rows = rowData.map((row, index) => [
       index + 1,
-      row.name || '',
-      row.description || '',
-      row.amountIn || '',  
-      row.amountOut || '',
-      row.remaining || '',
+      row.typeId || '',
+      row.typeName || ''
     ]);
 
     doc.autoTable({
@@ -244,7 +242,8 @@ const InvoiceRecord = () => {
 
   const handleExportExcel = useCallback(() => {
     if (gridRef.current?.api) {
-           const columnsToExport = columnDefs
+      // Export only specific columns, excluding the actions column
+      const columnsToExport = columnDefs
         .filter(col => col.field !== 'actions')
         .map(col => ({ 
           field: col.field,
@@ -252,11 +251,11 @@ const InvoiceRecord = () => {
         }));
       
       gridRef.current.api.exportDataAsCsv({
-        fileName: 'payment-data.csv',
-        sheetName: 'Payment',
+        fileName: 'category-data.csv',
+        sheetName: 'Categories',
         columnKeys: columnsToExport
-          .filter(col => col.field) 
-          .map(col => col.field),   
+          .filter(col => col.field) // Only include columns with field property
+          .map(col => col.field),   // Extract field names for columnKeys
         skipColumnHeaders: false,
         skipHeader: false
       });
@@ -301,12 +300,13 @@ const InvoiceRecord = () => {
     }
   }, [messageApi, setAutoHeight, setFixedHeight, handleFullscreen]);
 
+
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: "Invoice Details",
+    title: "Laboratory Management",
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-   
+    onAddNew: () => AddnewModal(null),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
     searchText,
@@ -315,6 +315,7 @@ const InvoiceRecord = () => {
   });
   
   const defaultColDef = useMemo(() => ({
+   
     filter: true,
     resizable: true,
     suppressSizeToFit: false
@@ -340,10 +341,9 @@ const InvoiceRecord = () => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-  (row.name && row.name.toLowerCase().includes(searchLower)) ||
-  (row.description && row.description.toLowerCase().includes(searchLower)) ||
-  (row.paymentMethodId && row.paymentMethodId.toString().toLowerCase().includes(searchLower))
-);
+        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
+        (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+      );
   
       setFilteredData(filtered);
     };
@@ -359,7 +359,16 @@ const InvoiceRecord = () => {
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
  
-    const renderLoadingState = () => (
+  const handleModalSave = useCallback(() => { 
+    Toaster.success(editingRecord?.typeId ? "Laboratory updated successfully!" : "Laboratory added successfully!");
+   
+    setIsModalVisible(false);
+     
+    handleRefreshData();
+  }, [editingRecord?.typeId, handleRefreshData]);
+  
+
+  const renderLoadingState = () => (
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column',
@@ -393,7 +402,7 @@ const InvoiceRecord = () => {
       image={Empty.PRESENTED_IMAGE_SIMPLE}
       description={
         <span>
-          No payments found matching your search criteria
+          No Laboratory found matching your search criteria
         </span>
       }
     >
@@ -401,52 +410,63 @@ const InvoiceRecord = () => {
   );
   
   return (
+    
     <div className="container mt-2">
-      <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
-        {contextHolder}
-        {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}     
-        {loading ? renderLoadingState() : error ? renderErrorState() : (
-          <div 
-            id="myGrid" 
-            className="ag-theme-alpine" 
-            style={{
-              height:'515px',
-              minHeight: '515px',
-              maxHeight: '520px',
-              width: '100%',
-              fontSize: '14px'
-            }}
-          >
-            {filteredData.length === 0 ? renderEmptyState() : (
-              <AgGridReact
-                gridOptions={{ suppressMenuHide: true }}
-                columnDefs={columnDefs}
-                ref={gridRef}
-                rowData={filteredData}
-                defaultColDef={defaultColDef}
-                pagination={true}
-                popupParent={popupParent}
-                paginationPageSize={10}
-                paginationPageSizeSelector={[ 10, 20, 50, 100]}
-                domLayout='normal'
-                suppressCellFocus={true}
-                animateRows={true}
-                enableCellTextSelection={true}
-                onGridReady={params => {
-                  params.api.sizeColumnsToFit();
-                  if (screenSize === 'xs') {
-                    params.api.setGridOption('rowHeight', 40);
-                  }
-                }}
-                onFirstDataRendered={params => params.api.sizeColumnsToFit()}
-              />
-            )}
-          </div>
-        )}
-        
-      </div>
+    <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
+      {contextHolder}
+      {screenSize === 'xs' || screenSize === 'sm' ? renderMobileHeader() : renderDesktopHeader()}     
+      {loading ? renderLoadingState() : error ? renderErrorState() : (
+        <div 
+          id="myGrid" 
+          className="ag-theme-alpine" 
+          style={{
+            height:'515px',
+            minHeight: '515px',
+            maxHeight: '520px',
+            width: '100%',
+            fontSize: '14px'
+          }}
+        >
+          {filteredData.length === 0 ? renderEmptyState() : (
+            <AgGridReact
+              gridOptions={{ suppressMenuHide: true }}
+              columnDefs={columnDefs}
+              ref={gridRef}
+              rowData={filteredData}
+              defaultColDef={defaultColDef}
+              pagination={true}
+              popupParent={popupParent}
+              paginationPageSize={10}
+              paginationPageSizeSelector={[ 10, 20, 50, 100]}
+              domLayout='normal'
+              suppressCellFocus={true}
+              animateRows={true}
+              enableCellTextSelection={true}
+              onGridReady={params => {
+                params.api.sizeColumnsToFit();
+                if (screenSize === 'xs') {
+                  params.api.setGridOption('rowHeight', 40);
+                }
+              }}
+              onFirstDataRendered={params => params.api.sizeColumnsToFit()}
+            />
+          )}
+        </div>
+      )}
+      
+      <LaboratoryModal
+        visible={isModalVisible}
+        title={editingRecord?.typeId ? `Edit Laboratory` : 'Add New Laboratory'}
+        button={editingRecord?.typeId ? 'Update' : 'Save'}
+        onCancel={() => setIsModalVisible(false)}
+        initialValues={editingRecord}
+        setIsModalVisible={setIsModalVisible}
+        onSave={handleModalSave}
+      />
+    </div>
+    
     </div>
   );
 };
 
-export default InvoiceRecord;
+export default LaboratoryDetails;

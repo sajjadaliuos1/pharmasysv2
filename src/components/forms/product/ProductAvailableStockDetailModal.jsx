@@ -71,23 +71,18 @@ const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails,  
       width: 70,
     },
     {
-      headerName: "Name",
-      field: "productName",
-      minWidth: 150,
-    },
-    {
       headerName: "Batch No",
       field: "batchNo",
-      minWidth: 130,
+      width: 95,
     },
     {
       headerName: "Quantity",
       headerClass: 'quantity-header',
-      headerStyle: { color: 'red', 'background-color': 'green' },
+      headerStyle: { 'background-color': '#FFF3E0' },
       children: [
-        { headerName: "Purchase Qty", field: "purchaseQuantity", minWidth: 130 },
-        { headerName: "Remaining Qty", field: "remainingQuantity", minWidth: 130 },
-        { headerName: "Remaining Open Strip", field: "remainingOpenStrip", minWidth: 180 },
+        { headerName: "Purchase", field: "purchaseQuantity", width: 95 },
+        { headerName: "Remaining", field: "remainingQuantity", width: 95 },
+        { headerName: "OpenStrip", field: "remainingOpenStrip", width: 100 },
       ]
     },
     {
@@ -95,20 +90,20 @@ const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails,  
       headerClass: 'purchase-header',
       children: [
         {
-          headerName: "Purchase Rate",
+          headerName: "Purchase",
           field: "purchaseRate",
-          minWidth: 130,
+          width: 95,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Discount %",
+          headerName: "Discount",
           field: "purchaseDiscountPercent",
-          minWidth: 130,
+          width: 95,
         },
         {
-          headerName: "Final Rate",
+          headerName: "Final",
           field: "finalPurchaseRate",
-          minWidth: 130,
+          width: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         }
       ]
@@ -118,74 +113,53 @@ const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails,  
       headerClass: 'sale-header',
       children: [
         {
-          headerName: "Sale Rate",
+          headerName: "Rate",
           field: "saleRate",
-          minWidth: 130,
+          width: 85,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Discount %",
+          headerName: "Discount",
           field: "saleDiscountPercent",
-          minWidth: 130,
+          width: 95,
         },
         {
-          headerName: "Final Rate",
+          headerName: "Final",
           field: "finalSaleRate",
-          minWidth: 130,
+          width: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Min Sale Rate",
+          headerName: "MinRate",
           field: "minimumSaleRate",
-          minWidth: 150,
+          width: 95,
         }
       ]
     },
     {
       headerName: "Strip Record",
       headerClass: 'strip-header',
+      headerStyle: { 'background-color': '#E3F2FD' },
       children: [
         {
-          headerName: "Strip Rate",
+          headerName: "Rate",
           field: "stripRate",
-          minWidth: 130,
+          width: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Discount %",
-          field: "stripDiscountPercent",
-          minWidth: 130,
-        },
-        {
-          headerName: "Final Rate",
+          headerName: "Final",
           field: "finalStripRate",
-          minWidth: 130,
+          width: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Min Strip Rate",
+          headerName: "MinStrip",
           field: "minimumStripRate",
-          minWidth: 150,
+          width: 95,
         }
       ]
     },
-    {
-      headerName: "Barcode",
-      field: "barcode",
-      minWidth: 150,
-    },
-    // {
-    //   headerName: "Total Amount",
-    //   valueGetter: (params) => {
-    //     const quantity = params.data?.purchaseQuantity || 0;
-    //     const rate = params.data?.finalPurchaseRate || 0;
-    //     return quantity * rate;
-    //   },
-      
-    //   valueFormatter: (params) => {
-    //     return params.value ? `${parseFloat(params.value).toFixed(2)}` : '0.00';
-    //   },
-    // }
   ], []);
 
   const defaultColDef = useMemo(() => ({

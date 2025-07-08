@@ -57,7 +57,7 @@ const PaymentModal = ({ visible, title, onCancel, initialValues, onSave, button,
           amountIn: "",
           amountOut: 0,
           remaing: 0,
-          date: formattedDate, 
+          date: formattedDate, // Set current date by default
           createdBy: 1,
         };
         form.setFieldsValue(defaultValues);

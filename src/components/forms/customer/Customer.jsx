@@ -430,12 +430,12 @@ const Customer = () => {
   }, [searchText, rowData]);
  
   const handleModalSave = useCallback(() => { 
-    Toaster.success(editingRecord?.typeId ? "Customer List updated successfully!" : "Customer List added successfully!");
+    // Toaster.success(editingRecord?.typeId ? "Customer List updated successfully!" : "Customer List added successfully!");
    
     setIsModalVisible(false);
      
     handleRefreshData();
-  }, [editingRecord?.typeId, handleRefreshData]);
+  }, [editingRecord?.customerId, handleRefreshData]);
   
 
   const renderLoadingState = () => (

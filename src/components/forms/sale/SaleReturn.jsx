@@ -37,6 +37,11 @@ const SaleReturn = () => {
 
   const handleSearch = async () => {
     try {
+      setTotalReturnAmount(0);
+      setFinalAmount(0);
+      form1.setFieldsValue({
+      remainingAmount: 0,
+      })
       const formData = await formSearch.validateFields();
       const invoiceNo = parseInt(formData.search, 10);
 
@@ -52,10 +57,12 @@ const SaleReturn = () => {
       Toaster.error("No record found for this invoice number.");
       return;
     }
+    console.log("Search Record:", result.data);
 
     const saleData = result.data.data;
  
     form1.setFieldsValue({
+      invoiceNo: saleData.invoiceNo,
       customerId: saleData.customerId,
       CustomerName: saleData.customerName,
       totalAmount: saleData.totalAmount?.toFixed(2),
@@ -111,28 +118,36 @@ const SaleReturn = () => {
   
 
   const fetchPaymentMethod = async () => {
-    try {
-      setLoadingPaymentMethod(true);
-      const response = await getPayment();
-       if (response.data && response.data.data) {
-         const paymentList = response.data.data;
-      setPaymentMethod(paymentList);
-
-      // use for dropdown to get record in fast....
-        const map = new Map();
-        paymentList.forEach(s => map.set(s.paymentMethodId, s));
-        setPaymentMethodMap(map);
-    
-      } else {
-        Toaster.warning("No payment Method found or unexpected response format.");
+      try {
+        setLoadingPaymentMethod(true);
+        const response = await getPayment();
+         if (response.data && response.data.data) {
+           const paymentList = response.data.data;
+        setPaymentMethod(paymentList);
+  
+        // use for dropdown to get record in fast....
+          const map = new Map();
+          paymentList.forEach(s => map.set(s.paymentMethodId, s));
+          setPaymentMethodMap(map);
+      
+        if (paymentList.length > 0 && !form1.getFieldValue("PaymentMethodId")) {
+        const firstPaymentMethod = paymentList[0];
+        const firstId = firstPaymentMethod.paymentMethodId;
+         
+        form1.setFieldsValue({ paymentMethodId: firstId });
+         setPaymentMethodRemainingAmount(firstPaymentMethod?.remaining || '');
       }
-    } catch (err) {
-      console.error("Error fetching suppliers:", err);
-      Toaster.error("Failed to load suppliers. Please try again.");
-    } finally {
-      setLoadingPaymentMethod(false);
-    }
-  };
+      
+        } else {
+          Toaster.warning("No payment Method found or unexpected response format.");
+        }
+      } catch (err) {
+        console.error("Error fetching suppliers:", err);
+        Toaster.error("Failed to load suppliers. Please try again.");
+      } finally {
+        setLoadingPaymentMethod(false);
+      }
+    };
 
    
  
@@ -321,16 +336,17 @@ const handleSubmit = async () => {
     const payload = {
       ...formData,
       customerId,
-      totalReturnItems: returnItems.length,
-      totalReturnAmount: totalReturnAmount,
-  
+      invoiceNo: parseInt(formData.invoiceNo, 10),
+      returnItem: returnItems.length,
+      returnItemAmount: totalReturnAmount,
+      paidOrReturn : parseFloat(formData.paidOrReturn || 0),
       totalAmount: parseFloat(formData.totalAmount),
       DiscountAmount: parseFloat(formData.supplierDiscount || 0),
-      FinalAmount: parseFloat(formData.netAmount),
-      netPayableAmount: parseFloat(formData.totalAmountWithOld),
+      // FinalAmount: parseFloat(formData.netAmount),
+      netPayableAmount: isNaN(parseFloat(formData.totalAmountWithOld)) ? 0 : parseFloat(formData.totalAmountWithOld),
       paidAmount,
-      remaining: parseFloat(formData.remainingAmount),   
-      paymentMethodId: formData.paymentMethodId || null,
+      remaining: parseFloat(formData.remainingAmount || 0),
+      paymentMethodId: formData.paymentMethodId || 0,
       returnDetails: returnDetails, // Send return details instead of all sale details
     };
 
@@ -389,6 +405,7 @@ const handleSubmit = async () => {
 
 <Form
 form={formSearch}
+ onFinish={handleSearch}
  layout="vertical"
             name="search_form">
                 <Row gutter={[16, 0]} style={{ marginBottom: '16px' }}>
@@ -496,7 +513,10 @@ form={formSearch}
     remainingAmount: '0.00',
   }}
 >
-  <Form.Item name="customerId" hidden>
+  <Form.Item name="invoiceNo" hidden>
+    <Input />
+  </Form.Item>
+    <Form.Item name="customerId" hidden>
     <Input />
   </Form.Item>
 
@@ -581,7 +601,7 @@ form={formSearch}
       <Col span={24}>
         <Form.Item
           name="paymentMethodId"
-          label={`Payment Method - ${paymentMethodRemainingAmount}`}
+          label={`Payment Method : ${paymentMethodRemainingAmount}`}
         >
           <ReusableDropdown
             data={paymentMethod}
@@ -591,6 +611,7 @@ form={formSearch}
             loading={loadingPaymentMethod}
             style={{ width: '100%' }}
             defaultOption={false}
+            value={form1.getFieldValue("paymentMethodId")}
             onChange={(paymentMethodId) => {
               form1.setFieldsValue({ paymentMethodId });
               const selectedMethod = paymentMethodMap.get(paymentMethodId);

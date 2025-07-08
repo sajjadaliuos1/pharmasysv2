@@ -7,13 +7,13 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  // const navigate = useNavigate();
+ 
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("authToken");    
     // <Navigate to="/login" replace/>
-    Outlet("/login"); // Redirect to login page
+    Outlet("/login"); 
   };
 
   const setLogoutTimer = (expirationTime) => {
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
   const login = (userData) => {
     try {
       const decoded = jwtDecode(userData.token);
-      setUser({ token: userData.token, role: decoded.role });
+      setUser({ token: userData.token, role: decoded.role, userId: decoded.userId });
       localStorage.setItem("authToken", userData.token);
 
       if (decoded.exp) setLogoutTimer(decoded.exp);
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setUser({ token, role: decoded.role });
+        setUser({ token, role: decoded.role, userId: decoded.userId });
 
         if (decoded.exp) setLogoutTimer(decoded.exp);
       } catch (error) {
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, userId: user?.userId }}>
       {children}
     </AuthContext.Provider>
   );

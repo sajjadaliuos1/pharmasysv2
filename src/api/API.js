@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-    // baseURL: "https://ph.idotsolution.com/api",
-     baseURL: "http://192.168.100.7:5277/api", //  Office
+   baseURL: "https://ph.idotsolution.com/api",
+    //  baseURL: "http://192.168.100.7:5277/api", //  Office
     // baseURL: "http://192.168.10.12:5277/api", // Home
     //  baseURL: "http://192.168.10.8:5277/api", // Clg
     // baseURL: "http://192.168.214.9:5277/api", // Mobile Hotspot 
@@ -16,6 +16,16 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+
+export const getDashbordData = () => API.get('/Setting/summary');
+
+// User Api
+export const getUser = () => API.get('/Employee/employee');
+export const createUser = (data) => API.post('/Employee/employee', data);
+export const deleteUser = (id) => API.post(`/Employee/employee/${id}`);
+export const createAuthUser = (data) => API.post('/Account/register', data); 
+
+export const getRole = () => API.get('/Setting/roles');
 
 export const getShop = () => API.get('/Setting/shop');  
 export const createShop = (data) => API.post('/Setting/shop', data, {
@@ -115,7 +125,7 @@ export const getSaleDateRange = (startDate, endDate) => {
 };
 export const getSaleDetailsById = (id) => API.get(`Sale/getSaleRecord/${id}`);
 export const returnSale = (data) => API.post('/Sale/returnSaleOrder', data);
-
+export const getSalePrint = (id) => API.get(`Sale/salePrint/${id}`);
 
 // Expense Api
 export const getExpenseCategory = () => API.get('/Expense/expenseCategories');

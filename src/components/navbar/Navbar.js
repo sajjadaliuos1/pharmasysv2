@@ -96,7 +96,8 @@ const Navbar = () => {
               { path: '/category', label: 'Category', icon: <FaListAlt /> },
               { path: '/subCategory', label: 'Sub Category', icon: <FaList  /> },
               { path: '/uom', label: 'UOM', icon: <FaBalanceScale  /> },
-              { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },              
+              { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> }, 
+              { path: '/laboratoryDetails', label: 'Laboratory', icon: <FaCreditCard /> },             
             ],
           },
           {
@@ -156,6 +157,14 @@ const Navbar = () => {
              { path: '/expenseCategory', label: 'Expense Category', icon: <FaShoppingCart  /> },
                 
             ],
+          },
+          {
+            label: 'User',
+            icon: <FaRegUser />,
+            dropdown: true,
+            links: [
+              { path: '/user', label: 'User', icon: <FaUser /> },
+            ]
           },
         ];
       case 2: // Manager

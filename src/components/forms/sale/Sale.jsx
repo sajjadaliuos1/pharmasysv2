@@ -1,4 +1,4 @@
- import React, { useState, useEffect,useMemo, useRef  } from 'react';
+import React, { useState, useEffect,useMemo, useRef  } from 'react';
  
 import {
   Card,  Table,  Form,  Input,  Button,  DatePicker,  InputNumber,  Row,  Col,  Space, 
@@ -13,16 +13,20 @@ PrinterOutlined,
 import dayjs from 'dayjs';
 
 import ReusableDropdown from '../../common/ReusableDropdown';  
-import {  getBoxProduct,getNewInvoice,getPayment, getCustomer, getStripProduct, createSale, getOpenInvoice } from '../../../api/API';  
+import {  getBoxProduct,getNewInvoice,getPayment,getShop, getSalePrint, getCustomer, getStripProduct, createSale, getOpenInvoice } from '../../../api/API';  
 import { Toaster } from '../../common/Toaster';
 import CustomerModal from '../customer/CustomerModal';
- 
+import useUserId from '../../../hooks/useUserId';
+
+import ReactToPrint from 'react-to-print';
+import ThermalReceipt from '../../common/ThermalReceipt';
+
 
 
 const Sale = () => {
   const [form] = Form.useForm();
    const [form1] = Form.useForm();
- 
+ const userId = useUserId();
   const [loadingCustomer, setLoadingCustomer] = useState(false);
   const [loadingPaymentMethod, setLoadingPaymentMethod] = useState(false);
   const [loadingproduct, setLoadingproduct] = useState(false);
@@ -65,7 +69,7 @@ const [loadingInvoices, setLoadingInvoices] = useState(false);
 
 const [newInvChecking, setNewInvChecking] = useState();
 
-
+ const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     fetchBoxProduct();
@@ -377,12 +381,6 @@ const createNewInvoiceNo = async () => {
     dataIndex: 'saleItemAmount',
     render: (value) => `Rs. ${parseFloat(value || 0).toFixed(2)}`
   }, 
-  // { 
-  //   title: 'Show Amount After Final Discount', 
-  //   dataIndex: 'finalAmount',
-  //   render: (value) => `Rs. ${parseFloat(value || 0).toFixed(2)}`
-  // }, 
-
 ];
 
 
@@ -767,7 +765,7 @@ const applyRoundOff = (amount) => {
   const numAmount = parseFloat(amount);
   const lastDigit = numAmount % 10;
 
-  if (lastDigit < 5) {
+  if (lastDigit < 3) {
     return Math.floor(numAmount / 10) * 10;
   } else {
     return Math.ceil(numAmount / 10) * 10;
@@ -809,10 +807,133 @@ const reportJson = (date, total,discount,net,old,payable,paid,remaining) => {
   }
   }
 };
- const handlePrint =  () => {
-  // const newInv = parseInt(newInvChecking, 10);
-Toaster.success(newInvChecking-1);
- }
+
+const printRef = useRef();
+  const [saleSummary, setSaleSummary] = useState(null);
+  const [saleDetails, setSaleDetails] = useState([]);
+
+
+ const handlePrint = async () => {
+  try {
+    // const shopInfo = await getShop();
+    const newInv = parseInt(newInvChecking, 10); // or your logic
+    const invno = newInv - 1;
+    const invoiceData = await getSalePrint(invno); // already an object
+
+    let printWindow = window.open("", "_blank");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>INVOICE ${invno}</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              font-size: 12px;
+              margin: 0;
+              padding: 20px;
+              color: #000;
+            }
+            h2, h3 {
+              margin: 0;
+              text-align: center;
+            }
+            .invoice-box {
+              width: 100%;
+              padding: 10px;
+              border: 1px solid #000;
+              margin-top: 20px;
+            }
+            .info {
+              margin: 10px 0;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 10px;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 5px;
+              text-align: left;
+            }
+            .totals {
+              text-align: right;
+              margin-top: 10px;
+            }
+            .signature {
+              margin-top: 40px;
+              display: flex;
+              justify-content: space-between;
+            }
+          </style>
+        </head>
+        <body>
+          
+          <h2>I.Solution</h2>
+          <h3>Kabal Swat</h3>
+          <div class="info">
+            <p>Invoice No: ${invno}</p>
+            <p>Date: ${invoiceData.date}</p>
+            <p>Customer: ${invoiceData.customerName}</p>
+            <p>Phone: ${invoiceData.customerPhone}</p>
+          </div>
+          <div class="invoice-box">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Rate</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${invoiceData.items.map((item, index) => `
+                  <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.qty}</td>
+                    <td>${item.rate}</td>
+                    <td>${item.total}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+            <div class="totals">
+              <p><strong>Total: ${invoiceData.totalAmount}</strong></p>
+              <p>Discount: ${invoiceData.discount}</p>
+              <p><strong>Grand Total: ${invoiceData.grandTotal}</strong></p>
+              <p>Paid: ${invoiceData.paidAmount}</p>
+              <p>Remaining: ${invoiceData.remainingAmount}</p>
+            </div>
+            <div class="signature">
+              <p>Customer Signature: ___________________</p>
+              <p>Shopkeeper Signature: ___________________</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                setTimeout(function() {
+                  window.close();
+                }, 100);
+              }, 200);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+
+  } catch (error) {
+    console.error("Error printing invoice:", error);
+  }
+};
+
 const handleSubmit = async () => {
   try {    
     const formData = await form1.validateFields();       
@@ -878,32 +999,28 @@ const jsDate = saleDate ? saleDate.toDate() : null;
 const convertedInvoiceNo = parseInt(InvoiceNo, 10); 
 const isInvoiceNumberNew = convertedInvoiceNo === newInvChecking;
  
-
-const jsonReport = reportJson(jsDate,parseFloat(formData.totalAmount),
-parseFloat(formData.supplierDiscount || 0),
-parseFloat(formData.netAmount),parseFloat(formData.customerOldAmount || 0), payableAmount,paidAmount,
-parseFloat(formData.remainingAmount));
  
   
     const payload = {
       ...formData,
       customerId,
       InvoiceNo:InvoiceNo,
-      totalItems : cartItems.length,
+      totalItems : totalItems,
       totalAmount: parseFloat(formData.totalAmount),
       DiscountAmount: parseFloat(formData.supplierDiscount || 0),
       FinalAmount: parseFloat(formData.netAmount),
-      customerOldAmount: parseFloat(formData.customerOldAmount || 0),
-      netPayableAmount: parseFloat(formData.totalAmountWithOld),
+      // customerOldAmount: parseFloat(formData.customerOldAmount || 0),
+      netPayableAmount: parseFloat(formData.netAmount),
       paidAmount,
       remaining: parseFloat(formData.remainingAmount),   
       // date: jsDate,
       date: jsDate.toISOString().split('T')[0],
-      report: JSON.stringify(jsonReport),
+      report: null,
       paymentMethodId: formData.paymentMethodId || null,
        isInvoiceNew: isInvoiceNumberNew,
        isInvoiceOpen: isInvoiceOpenValue,
       saleDetails: cartItems,
+      createdBy: userId, 
     };
 
 
@@ -1268,14 +1385,24 @@ label={`Product Name - ${remainingQuantity}`}
                <Row gutter={[16, 0]}>
                 
    <Col span={6}>
-    <Form.Item
+  <Form.Item
     name="quantity"
     label="Quantity"
     rules={[{ required: true, message: 'Please enter quantity' }]}
   >
-    <Input type="number" placeholder="Enter quantity" />
+    <Input
+      type="number"
+      placeholder="Enter quantity"
+      onFocus={() => {
+        const value = form.getFieldValue("quantity");
+        if (value === 1) {
+          form.setFieldsValue({ quantity: null });
+        }
+      }}
+    />
   </Form.Item>
-  </Col>
+</Col>
+
   <Col span={6}> 
         <Form.Item
     name="finalRate"
@@ -1341,11 +1468,12 @@ label={`Product Name - ${remainingQuantity}`}
       return sum + parseFloat(item.finalAmount || item.totalAmount || 0);
     }, 0);
 
-    const totalItems = cartItems.length;
-    const itemLevelDiscount = (actualTotal - discountedTotal).toFixed(2);
-    const additionalDiscountTotal = cartItems.reduce((sum, item) => {
-      return sum + parseFloat(item.additionalDiscount || 0);
+   
+ const totalItm = cartItems.reduce((sum, item) => {
+      return sum + parseFloat(item.quantity);
     }, 0);
+ setTotalItems(totalItm);
+    const itemLevelDiscount = (actualTotal - discountedTotal).toFixed(2);
     
     form1.setFieldsValue({
       totalAmount: applyRoundOff(discountedTotal).toFixed(2)
@@ -1364,7 +1492,15 @@ label={`Product Name - ${remainingQuantity}`}
         fontSize: '15px',
          
       }}>
-         
+           <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          // marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          <span>Total TIems:</span>
+          <span>Rs. {totalItm.toFixed(2)}</span>
+        </div>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -1615,6 +1751,11 @@ initialValues={{
       icon={<PrinterOutlined />}
      onClick={handlePrint}
     />
+    <div style={{ display: 'none' }}>
+        {saleSummary && (
+          <ThermalReceipt ref={printRef} saleSummary={saleSummary} saleDetails={saleDetails} />
+        )}
+      </div>
   </Col>
   <Col flex="auto">
     <Button 
@@ -1644,8 +1785,8 @@ initialValues={{
  
          <CustomerModal
                visible={showCustomerModal}
-               title="Add Payment Method"
-               button="Add Payment Method"
+               title="Add Customer"
+               button="Add Customer"
                onCancel={() => setShowCustomerModal(false)}
                onSave={handleSaveCustomer}
                setIsModalVisible={setShowCustomerModal}
