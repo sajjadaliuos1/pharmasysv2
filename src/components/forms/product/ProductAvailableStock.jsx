@@ -8,7 +8,7 @@ import { ModuleRegistry } from 'ag-grid-community';
 import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { UnorderedListOutlined } from '@ant-design/icons';
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
 import { getPurchaseProduct } from "../../../api/API";
@@ -73,7 +73,7 @@ const getColumnDefs = useCallback(() => {
         <Space size="middle">
           <Tooltip title="Edit">
             <Button 
-              icon={<EditOutlined />}
+              icon={<UnorderedListOutlined />}
               onClick={() =>
                {
                  setIsModalVisible(true);

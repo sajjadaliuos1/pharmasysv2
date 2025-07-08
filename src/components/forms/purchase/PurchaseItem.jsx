@@ -527,12 +527,12 @@ setProducts(productList);
 
  
     { title: 'Purchase Rate', dataIndex: 'purchaseRate' },
-    { title: 'Purchase Discount', dataIndex: 'purchaseDiscount' },
+    { title: 'Discount %', dataIndex: 'purchaseDiscount' },
     { title: 'Final Purchase', dataIndex: 'finalPurchaseRate' },
     { title: 'Total Purchase Amount', dataIndex: 'totalPurchaseAmount' },
 
     { title: 'Sale Rate', dataIndex: 'saleRate' },
-    { title: 'Sale Discount', dataIndex: 'saleDiscount' },
+    { title: 'Discount %', dataIndex: 'saleDiscount' },
     { title: 'Final Sale Rate', dataIndex: 'finalSaleRate' },
     { title: 'Minimum Sale Rate', dataIndex: 'minSaleRate' },
 

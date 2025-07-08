@@ -27,6 +27,8 @@ import ExpenseCategory from "../components/forms/expense/ExpenseCategory";
 import ProductLowStockItem from "../components/forms/product/ProductLowStockItem";
 import ProductAvailableStock from "../components/forms/product/ProductAvailableStock";
 import Expense from "../components/forms/expense/Expense";
+import User from "../components/forms/users/User";
+import LaboratoryDetail from "../components/setting/laboratory/LaboratoryDetails";
 const isAuthenticated = () => {
   return !!localStorage.getItem("authToken"); 
 };
@@ -50,6 +52,7 @@ const AppRoutes = () => {
         <Route path="/subCategory" element={<SubCategory />} /> 
         <Route path="/uom" element={<Uom/>} /> 
         <Route path="/paymentMethod" element={<Payment/>} /> 
+        <Route path="/laboratoryDetails" element={<LaboratoryDetail/>} /> 
         <Route path="/productList" element={<ProductList />} />
         <Route path="/supplier" element={<SupplierList />} />
         <Route path="/purchase" element={<PurchaseItem />} />
@@ -68,6 +71,7 @@ const AppRoutes = () => {
         <Route path="/expense" element={<Expense />} />
         <Route path="/productAvailableStock" element={<ProductAvailableStock />} />
         <Route path="/expenseCategory" element={<ExpenseCategory />} />
+        <Route path="/user" element={<User />} />
         </Route>
       </Routes>
       </div>
