@@ -14,7 +14,7 @@ import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { deleteCategory, getCategories } from "../../../api/API";
+import { deleteTest, getTests } from "../../../api/API";
 
 import LaboratoryModal from "./LaboratoryModol";
 
@@ -37,12 +37,12 @@ const LaboratoryDetails = () => {
   const loadingRef = useRef(false); 
   
   const AddnewModal = useCallback((record) => {
-    setEditingRecord(record ? { ...record } : { typeId: '', typeName: '' });
+    setEditingRecord(record ? { ...record } : { testId: '', testName: '' ,testAmount: '', processingTime: '', description: '' });
     setIsModalVisible(true);
   }, []);
 
   const handleEdit = useCallback((id) => {
-    const record = rowData.find(item => item.typeId === id);
+    const record = rowData.find(item => item.testId === id);
     if (record) {
       AddnewModal(record);
     }
@@ -51,7 +51,7 @@ const LaboratoryDetails = () => {
   const handleDelete = useCallback(async (id) => {
     console.log("Delete category id:", id);
     try {
-      const response = await deleteCategory(id);
+      const response = await deleteTest(id);
       if(response.data.status === "Success"){
       handleRefreshData();
     Toaster.success(response.data.message);
@@ -77,7 +77,7 @@ const LaboratoryDetails = () => {
     
       {
         headerName: "Test Name",
-        field: "typeName",
+        field: "testName",
         sortable: true,
         filter: true,
        
@@ -85,7 +85,7 @@ const LaboratoryDetails = () => {
       },
       {
         headerName: "Test Amount",
-        field: "typeName",
+        field: "testAmount",
         sortable: true,
         filter: true,
        
@@ -93,7 +93,7 @@ const LaboratoryDetails = () => {
       },
        {
         headerName: "Processing Time",
-        field: "typeName",
+        field: "processingTime",
         sortable: true,
         filter: true,
        
@@ -101,7 +101,7 @@ const LaboratoryDetails = () => {
       },
        {
         headerName: "Description",
-        field: "typeName",
+        field: "description",
         sortable: true,
         filter: true,
        
@@ -120,14 +120,14 @@ const LaboratoryDetails = () => {
               <Tooltip title="Edit">
                 <Button 
                   icon={<EditOutlined />} 
-                  text={params.data.typeId}
-                  onClick={() => handleEdit(params.data.typeId)} 
+                  text={params.data.testId}
+                  onClick={() => handleEdit(params.data.testId)} 
                   size="small"
                 />
               </Tooltip>
               <Popconfirm
                 title="Are you sure you want to delete?"
-                onConfirm={() => handleDelete(params.data.typeId)}
+                onConfirm={() => handleDelete(params.data.testId)}
                 okText="Yes"
                 cancelText="No"
               >
@@ -155,7 +155,7 @@ const LaboratoryDetails = () => {
     setLoading(true);
     
     try {
-      const response = await getCategories();
+      const response = await getTests();
       // Handle potential null response safely
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
@@ -187,7 +187,7 @@ const LaboratoryDetails = () => {
     loadingRef.current = true;
 
     try {
-      const response = await getCategories();
+      const response = await getTests();
     
       if (!response) {
         throw new Error("Failed to fetch categories");
@@ -217,17 +217,20 @@ const LaboratoryDetails = () => {
     if (!fileName) return;
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text('Category Report', 14, 22);
+    doc.text('Test Report', 14, 22);
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
     
     // Include serial number and exclude actions column
-    const columns = ['S.No', 'Category ID', 'Category Name'];
+    const columns = ['S.No', 'Test ID', 'Test Name', 'Test Amount', 'Processing Time', 'Description'];
     
     const rows = rowData.map((row, index) => [
       index + 1,
-      row.typeId || '',
-      row.typeName || ''
+      row.testId || '',
+      row.testName || '',
+      row.testAmount || '',
+      row.processingTime || '', 
+      row.description || ''
     ]);
 
     doc.autoTable({
@@ -251,11 +254,11 @@ const LaboratoryDetails = () => {
         }));
       
       gridRef.current.api.exportDataAsCsv({
-        fileName: 'category-data.csv',
-        sheetName: 'Categories',
+        fileName: 'Test-data.csv',
+        sheetName: 'Test',
         columnKeys: columnsToExport
-          .filter(col => col.field) // Only include columns with field property
-          .map(col => col.field),   // Extract field names for columnKeys
+          .filter(col => col.field) 
+          .map(col => col.field),   
         skipColumnHeaders: false,
         skipHeader: false
       });
@@ -341,8 +344,7 @@ const LaboratoryDetails = () => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
-        (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+        (row.testName && row.testName.toLowerCase().includes(searchLower))
       );
   
       setFilteredData(filtered);
@@ -360,12 +362,12 @@ const LaboratoryDetails = () => {
   }, [searchText, rowData]);
  
   const handleModalSave = useCallback(() => { 
-    Toaster.success(editingRecord?.typeId ? "Laboratory updated successfully!" : "Laboratory added successfully!");
+    Toaster.success(editingRecord?.testId ? "Laboratory updated successfully!" : "Laboratory added successfully!");
    
     setIsModalVisible(false);
      
     handleRefreshData();
-  }, [editingRecord?.typeId, handleRefreshData]);
+  }, [editingRecord?.testId, handleRefreshData]);
   
 
   const renderLoadingState = () => (
@@ -456,8 +458,8 @@ const LaboratoryDetails = () => {
       
       <LaboratoryModal
         visible={isModalVisible}
-        title={editingRecord?.typeId ? `Edit Laboratory` : 'Add New Laboratory'}
-        button={editingRecord?.typeId ? 'Update' : 'Save'}
+        title={editingRecord?.testId ? `Edit Laboratory` : 'Add New Laboratory'}
+        button={editingRecord?.testId ? 'Update' : 'Save'}
         onCancel={() => setIsModalVisible(false)}
         initialValues={editingRecord}
         setIsModalVisible={setIsModalVisible}
