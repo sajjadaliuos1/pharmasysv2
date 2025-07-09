@@ -97,7 +97,7 @@ const Navbar = () => {
               { path: '/subCategory', label: 'Sub Category', icon: <FaList  /> },
               { path: '/uom', label: 'UOM', icon: <FaBalanceScale  /> },
               { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> }, 
-              { path: '/laboratoryDetails', label: 'Laboratory', icon: <FaCreditCard /> },             
+                           
             ],
           },
           {
@@ -164,6 +164,16 @@ const Navbar = () => {
             dropdown: true,
             links: [
               { path: '/user', label: 'User', icon: <FaUser /> },
+            ]
+          },
+          
+           {
+            label: 'Laboratory',
+            icon: <FaCreditCard />,
+            dropdown: true,
+            links: [
+              { path: '/laboratoryDetails', label: 'Laboratory', icon: <FaCreditCard /> },
+              { path: '/booktest', label: 'Book Test', icon: <FaCreditCard /> },
             ]
           },
         ];

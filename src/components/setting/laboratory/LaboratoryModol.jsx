@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Form, Button, Input, message, Row, Col } from 'antd';
-import { createCategory } from '../../../api/API';
+import { createTest } from '../../../api/API';
 import preventWheelChange from '../../common/PreventWheel';
 
 
@@ -31,10 +31,10 @@ const [processingTime, setProcessingTime] = useState('');
 
       const payload = {
         ...values,
-        typeId: values.typeId ? Number(values.typeId) : 0,
+        testId: values.testId ? Number(values.testId) : 0,
       };
 
-      const response = await createCategory(payload);
+      const response = await createTest(payload);
 
       if (!response || !response.data) throw new Error("Invalid response from server");
 
@@ -80,12 +80,12 @@ const [processingTime, setProcessingTime] = useState('');
         layout="vertical"
         initialValues={initialValues}
       >
-        <Form.Item name="typeId" noStyle />
+        <Form.Item name="testId" noStyle />
 
         <Row gutter={[0, 16]}>
           <Col span={24}>
             <Form.Item
-              name="typeName"
+              name="testName"
               label="Test Name"
               rules={[
                 { required: true, message: 'Please enter Test name', whitespace: true },
@@ -98,7 +98,7 @@ const [processingTime, setProcessingTime] = useState('');
 
           <Col span={24}>
             <Form.Item
-              name="amountIn"
+              name="testAmount"
               label="Test Amount"
               rules={[{ required: true, message: 'Please enter amount' }]}
             >

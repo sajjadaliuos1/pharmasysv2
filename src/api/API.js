@@ -137,4 +137,11 @@ export const geExpense = (startDate, endDate) => {
     params: { startDate, endDate } 
   });
 };
+
+// Laboratory Api
+export const getTests = () => API.get('/TestReport/testName');
+export const createTest = (data) => API.post('/TestReport/testName', data);
+export const deleteTest = (id) => API.post(`/TestReport/testName/${id}`);
+
+
 export default API;
