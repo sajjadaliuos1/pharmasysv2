@@ -1,11 +1,11 @@
 import axios from "axios";
 
 const API = axios.create({
-   baseURL: "https://ph.idotsolution.com/api",
-    //  baseURL: "http://192.168.100.7:5277/api", //  Office
-    // baseURL: "http://192.168.10.12:5277/api", // Home
+  //  baseURL: "https://ph.idotsolution.com/api",
+      baseURL: "http://192.168.100.7:5277/api", //  Office
+    //baseURL: "http://192.168.10.12:5277/api", // Home
     //  baseURL: "http://192.168.10.8:5277/api", // Clg
-    // baseURL: "http://192.168.214.9:5277/api", // Mobile Hotspot 
+    // baseURL: "http://192.168.17.9:5277/api", // Mobile Hotspot 
 });
 
 API.interceptors.request.use((config) => {
@@ -17,7 +17,7 @@ API.interceptors.request.use((config) => {
 });
 
 
-export const getDashbordData = () => API.get('/Setting/summary');
+export const getDashbordData = () => API.get('/Setting/dashboardData');
 
 // User Api
 export const getUser = () => API.get('/Employee/employee');
@@ -137,11 +137,27 @@ export const geExpense = (startDate, endDate) => {
     params: { startDate, endDate } 
   });
 };
-
-// Laboratory Api
+export const getTestNo = () => API.get('/TestReport/newTestNo');
 export const getTests = () => API.get('/TestReport/testName');
 export const createTest = (data) => API.post('/TestReport/testName', data);
 export const deleteTest = (id) => API.post(`/TestReport/testName/${id}`);
+export const addTestRecord = (data) => API.post('/TestReport/addTestRecord', data);
+export const getTestPrint = (id) => API.get(`TestReport/testReportPrint/${id}`);
+export const testRecord = (startDate, endDate) => {
+   return API.get(`TestReport/testRecord`, { 
+    params: { startDate, endDate } 
+  });
+};
 
+//NICU
 
+export const newNicuNumber = () => API.get('/Nicu/newNicuNumber');
+export const createNicuRecord = (data) => API.post('/Nicu/nicuRecord', data);
+export const getNicuPatient = (id) => API.post(`/Nicu/getNicuPatient/${id}`);
+export const getNicuRecord = (startDate, endDate) => {
+   return API.get(`Nicu/getNicuRecord`, { 
+    params: { startDate, endDate } 
+  });
+};
+export const getNicuPrint = (id) => API.get(`Nicu/getNicuPrint/${id}`);
 export default API;

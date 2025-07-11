@@ -3,20 +3,20 @@ import ReactDOM from "react-dom/client";
 import { AuthProvider } from "./context/AuthContext";
 import AppRoutes from "./routes/AppRoutes";
 import "bootstrap/dist/css/bootstrap.min.css";
-// import "@fortawesome/fontawesome-free/css/all.min.css";
+import { CompanyInfoProvider } from "./components/common/CompanyInfoContext"; 
 import './App.css'
 import "@fortawesome/fontawesome-free/css/all.min.css";
-// npm install @fortawesome/fontawesome-free
 
 
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  // <React.StrictMode>
     <AuthProvider>
+     <CompanyInfoProvider> 
       <AppRoutes />
+    </CompanyInfoProvider>
     </AuthProvider>
-  // </React.StrictMode>
+  
 );
 
 

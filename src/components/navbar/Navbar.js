@@ -45,6 +45,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       localStorage.clear();
+       localStorage.removeItem("companyInfo");
       sessionStorage.clear();
       window.location.reload();
       logout();
@@ -96,8 +97,7 @@ const Navbar = () => {
               { path: '/category', label: 'Category', icon: <FaListAlt /> },
               { path: '/subCategory', label: 'Sub Category', icon: <FaList  /> },
               { path: '/uom', label: 'UOM', icon: <FaBalanceScale  /> },
-              { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> }, 
-                           
+              { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },              
             ],
           },
           {
@@ -159,21 +159,21 @@ const Navbar = () => {
             ],
           },
           {
-            label: 'User',
-            icon: <FaRegUser />,
-            dropdown: true,
-            links: [
-              { path: '/user', label: 'User', icon: <FaUser /> },
-            ]
-          },
-          
-           {
             label: 'Laboratory',
             icon: <FaCreditCard />,
             dropdown: true,
             links: [
               { path: '/laboratoryDetails', label: 'Laboratory', icon: <FaCreditCard /> },
               { path: '/booktest', label: 'Book Test', icon: <FaCreditCard /> },
+               { path: '/nicu', label: 'Nicu', icon: <FaCreditCard /> },
+            ]
+          },
+          {
+            label: 'User',
+            icon: <FaRegUser />,
+            dropdown: true,
+            links: [
+              { path: '/user', label: 'User', icon: <FaUser /> },
             ]
           },
         ];

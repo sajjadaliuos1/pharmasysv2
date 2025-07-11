@@ -8,13 +8,17 @@ import { AllCommunityModule } from "ag-grid-community";
 import {  message, Button, Empty, Space, Tooltip} from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import { InfoCircleOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined,PrinterOutlined } from '@ant-design/icons';
 import SaleRecordDetail from "./SaleRecordDetail";
 
-import { Toaster } from "../../common/Toaster";
+
+import {useCompanyInfo } from '../../common/CompanyInfoContext';
+
 import Loader from "../../common/Loader";
 import { getSaleDateRange } from "../../../api/API";
 import dayjs from 'dayjs';
+
+import {NewSaleInvoice} from "../../utils/NewSaleInvoice";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
@@ -30,7 +34,7 @@ const  SaleRecord = () => {
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingRecord, setEditingRecord] = useState(null);
+  
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
@@ -40,6 +44,27 @@ const  SaleRecord = () => {
   dayjs() // Today
   ]);
   
+
+
+
+const { companyInfo, fetchCompanyInfo } = useCompanyInfo();
+
+
+const handlePrint = async (invoiceId) => {
+    let company = companyInfo;
+
+    if (!company) {
+      console.log("Company info not found in context, fetching from API...");
+      company = await fetchCompanyInfo(); 
+      if (!company) {
+        alert("Company info is not available");
+        return;
+      }
+    }
+
+    await NewSaleInvoice(invoiceId, company);
+  };
+
    const getColumnDefs = useCallback(() => {
     return [
       {
@@ -113,7 +138,7 @@ const  SaleRecord = () => {
               sortable: false,
               pinned: 'right',
               filter: false,
-              minWidth: 60,
+              minWidth: 100,
               cellRenderer: (params) => {
                 return (
                   <Space size="middle">
@@ -123,6 +148,19 @@ const  SaleRecord = () => {
                         onClick={() => {
                           setSaleId(params.data.saleId); 
                           setIsModalVisible(true);
+                        }}
+                        size="small"
+                    />
+                     
+                    </Tooltip>
+
+                     <Tooltip title="Print">
+                      <Button 
+                        icon={<PrinterOutlined />} 
+                        onClick={() => 
+                        {
+
+                          handlePrint(params.data.invoiceNo);                          
                         }}
                         size="small"
                     />
