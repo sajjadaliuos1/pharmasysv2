@@ -32,9 +32,9 @@ import User from "../components/forms/users/User";
 // BookTest
 import LaboratoryDetail from "../components/forms/laboratory/LaboratoryDetails";
 import BookTest from "../components/forms/laboratory/BookTest";
-
+import LaboratoryList from "../components/forms/laboratory/LaboratoryList";
 import Nicu from "../components/forms/nicu/Nicu";
-
+import NicuList from "../components/forms/nicu/NicuList";
 const isAuthenticated = () => {
   return !!localStorage.getItem("authToken"); 
 };
@@ -79,7 +79,9 @@ const AppRoutes = () => {
         <Route path="/user" element={<User />} />
         <Route path="/laboratoryDetails" element={<LaboratoryDetail/>} /> 
           <Route path="/booktest" element={<BookTest/>} />
+          <Route path="/laboratorylist" element={<LaboratoryList/>} />
   <Route path="/nicu" element={<Nicu/>} />
+  <Route path="/niculist" element={<NicuList/>} />
 
         </Route>
       </Routes>

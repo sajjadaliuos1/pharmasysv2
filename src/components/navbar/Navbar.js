@@ -165,7 +165,9 @@ const Navbar = () => {
             links: [
               { path: '/laboratoryDetails', label: 'Laboratory', icon: <FaCreditCard /> },
               { path: '/booktest', label: 'Book Test', icon: <FaCreditCard /> },
+              { path: '/laboratorylist', label: 'Laboratory List', icon: <FaCreditCard /> },
                { path: '/nicu', label: 'Nicu', icon: <FaCreditCard /> },
+               { path: '/niculist', label: 'Nicu List', icon: <FaCreditCard /> },
             ]
           },
           {

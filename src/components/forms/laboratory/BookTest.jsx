@@ -106,9 +106,15 @@ const fetchPaymentMethod = async () => {
         setPaymentMethodMap(map);
     
       if (paymentList.length > 0 && !form1.getFieldValue("PaymentMethodId")) {
+let firstId = 0;
+        const getSajjad = paymentList.find(s => s.name.includes('HBl'));
+        if (getSajjad) {
+         firstId   = getSajjad.paymentMethodId;
+        }
+        else{
       const firstPaymentMethod = paymentList[0];
-      const firstId = firstPaymentMethod.paymentMethodId;
-       
+       firstId = firstPaymentMethod.paymentMethodId;
+       }
       form1.setFieldsValue({ paymentMethodId: firstId });
       
     }
@@ -179,7 +185,7 @@ const handleAddOrUpdate = () => {
       testId: values.testId,
       testName: testList.find(t => t.testId === values.testId)?.testName || '',
       testAmount: values.testAmount,
-      processingTime: values.processingTime,
+      processingTime: values.processingTime + ':00',
       description: values.description,
       key: values.testId
     };
@@ -229,8 +235,12 @@ const handleAddOrUpdate = () => {
   const handleEdit = (record, index) => {
     setEditingIndex(index);
     setSelectedTestId(record.testId);
-    form.setFieldsValue(record);
-  };
+      const trimmedTime = record.processingTime?.split(':').slice(0, 2).join(':') || '';
+     form.setFieldsValue({
+     ...record,
+      processingTime: trimmedTime,
+    });
+  }
 
 const handleDelete = (index) => {
   const updated = [...cart];

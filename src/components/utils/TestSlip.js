@@ -252,9 +252,8 @@ export const TestSlip = async (invoiceNo, companyInfo) => {
         </head>
         <body>
           <div class="header">
-            <div class="center shop-name">${companyInfo.data.shopName || 'Shop Name'}</div>
-            <div class="center shop-address">${companyInfo.data.phoneNo || ''} - ${companyInfo.data.contactNo || ''}</div>
-            <div class="center shop-address">${companyInfo.data.address || ''}</div>
+            <div class="center shop-name">${companyInfo.data.address || 'Shop Name'}</div>
+            <div class="center shop-address"> Laboratory  -   ${companyInfo.data.contactNo || ''}</div>            
           </div>
           
         <div class="invoice-info">
@@ -272,8 +271,9 @@ export const TestSlip = async (invoiceNo, companyInfo) => {
     <span> ${invoiceData.data.data.contactNo}</span>
     <span class="right"> ${invoiceData.data.data.address }</span>
   </div>
-   
-
+   <div class="row-top">
+    <span> Refer By: ${invoiceData.data.data.doctorName}</span>   
+  </div>
 </div>
 <div class="sale-invoice-bar">TEST SLIP</div>
           
