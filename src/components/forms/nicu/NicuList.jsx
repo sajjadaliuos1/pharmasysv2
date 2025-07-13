@@ -39,8 +39,8 @@ const  NicuList = () => {
   const loadingRef = useRef(false); 
   const [dateRange, setDateRange] = 
   useState([
-   dayjs().subtract(30, 'day'), // 30 days ago
-  dayjs() // Today
+   dayjs().subtract(30, 'day'), 
+  dayjs() 
   ]);
   const { companyInfo, fetchCompanyInfo } = useCompanyInfo();
 
@@ -245,9 +245,9 @@ const fetchPaymentDetailData = useCallback(async () => {
     setLoading(false);
     loadingRef.current = false;
   }
-}, [messageApi, dateRange]);  // Added paymentId to dependencies
+}, [messageApi, dateRange]); 
 
-// Consolidated refresh function
+
 const handleRefreshData = useCallback(async () => {
   await fetchPaymentDetailData();  // Reuse the same logic
 }, [fetchPaymentDetailData]);
@@ -259,6 +259,7 @@ useEffect(() => {
   }
 }, [dateRange, handleRefreshData]);
 
+// new commeted cod eby inam
   const handleExportPDF = useCallback(() => {
       const fileName = prompt("Enter file name for PDF:", "category-data");
       if (!fileName) return;
