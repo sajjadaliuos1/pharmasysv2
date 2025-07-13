@@ -71,6 +71,9 @@ const [newInvChecking, setNewInvChecking] = useState();
 
  const [totalItems, setTotalItems] = useState(0);
 
+const [roundOffTotalAmount,setRoundOffTotalAmount] = useState(0)
+
+
   useEffect(() => {
     fetchBoxProduct();
      fetchCustomer();
@@ -79,26 +82,26 @@ const [newInvChecking, setNewInvChecking] = useState();
   }, []);
   
  
-useEffect(() => {
-  const discountedTotal = cartItems.reduce((sum, item) => {
-      return sum + parseFloat(item.totalAmount || item.saleItemAmount || 0);
-  }, 0);
+// useEffect(() => {
+//   const discountedTotal = cartItems.reduce((sum, item) => {
+//       return sum + parseFloat(item.totalAmount || item.saleItemAmount || 0);
+//   }, 0);
 
-  const rounded = applyRoundOff(discountedTotal).toFixed(2);
+//   const rounded = applyRoundOff(discountedTotal).toFixed(2);
 
-  const allValues = form1.getFieldsValue();
+//   const allValues = form1.getFieldsValue();
 
-  if (allValues.totalAmount !== rounded) {
-    // Update totalAmount
-    form1.setFieldsValue({ totalAmount: rounded });
+//   if (allValues.totalAmount !== rounded) {
+//     // Update totalAmount
+//     form1.setFieldsValue({ totalAmount: rounded });
 
-    // Immediately update all dependent fields
-    handleForm1Change({ totalAmount: rounded }, {
-      ...allValues,
-      totalAmount: rounded
-    });
-  }
-}, [cartItems]);
+//     // Immediately update all dependent fields
+//     handleForm1Change({ totalAmount: rounded }, {
+//       ...allValues,
+//       totalAmount: rounded
+//     });
+//   }
+// }, [cartItems]);
 
  
 
@@ -150,6 +153,12 @@ const fetchInvoicesByCustomer = async (customerId) => {
     setLoadingInvoices(true);
     const response = await getOpenInvoice(customerId); 
 
+
+
+      const currentFormValues = form1.getFieldsValue();
+      const totalItemAMont =parseFloat(currentFormValues.totalAmount || 0);
+      const discountAmount = parseFloat(currentFormValues.supplierDiscount || 0);
+       
     if (response.data && response.data.data) {
       const invoiceList = response.data.data.map(inv => ({
         value: inv.openInvoiceId || inv.saleId, 
@@ -162,13 +171,26 @@ const fetchInvoicesByCustomer = async (customerId) => {
      const first = invoiceList[0];
       setSelectedInvoiceId(first.value);
       setNewInvoiceNo(first.text);
+       
        setCustomerRemainingAmount(first.amount);
-      form.setFieldsValue({ invoiceId: first.value });
+      form.setFieldsValue({ invoiceId: first.value
+       });
+
+       
+        form1.setFieldsValue({
+        customerOldAmount: parseFloat(first.amount || 0),
+        paidAmount: parseFloat(first.amount || 0) + totalItemAMont -discountAmount,
+       
+       });
 
     } else {
       setInvoiceNumbers([]);
       setSelectedInvoiceId(null);
-      form.setFieldsValue({ invoiceId: null });
+      form.setFieldsValue({ invoiceId: null,      
+       });
+       form1.setFieldsValue({
+        customerOldAmount: 0
+       });
       Toaster.warning("No invoices found for this customer.");
     }
   } catch (err) {
@@ -274,9 +296,9 @@ stripProductCache.current = productList;
           customerOldAmount: remaining,
           paidAmount: 0,
           netAmount: totalItemAmount,
-          totalAmountWithOld: (parseFloat(totalItemAmount || 0) + parseFloat(remaining || 0)).toFixed(2)
+          payableAmount: (parseFloat(totalItemAmount || 0) + parseFloat(remaining || 0)).toFixed(2)
         });
-      setShowPaymentMethod(false);
+      // setShowPaymentMethod(false);
       fetchInvoicesByCustomer(customerId);
       }
     
@@ -299,7 +321,7 @@ stripProductCache.current = productList;
          const paymentList = response.data.data;
       setPaymentMethod(paymentList);
 
-      // use for dropdown to get record in fast....
+     
         const map = new Map();
         paymentList.forEach(s => map.set(s.paymentMethodId, s));
         setPaymentMethodMap(map);
@@ -345,9 +367,19 @@ const createNewInvoiceNo = async () => {
          text : newInvoiceValue,
         amount: 0,
       };
+
+       
+
       setInvoiceNumbers(prev => [newInvoice, ...prev]);
     }
-
+const currentFormValues = form1.getFieldsValue();
+      const totalItemAMont =parseFloat(currentFormValues.totalAmount || 0);
+      const discountAmount = parseFloat(currentFormValues.supplierDiscount || 0);
+       
+        form1.setFieldsValue({
+        customerOldAmount: 0,
+        paidAmount: totalItemAMont -discountAmount,       
+       });
     setNewInvoiceNo(invoiceNo);
     setSelectedInvoiceId(newInvoiceValue);
     form.setFieldsValue({ invoiceId: newInvoiceValue });
@@ -508,7 +540,8 @@ if (finalRate < minSaleRate) {
   });
 };
 
- const handleAddOrUpdate = () => {
+ const handleAddOrUpdate = () => 
+  {
   form.validateFields().then(values => {
     const enteredQuantity = parseFloat(values.saleQuantity || values.quantity ||  0);
     const unitSaleRate = parseFloat(values.unitSaleRate || values.saleRate || 0);
@@ -531,7 +564,8 @@ if (finalRate < minSaleRate) {
     console.log("cart Items === ", cartItems);
     let updatedCart;
 
-    if (editingIndex !== null) {
+    if (editingIndex !== null) 
+      {
      // on Edit
       updatedCart = [...cartItems];
       updatedCart[editingIndex] = {
@@ -600,29 +634,35 @@ if (finalRate < minSaleRate) {
       }
     }
 
-    // Apply additional discount if any
+     
     const cartWithDiscount = reapplyAdditionalDiscount(updatedCart);
     setCartItems(cartWithDiscount);
 
-    // Calculate the new total from cart items
-    const newTotal = cartWithDiscount.reduce((sum, item) => {
-      return sum + parseFloat(item.saleItemAmount || 0);
-    }, 0);
-    
-    // Apply round-off immediately
-    const roundedTotal = applyRoundOff(newTotal).toFixed(2);
-    
-    // Update form1 with rounded total
-    form1.setFieldsValue({
-      totalAmount: roundedTotal
-    });
+const newTotal = cartWithDiscount.reduce((sum, item) => {
+  return sum + parseFloat(item.saleItemAmount || 0);
+}, 0);
 
-    // Trigger form1 change to update all dependent fields
-    handleForm1Change({}, {
-      ...form1.getFieldsValue(),
-      totalAmount: roundedTotal
-    });
- 
+const roundedTotal = applyRoundOff(newTotal);
+
+const currentFormValues = form1.getFieldsValue();
+const discountAmount = parseFloat(currentFormValues.supplierDiscount || 0);
+const cusOldAmount = parseFloat(currentFormValues.customerOldAmount || 0);
+
+const netAmount = roundedTotal - discountAmount;
+const payableAmount = netAmount + cusOldAmount;
+
+const calculatedPaidAmount = payableAmount;
+
+const remainingAmount = payableAmount - calculatedPaidAmount; 
+
+form1.setFieldsValue({
+  totalAmount: roundedTotal.toFixed(2),
+  netAmount: netAmount.toFixed(2),
+  payableAmount: payableAmount.toFixed(2),
+  paidAmount: calculatedPaidAmount.toFixed(2),
+  remainingAmount: remainingAmount.toFixed(2),
+});
+
    form.resetFields([
   'saleDate',
   'purchaseInventoryId',
@@ -639,6 +679,7 @@ if (finalRate < minSaleRate) {
     setEditingIndex(null);
     setMinSaleRate('');
     setFinalPurchaseRate('');
+  setShowPaymentMethod(true);
   });
 };
 
@@ -668,9 +709,9 @@ const handleEdit = async(index) => {
     finalRate: item.finalRate,
     saleQuantity: item.saleQuantity,
     saleItemAmount: item.saleItemAmount,
-    
   });
-  
+  //selectedInvoiceId
+//InvoiceId
  
   const product = productMap.get(item.purchaseInventoryId);
   setRemainingQuantity(product?.remainingQuantity || 0);
@@ -685,31 +726,36 @@ const handleDelete = (index) => {
   const updatedCart = [...cartItems];
   updatedCart.splice(index, 1);
   
-  // Apply additional discount if any
   const cartWithDiscount = reapplyAdditionalDiscount(updatedCart);
   setCartItems(cartWithDiscount);
 
-  // Calculate the new total from updated cart
   const newTotal = cartWithDiscount.reduce((sum, item) => {
-    return sum + parseFloat(item.totalAmount || item.saleItemAmount || 0);
+    return sum + parseFloat(item.saleItemAmount || 0);
   }, 0);
   
-  // Apply round-off immediately
-  const roundedTotal = applyRoundOff(newTotal).toFixed(2);
+  const roundedTotal = applyRoundOff(newTotal);
   
-  // Update form1 with rounded total
-  form1.setFieldsValue({
-    totalAmount: roundedTotal
-  });
+   const currentFormValues = form1.getFieldsValue();
+  const discountAmount = parseFloat(currentFormValues.supplierDiscount || 0);
+  const cusOldAmount = parseFloat(currentFormValues.customerOldAmount || 0);
+  
+   const netAmount = roundedTotal - discountAmount;
+  const payableAmount = netAmount + cusOldAmount;
+  
+  // Calculate paid amount based on the new payable amount
+  const calculatedPaidAmount = payableAmount;
 
-  // Trigger form1 change to update all dependent fields
-  handleForm1Change({}, {
-    ...form1.getFieldsValue(),
-    totalAmount: roundedTotal
+  // Calculate remaining amount
+  const remainingAmount = payableAmount - calculatedPaidAmount; // Will be 0.00 since paid = payable
+
+  form1.setFieldsValue({
+    totalAmount: roundedTotal.toFixed(2),
+    netAmount: netAmount.toFixed(2),
+    payableAmount: payableAmount.toFixed(2),
+    paidAmount: calculatedPaidAmount.toFixed(2),
+    remainingAmount: remainingAmount.toFixed(2),
   });
 };
-
- 
 const reapplyAdditionalDiscount = (updatedCart) => {
   const currentDiscount = parseFloat(form1.getFieldValue('supplierDiscount') || 0);
   if (currentDiscount > 0) {
@@ -732,40 +778,58 @@ const reapplyAdditionalDiscount = (updatedCart) => {
   return calculateRoundOffAndProfit(itemsWithoutDiscount);
 };
 
-
+ 
+ 
 const handleForm1Change = (changedValues, allValues) => {
-  const additionalDiscount = parseFloat(allValues.supplierDiscount || 0);
+  const totalAmount = parseFloat(allValues.totalAmount || 0);
+  const supplierDiscount = parseFloat(allValues.supplierDiscount || 0);
+  const customerOldAmount = parseFloat(allValues.customerOldAmount || 0);
   const paidAmount = parseFloat(allValues.paidAmount || 0);
-  const totalAmount = parseFloat(allValues.totalAmount || totalItemAmount || 0);
-  const oldCustomerAmount = parseFloat(customerRemainingAmount || 0);
-
-  const netAmount = Math.max(0, totalAmount - additionalDiscount);
-  const finalTotal = netAmount + oldCustomerAmount;
-  const remaining = Math.max(0, finalTotal - paidAmount);
-
+  
+  const netAmount = totalAmount - supplierDiscount;
+  
+  const payableAmount = netAmount + customerOldAmount;
+  
+  const remainingAmount = payableAmount - paidAmount;
   
   if (changedValues.supplierDiscount !== undefined) {
-    const updatedCartItems = calculateAdditionalDiscountByRate(cartItems, additionalDiscount);
-    setCartItems(updatedCartItems); 
-  }
-
-  setTimeout(() => {
+    const newPaidAmount = payableAmount; 
     form1.setFieldsValue({
       netAmount: netAmount.toFixed(2),
-      customerOldAmount: oldCustomerAmount.toFixed(2),
-      totalAmountWithOld: finalTotal.toFixed(2),
-      remainingAmount: remaining.toFixed(2)
+      payableAmount: payableAmount.toFixed(2),
+      paidAmount: newPaidAmount.toFixed(2),
+      remainingAmount: '0.00' 
     });
-  }, 0);
+  }
 
-  setShowPaymentMethod(paidAmount > 0);
+  else if (changedValues.paidAmount !== undefined) {
+    form1.setFieldsValue({
+      netAmount: netAmount.toFixed(2),
+      payableAmount: payableAmount.toFixed(2),
+      remainingAmount: remainingAmount.toFixed(2)
+    });
+  }
+
+  else {
+    form1.setFieldsValue({
+      netAmount: netAmount.toFixed(2),
+      payableAmount: payableAmount.toFixed(2)
+    });
+  }
+   if (payableAmount > 0) {
+     setShowPaymentMethod(true);
+  } else {
+    console.log("Payable Amount is 0, hiding payment method");
+    setShowPaymentMethod(false);
+  }
 };
+
 
 const applyRoundOff = (amount) => {
   const numAmount = parseFloat(amount);
   const lastDigit = numAmount % 10;
 
-  if (lastDigit < 5) {
+  if (lastDigit < 3) {
     return Math.floor(numAmount / 10) * 10;
   } else {
     return Math.ceil(numAmount / 10) * 10;
@@ -1174,7 +1238,7 @@ const handleSubmit = async () => {
     }
 
     const paidAmount = parseFloat(formData.paidAmount || 0);
-    const payableAmount = parseFloat(formData.totalAmountWithOld || 0);
+    const payableAmount = parseFloat(formData.payableAmount  || 0);
     
     const customerIndex = customers.findIndex(c => c.customerId === customerId);
 
@@ -1345,22 +1409,14 @@ const [isChecked, setIsChecked] = useState(false);
                     onChange={(customerId) => {
                      const selectedCustomer = customerMap.get(customerId);
                      const customerName = selectedCustomer ? selectedCustomer.customerName : "";
-                    const remaining = selectedCustomer ? selectedCustomer.remaining || 0 : 0;
+                    
                     setCustomerName(customerName);
 
-                    // setCustomerRemainingAmount(remaining);
                     fetchInvoicesByCustomer(customerId);
-                    
-                    form1.setFieldsValue({
-                    customerId,
-                    customerOldAmount: remaining,
-                    paidAmount: 0,
-                    netAmount: totalItemAmount,
-                    totalAmountWithOld: (parseFloat(totalItemAmount || 0) + parseFloat(remaining || 0)).toFixed(2)
+                   form1.setFieldsValue({
+                     customerId,
                       });
-
-                setShowPaymentMethod(false);
-}}
+                      }}
 
                     />
                      <Button
@@ -1391,8 +1447,22 @@ const [isChecked, setIsChecked] = useState(false);
     if (selectedOption) {
       setNewInvoiceNo(selectedOption.text);  
        setCustomerRemainingAmount(selectedOption.amount);
+        const currentFormValues = form1.getFieldsValue();
+                    const totalItemAMont =parseFloat(currentFormValues.totalAmount || 0);
+                    const discountAmount = parseFloat(currentFormValues.supplierDiscount || 0);
+                    const oldAMount = parseFloat(selectedOption.amount || 0);
+                     
+                    form1.setFieldsValue({
+                     
+                    customerOldAmount: parseFloat(selectedOption.amount || 0),
+                    // paidAmount: 0,
+                    netAmount: totalItemAmount,
+                    // payableAmount: (parseFloat(totalItemAmount || 0) + parseFloat(remaining || 0)).toFixed(2),
+                     paidAmount: (parseFloat(totalItemAMont || 0) + parseFloat(oldAMount || 0) -  parseFloat(discountAmount || 0)).toFixed(2)
+                      });
+       
     } else {
-      setNewInvoiceNo(''); // fallback
+      setNewInvoiceNo('');  
     }
   }}
     allowClear
@@ -1597,7 +1667,7 @@ label={`Product Name - ${remainingQuantity}`}
             style={{ width: '100%' }}
             min={0}
             max={100}     
-            step="0.01"
+            step="1"
             precision={2}
             placeholder="Enter discount %"
             onFocus={() => {
@@ -1620,7 +1690,8 @@ label={`Product Name - ${remainingQuantity}`}
     label="Quantity"
     rules={[{ required: true, message: 'Please enter quantity' }]}
   >
-    <Input
+    <InputNumber
+    style={{ width: '100%' }}
       type="number"
       placeholder="Enter quantity"
       onFocus={() => {
@@ -1682,87 +1753,195 @@ label={`Product Name - ${remainingQuantity}`}
   dataSource={cartItems}
   rowKey={(record, index) => index}
   pagination={false}
-  footer={() => {
-    const actualTotal = cartItems.reduce((sum, item) => {
-      const quantity = parseFloat(item.quantity || 0);
-      const saleRate = parseFloat(item.saleRate || 0);
-      return sum + (quantity * saleRate);
-    }, 0);
+// Replace your current Table footer calculation with this:
 
-    const discountedTotal = cartItems.reduce((sum, item) => {
-      return sum + parseFloat(item.totalAmount || 0);
-    }, 0);
+footer={() => {
+  const actualTotal = cartItems.reduce((sum, item) => {
+    const quantity = parseFloat(item.saleQuantity || 0);
+    const saleRate = parseFloat(item.saleRate || 0);
+    return sum + (quantity * saleRate);
+  }, 0);
 
-    const finalTotal = cartItems.reduce((sum, item) => {
-      return sum + parseFloat(item.finalAmount || item.totalAmount || 0);
-    }, 0);
+  const discountedTotal = cartItems.reduce((sum, item) => {
+    const quantity = parseFloat(item.saleQuantity || 0);
+    const saleRate = parseFloat(item.saleRate || 0);
+    const discountPercent = parseFloat(item.discountPercent || 0);
+    const afterDiscountRate = saleRate - (saleRate * discountPercent / 100);
+    return sum + (quantity * afterDiscountRate);
+  }, 0);
+
+  const actualTotalAmount = actualTotal.toFixed(2);
+  const itemLevelDiscount = (actualTotal - discountedTotal).toFixed(2);
+
+  // Fix: finalTotal should be discountedTotal, not a complex calculation
+  const finalTotal = discountedTotal;
+
+  const totalItm = cartItems.reduce((sum, item) => {
+    return sum + parseFloat(item.saleQuantity);
+  }, 0);
+  
+  setTotalItems(totalItm);
+  
+  const totalAmountRoundOff = applyRoundOff(finalTotal).toFixed(2);
+  setRoundOffTotalAmount(totalAmountRoundOff);
+  
+  const currentFormValues = form1.getFieldsValue();
+  const cusOldAmount = parseFloat(currentFormValues.customerOldAmount || 0);
+  const discountAmount = parseFloat(currentFormValues.supplierDiscount || 0);
+  
+  // Fix: Calculate netAmount and payableAmount correctly
+  const netAmount = parseFloat(totalAmountRoundOff) - discountAmount;
+  const payableAmount = netAmount + cusOldAmount;
+  
+  form1.setFieldsValue({
+    totalAmount: totalAmountRoundOff,
+    netAmount: netAmount.toFixed(2),
+    payableAmount: payableAmount.toFixed(2)
+  });
+
+  return (
+    <div style={{
+      backgroundColor: '#f9f9f9',
+      padding: '0px',
+      borderTop: '1px solid #e0e0e0',
+      fontSize: '15px',
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontWeight: '500'
+      }}>
+        <span>Total Items:</span>
+        <span>{totalItm.toFixed(0)}</span>
+      </div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontWeight: '500'
+      }}>
+        <span>Actual Sale Total (Before Any Discount):</span>
+        <span>Rs. {actualTotal.toFixed(2)}</span>
+      </div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontWeight: '500',
+        color: '#ff4d4f'
+      }}>
+        <span>Item Level Discount:</span>
+        <span>- Rs. {itemLevelDiscount}</span>
+      </div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontWeight: '600',
+        fontSize: '16px',
+        color: '#3f8600'
+      }}> 
+        <span>Final Payable Amount:</span>
+        <span>Rs. {finalTotal.toFixed(2)}</span>
+      </div>
+    </div>
+  );
+}}
+//   footer={() => {
+//     const actualTotal = cartItems.reduce((sum, item) => {
+//       const quantity = parseFloat(item.saleQuantity || 0);
+//       const saleRate = parseFloat(item.saleRate || 0);
+//       return sum + (quantity * saleRate);
+//     }, 0);
+
+//     const discountedTotal = cartItems.reduce((sum, item) => {
+//       const quantity = parseFloat(item.saleQuantity || 0);
+//       const saleRate = parseFloat(item.saleRate || 0);
+//       const afterDiscountAmount = parseFloat(item.afterDiscountAmount || 0);
+//       const finaldddd = (saleRate - afterDiscountAmount);      
+//       return sum + parseFloat( finaldddd * quantity);
+//     }, 0);
+
+//  const actualTotalAMount = (actualTotal).toFixed(2);
+//   const itemLevelDiscount = (discountedTotal).toFixed(2);
+
+//     const finalTotal = cartItems.reduce((sum, item) => {
+//       return parseFloat(actualTotalAMount - itemLevelDiscount );
+//     }, 0);
 
    
- const totalItm = cartItems.reduce((sum, item) => {
-      return sum + parseFloat(item.quantity);
-    }, 0);
- setTotalItems(totalItm);
-    const itemLevelDiscount = (actualTotal - discountedTotal).toFixed(2);
+//  const totalItm = cartItems.reduce((sum, item) => {
+//       return sum + parseFloat(item.saleQuantity);
+//     }, 0);
+//  setTotalItems(totalItm);
+   
+//  const totalAMountRoundOff = applyRoundOff(finalTotal).toFixed(2);
+
+// setRoundOffTotalAmount(totalAMountRoundOff);
+//       const currentFormValues = form1.getFieldsValue();
+//       const cusOldAmount =parseFloat(currentFormValues.customerOldAmount || 0);
+//        const discountAmount = parseFloat(currentFormValues.supplierDiscount || 0);
+// const netAMount = totalAMountRoundOff - discountAmount;
+// const paybleAm = netAMount + cusOldAmount;
     
-    form1.setFieldsValue({
-      totalAmount: applyRoundOff(discountedTotal).toFixed(2)
-    });
+//     form1.setFieldsValue({
+//       totalAmount: totalAMountRoundOff,
+//       netAmount: netAMount,
+//       payableAmount: paybleAm
+//     });
 
-    handleForm1Change({}, {
-      ...form1.getFieldsValue(),
-      totalAmount: applyRoundOff(discountedTotal).toFixed(2)
-    });
+//     // handleForm1Change({}, {
+//     //   ...form1.getFieldsValue(),
+//     //   totalAmount: applyRoundOff(discountedTotal).toFixed(2)
+//     // });
 
-    return (
-      <div style={{
-        backgroundColor: '#f9f9f9',
-        padding: '0px',
-        borderTop: '1px solid #e0e0e0',
-        fontSize: '15px',
+//     return (
+//       <div style={{
+//         backgroundColor: '#f9f9f9',
+//         padding: '0px',
+//         borderTop: '1px solid #e0e0e0',
+//         fontSize: '15px',
          
-      }}>
-           <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          // marginBottom: '8px',
-          fontWeight: '500'
-        }}>
-          <span>Total TIems:</span>
-          <span>Rs. {totalItm.toFixed(2)}</span>
-        </div>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          // marginBottom: '8px',
-          fontWeight: '500'
-        }}>
-          <span>Actual Sale Total (Before Any Discount):</span>
-          <span>Rs. {actualTotal.toFixed(2)}</span>
-        </div>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
+//       }}>
+//            <div style={{
+//           display: 'flex',
+//           justifyContent: 'space-between',
+//           // marginBottom: '8px',
+//           fontWeight: '500'
+//         }}>
+//           <span>Total TIems:</span>
+//           <span>Rs. {totalItm.toFixed(2)}</span>
+//         </div>
+//         <div style={{
+//           display: 'flex',
+//           justifyContent: 'space-between',
+//           // marginBottom: '8px',
+//           fontWeight: '500'
+//         }}>
+//           <span>Actual Sale Total (Before Any Discount):</span>
+//           <span>Rs. {actualTotal.toFixed(2)}</span>
+//         </div>
+//         <div style={{
+//           display: 'flex',
+//           justifyContent: 'space-between',
         
-          fontWeight: '500',
-          color: '#ff4d4f'
-        }}>
-          <span>Item Level Discount:</span>
-          <span>- Rs. {itemLevelDiscount}</span>
-        </div>
+//           fontWeight: '500',
+//           color: '#ff4d4f'
+//         }}>
+//           <span>Item Level Discount:</span>
+//           <span>- Rs. {itemLevelDiscount}</span>
+//         </div>
        
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontWeight: '600',
-          fontSize: '16px',
-          color: '#3f8600'
-        }}> 
-          <span>Final Payable Amount:</span>
-          <span>Rs. { finalTotal.toFixed(2)}</span>
-        </div>
-      </div>
-    );
-  }}
+//         <div style={{
+//           display: 'flex',
+//           justifyContent: 'space-between',
+//           fontWeight: '600',
+//           fontSize: '16px',
+//           color: '#3f8600'
+//         }}> 
+//           <span>Final Payable Amount:</span>
+//           <span>Rs. { finalTotal.toFixed(2)}</span>
+//         </div>
+//       </div>
+//     );
+//   }}
   bordered
   columns={columns} 
   scroll={{ x: 'max-content' }}
@@ -1811,7 +1990,7 @@ initialValues={{
     supplierDiscount: '',
     netAmount: '0.00',
     customerOldAmount: '0.00',
-    totalAmountWithOld: '0.00',
+    payableAmount: '0.00',
     paidAmount: '',
     remainingAmount: '0.00'
   }}>
@@ -1891,7 +2070,7 @@ initialValues={{
     <label>Payable</label>
   </Col>
   <Col span={18}>
-    <Form.Item name="totalAmountWithOld" noStyle>
+    <Form.Item name="payableAmount" noStyle>
       <Input disabled />
     </Form.Item>
   </Col>

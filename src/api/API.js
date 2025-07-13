@@ -2,10 +2,10 @@ import axios from "axios";
 
 const API = axios.create({
   //  baseURL: "https://ph.idotsolution.com/api",
-      baseURL: "http://192.168.100.7:5277/api", //  Office
-    //baseURL: "http://192.168.10.12:5277/api", // Home
+     baseURL: "http://192.168.100.7:5277/api", //  Office
+    // baseURL: "http://192.168.10.12:5277/api", // Home
     //  baseURL: "http://192.168.10.8:5277/api", // Clg
-    // baseURL: "http://192.168.17.9:5277/api", // Mobile Hotspot 
+    // baseURL: "http://192.168.0.112:5277/api", // Mobile Hotspot 
 });
 
 API.interceptors.request.use((config) => {
@@ -108,10 +108,11 @@ export const getCustomerPaymentByDateRange = (id, startDate, endDate) => {
   });
 };
 
-export const CloseInvoice = (id) => API.delete(`/Sale/closeInvoice/${id}`);
+
 
 
 // Sale Api
+export const CloseInvoice = (id) => API.delete(`/Sale/closeInvoice/${id}`);
 export const getNewInvoice = () => API.get('/Sale/newInvoice');
 export const getBoxProduct = () => API.get('/Sale/boxProduct');
 export const getStripProduct = () => API.get('/Sale/stripProduct');
@@ -143,6 +144,7 @@ export const createTest = (data) => API.post('/TestReport/testName', data);
 export const deleteTest = (id) => API.post(`/TestReport/testName/${id}`);
 export const addTestRecord = (data) => API.post('/TestReport/addTestRecord', data);
 export const getTestPrint = (id) => API.get(`TestReport/testReportPrint/${id}`);
+export const getTestRecordDetails = (id) => API.get(`TestReport/testRecordDetail/${id}`);
 export const testRecord = (startDate, endDate) => {
    return API.get(`TestReport/testRecord`, { 
     params: { startDate, endDate } 
@@ -152,8 +154,8 @@ export const testRecord = (startDate, endDate) => {
 //NICU
 
 export const newNicuNumber = () => API.get('/Nicu/newNicuNumber');
-export const createNicuRecord = (data) => API.post('/Nicu/nicuRecord', data);
-export const getNicuPatient = (id) => API.post(`/Nicu/getNicuPatient/${id}`);
+export const createNicuRecord = (data) => API.post('/Nicu/createNicuRecord', data);
+export const getNicuPatient = (sts) => API.get(`/Nicu/getNicuPatient/${sts}`);
 export const getNicuRecord = (startDate, endDate) => {
    return API.get(`Nicu/getNicuRecord`, { 
     params: { startDate, endDate } 

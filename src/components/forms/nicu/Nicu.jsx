@@ -9,13 +9,15 @@ import { AllCommunityModule } from "ag-grid-community";
 import {  message, Button, Empty, Space, Tooltip } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
-import { EditOutlined, DeleteOutlined, DollarCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
-
+import { EditOutlined, PrinterOutlined,LogoutOutlined  } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
 import {  getNicuPatient } from "../../../api/API";
 import NicuModal from "./NicuModal";
-
+import NicuDischargeModal from "./NicuDischargeModal";
+import { useCompanyInfo } from '../../common/CompanyInfoContext';
+import { NicuSlip } from '../../utils/NicuSlip';
 ModuleRegistry.registerModules([
   AllCommunityModule, 
 ]);
@@ -28,48 +30,88 @@ const Nicu = () => {
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-
+    const [isDischargeModalVisible, setIsDischargeModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
-
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
-  const navigate = useNavigate();
+ 
   const AddnewModal = useCallback((record) => {
-    setEditingRecord(record ? { ...record } : {  patientName: '', contact: '', address: '', bed : '', admissionDatetime: '', fee:'' });
+    setEditingRecord(record ? { ...record } : { referBy: '', patientName: '', contact: '', address: '', bed : '', admissionDatetime: '', fee:'' });
     setIsModalVisible(true);
+  }, []);
+
+
+  const AddDischargeModal = useCallback((record) => {
+    setEditingRecord(record ? { ...record } : { referBy: '', patientName: '', contact: '', address: '', bed : '', admissionDatetime: '', fee:'' });
+    setIsDischargeModalVisible(true);
   }, []);
 
  
 
-  const handleEdit = useCallback((id) => {
+  const handleDischarge = useCallback((id) => 
+    {
+    const record = rowData.find(item => item.nicuId === id);
+    if (record) {
+      AddDischargeModal(record);
+    }
+  }, [AddDischargeModal, rowData]);
+
+  const handleEdit = useCallback((id) => 
+    {
     const record = rowData.find(item => item.nicuId === id);
     if (record) {
       AddnewModal(record);
     }
   }, [AddnewModal, rowData]);
  
+
+  const { companyInfo, fetchCompanyInfo } = useCompanyInfo();
+  
+   const handlePrint = async (invoiceId) => {
+       let company = companyInfo;
+       
+       
+       if (!company) {
+          company = await fetchCompanyInfo(); 
+         if (!company) {
+           alert("Company info is not available");
+           return;
+         }
+       }
+   
+        await NicuSlip(invoiceId, company);
+     };
  
   const getColumnDefs = useCallback(() => {
     return [
       {
-        headerName: 'S.No',
+        headerName: '#',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
+        minWidth: 40,
+        filter: false,
+        sortable: false,
       },
       {
         headerName: "No",
         field: "nicuNo",
         sortable: true,
         filter: true,
-        minWidth: 50,
+        minWidth: 80,
       },
       {
-        headerName: "patient Name",
+        headerName: "Refer By",
+        field: "referBy",
+        sortable: true,
+        filter: true,
+        minWidth: 150,
+      },
+      {
+        headerName: "Patient Name",
         field: "patientName",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 150,
       },
       {
         headerName: "Contact",
@@ -83,7 +125,7 @@ const Nicu = () => {
         field: "address",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 150,
       },
       {
         headerName: "Bed No",
@@ -92,37 +134,48 @@ const Nicu = () => {
         filter: true,
         minWidth: 140,
       },
-      {
-        headerName: "AdmissionDatetime",
-        field: "admissionDatetime",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-      {
-        headerName: "Fee",
-        field: "fee",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
+     {
+  headerName: "Admission Time",
+  field: "admissionDatetime",
+  sortable: true,
+  filter: true,
+  minWidth: 180,
+  valueFormatter: (params) => {
+    if (!params.value) return '';
+    return dayjs(params.value).format('DD/MM/YYYY hh:mm A');
+  },
+},
+      
       {
         headerName: "Actions",
         field: "actions",
         sortable: false,
         filter: false,
+         pinned: 'right',  
         minWidth: 180,
         cellRenderer: (params) => {
           return (
             <Space size="middle">
-              <Tooltip title="Edit">
+              
                 <Button 
                   icon={<EditOutlined />} 
                   text={params.data.nicuId}
                   onClick={() => handleEdit(params.data.nicuId)} 
                   size="small"
                 />
-              </Tooltip>
+ <Button 
+                  icon={<LogoutOutlined  />} 
+                  text={params.data.nicuId}
+                  onClick={() => handleDischarge(params.data.nicuId)} 
+                  size="small"
+                />
+                  <Button 
+                  icon={<PrinterOutlined />} 
+                  text={params.data.nicuId}
+                  onClick={() => handlePrint(params.data.nicuId)} 
+                  size="small"
+                />
+              
                
             </Space>
           );
@@ -289,7 +342,7 @@ const Nicu = () => {
   }, [messageApi, setAutoHeight, setFixedHeight, handleFullscreen]);
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: "Payment Management",
+    title: "Nicu Management",
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
@@ -345,6 +398,7 @@ const Nicu = () => {
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
  
+  
   const handleModalSave = useCallback(() => { 
     Toaster.success(editingRecord?.nicuId ? "Record updated successfully!" : "Record added successfully!");
     setIsModalVisible(false);
@@ -352,6 +406,11 @@ const Nicu = () => {
   }, [editingRecord?.nicuId, handleRefreshData]);
   
  
+ const handleDischargeModalSave = useCallback(() => { 
+    Toaster.success(editingRecord?.nicuId ? "Record updated successfully!" : "Record added successfully!");
+    setIsDischargeModalVisible(false);
+    handleRefreshData();
+  }, [editingRecord?.nicuId, handleRefreshData]);
 
   const renderLoadingState = () => (
     <div style={{ 
@@ -440,12 +499,22 @@ const Nicu = () => {
         
         <NicuModal
           visible={isModalVisible}
-          title={editingRecord?.paymentMethodId ? `Edit Payment` : 'Add New Payment'}
-          button={editingRecord?.paymentMethodId ? 'Update' : 'Save'}
+          title={editingRecord?.nicuId ? `Edit Record` : 'Add New Record'}
+          button={editingRecord?.nicuId ? 'Update' : 'Save'}
           onCancel={() => setIsModalVisible(false)}
           initialValues={editingRecord}
           setIsModalVisible={setIsModalVisible}
           onSave={handleModalSave}
+        />
+
+          <NicuDischargeModal
+          visible={isDischargeModalVisible}
+          title={`Discharge Patient`}
+          button={ 'Discharge'}
+          onCancel={() => setIsDischargeModalVisible(false)}
+          initialValues={editingRecord}
+          setIsModalVisible={setIsDischargeModalVisible}
+          onSave={handleDischargeModalSave}
         />
 
       
