@@ -479,6 +479,22 @@ form={formSearch}
     >
       <Input type="number" placeholder="Enter Invoice Number" />
     </Form.Item>
+<Form.Item
+      name="search"
+      label="Search Record by Invoice No"
+      rules={[{ required: true, message: 'Please enter invoice number' }]}
+    >
+      <Input type="number" placeholder="Enter Invoice Number" />
+    </Form.Item>
+    <Form.Item
+      name="search"
+      label="Search Record by Invoice No"
+      rules={[{ required: true, message: 'Please enter invoice number' }]}
+    >
+      <Input type="number" placeholder="Enter Invoice Number" />
+    </Form.Item>
+
+    
   </Col>
   <Col span={6} style={{ display: 'flex', alignItems: 'center' }}>
     <Button 
