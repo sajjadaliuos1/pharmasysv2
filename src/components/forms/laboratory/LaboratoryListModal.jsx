@@ -1,31 +1,32 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { Modal, Typography } from 'antd';
 import { AgGridReact } from "ag-grid-react";
-import { message } from "antd";
-import { getTestRecordDetails } from "../../../api/API";
-
+import { getTestRecordDetails,deleteTestRecord } from "../../../api/API";
+import {  message, Button, Space, Tooltip, Popconfirm } from "antd";
+import { DeleteOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import { Toaster } from '../../common/Toaster';
 
 const { Title } = Typography;
 
-const LaboratoryListModol = ({ visible, onCancel, purchaseDetails,  width, zIndex, testId }) => {
+
+const LaboratoryListModol = ({ visible, onCancel, purchaseDetails,patientName,  width, zIndex, testId,onSuccess  }) => {
   const gridRef = useRef(null);
   const [error, setError] = useState(null);
   const [rowData, setRowData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   
-  // Extract data safely
-  const mainData = purchaseDetails?.data || purchaseDetails || {};
-  const itemsData = mainData?.items || rowData; // Use fetched rowData if items not available
 
-  // Fetch purchase details when modal opens and purchaseId is available
+  const mainData = purchaseDetails?.data || purchaseDetails || {};
+  const itemsData = mainData?.items || rowData; 
+
   useEffect(() => {
     if (visible && testId) {
       fetchPurchaseDetails(testId);
     }
-  }, [visible, testId]); // Dependencies: modal visibility and purchaseId
+  }, [visible, testId]);  
 
-  // For purchase details modal
   const fetchPurchaseDetails = useCallback(async (testId) => {
     if (!testId) return;
      
@@ -62,8 +63,26 @@ const LaboratoryListModol = ({ visible, onCancel, purchaseDetails,  width, zInde
       setError(null);
     }
   }, [visible]);
+const formatDate = (value) => {
+  if (!value) return '';
+  return dayjs(value).format('DD-MM-YYYY hh:mm:ss A');
+};
+  
+  const handleDelete = useCallback(async (id) => {     
+    try {
+      const response = await deleteTestRecord(id,1);
+      if(response.data.status === "Success"){       
+        Toaster.success(response.data.message);
+      } else {
+        Toaster.error(response.data.message);
+      }
+       onSuccess();
+    } catch (err) {
+      setError(err.message || 'Failed to delete data');
+      Toaster.error({ content: `Failed to delete data: ${err.message || 'Unknown error'}`, key: 'deletingData' });
+    }
+  }, [rowData]);
 
-  // Column definitions for AG Grid - Updated to match your data structure
   const columnDefs = useMemo(() => [
     {
       headerName: 'S.No',
@@ -81,31 +100,60 @@ const LaboratoryListModol = ({ visible, onCancel, purchaseDetails,  width, zInde
         field: "amount",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 100,
       },
      {
         headerName: "Processing Time",
         field: "processingTime",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 100,
+      },
+      {
+        headerName: "Book Time",
+        field: "registerTime",
+        sortable: true,
+        filter: true,
+        minWidth: 100,
+        valueFormatter: params => formatDate(params.value)
       },
       {
         headerName: "Completion Time",
         field: "completionTime",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 100,
+       valueFormatter: params => formatDate(params.value)
       },
-      {
-        headerName: "Registration Time",
-        field: "registerTime",
-        sortable: true,
-        filter: true,
-        minWidth: 40,
-      }
+       {
+            headerName: "Action",
+            field: "actions",
+            pinned: 'right',  
+            cellRenderer: (params) => (
+              <Space size="middle">
+                
+                <Popconfirm
+                  title="Are you sure you want to delete?"
+                  onConfirm={() => handleDelete(params.data.testRecordDetailId)}
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <Tooltip title="Delete">
+                    <Button 
+                      icon={<DeleteOutlined />} 
+                      danger 
+                      size="small"
+                    />
+                  </Tooltip>
+                </Popconfirm>
+              </Space>
+            ),
+            minWidth: 90,
+            width:90
+          }
+      
  
-  ], []);
+  ], [handleDelete]);
 
   const defaultColDef = useMemo(() => ({
      
@@ -122,7 +170,7 @@ const LaboratoryListModol = ({ visible, onCancel, purchaseDetails,  width, zInde
       <Modal
         title={
           <Title level={4} style={{ margin: 0 }}>
-            Test Details - Invoice #{mainData?.testId || testId || 'N/A'}
+            Test Details - {patientName || 'N/A'}
           </Title>
         }
         open={visible}
@@ -135,7 +183,7 @@ const LaboratoryListModol = ({ visible, onCancel, purchaseDetails,  width, zInde
       >
         {/* Items Grid */}
         <div style={{ marginTop: 24 }}>
-          <Title level={5} style={{ marginBottom: 16 }}>Total Test</Title>
+        {/* <Title level={5} style={{ marginBottom: 16 }}>Total Test</Title> */}
           <div 
             className="ag-theme-alpine" 
             style={{

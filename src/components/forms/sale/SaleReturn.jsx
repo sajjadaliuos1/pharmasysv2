@@ -25,15 +25,16 @@ const SaleReturn = () => {
   const [cartItems, setCartItems] = useState([]);  
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const [totalReturnAmount, setTotalReturnAmount] = useState(0);
-
+  const [isPaidReturnTouched, setIsPaidReturnTouched] = useState(false);
   const [finalAmount, setFinalAmount] = useState(0);   
 
   useEffect(() => {    
     fetchPaymentMethod();
   }, []);
+  
   useEffect(() => {
   recalculateAmounts(form1, totalReturnAmount, setFinalAmount);
-  }, [totalReturnAmount]);
+  }, [totalReturnAmount,paymentMethod]);
 
   const handleSearch = async () => {
     try {
@@ -61,15 +62,31 @@ const SaleReturn = () => {
 
     const saleData = result.data.data;
  
+    const totalAmount = parseFloat(saleData.totalAmount ?? 0);
+    const returnItemAmount = parseFloat(saleData.returnItemAmount ?? 0);
+
+    const netTotalAMount = totalAmount - returnItemAmount;
+
+
+    
+    const totalPaid = parseFloat(saleData.paidAmount ?? 0);
+    const returnToCusAmount = Math.abs(parseFloat(saleData.returnToCustomerAmount ?? 0));
+
+    const netTotalPaid = totalPaid - returnToCusAmount;
+
     form1.setFieldsValue({
       invoiceNo: saleData.invoiceNo,
       customerId: saleData.customerId,
+      discountAmount: saleData.discountAmount?.toFixed(2) || '0.00',
       CustomerName: saleData.customerName,
-      totalAmount: saleData.totalAmount?.toFixed(2),
+      // totalAmount: saleData.totalAmount?.toFixed(2),
+       totalAmount: totalAmount.toFixed(2),
+       alreadyReturned : returnItemAmount.toFixed(2),
       supplierDiscount: saleData.discountAmount?.toFixed(2),
       netAmount: saleData.finalAmount?.toFixed(2),
       totalAmountWithOld: (saleData.finalAmount).toFixed(2),
-      paidAmount: saleData.paidAmount?.toFixed(2),
+      paidAmount: netTotalPaid.toFixed(2),
+      remainingAmountOld : saleData.remaining?.toFixed(2),
       remainingAmount: saleData.remaining?.toFixed(2),
       paymentMethodId: saleData.paymentMethodId ?? undefined
     });
@@ -81,7 +98,7 @@ const SaleReturn = () => {
       setPaymentMethodRemainingAmount('');
     }
     const saleDetails = Array.isArray(saleData.saleDetails) ? saleData.saleDetails : [];
-    const mappedTableData = saleDetails.map((item, index) => ({
+    const mappedTableData = saleDetails.filter(item => item.netQuantity !== 0).map((item, index) => ({
       key: index,
       saleDetailId: item.saleDetailId,
       productId: item.productId,
@@ -110,12 +127,11 @@ const SaleReturn = () => {
   } catch (error) {
      setLoadingSearch(false);
     console.error("Error submitting form:", error);
-    Toaster.error("Please fill all required fields.");
+    Toaster.warning("Please fill all required fields.");
   }
 };
  
-
-  
+ 
 
   const fetchPaymentMethod = async () => {
       try {
@@ -130,7 +146,7 @@ const SaleReturn = () => {
           paymentList.forEach(s => map.set(s.paymentMethodId, s));
           setPaymentMethodMap(map);
       
-        if (paymentList.length > 0 && !form1.getFieldValue("PaymentMethodId")) {
+        if (paymentList.length > 0 && !form1.getFieldValue("paymentMethodId")) {
         const firstPaymentMethod = paymentList[0];
         const firstId = firstPaymentMethod.paymentMethodId;
          
@@ -152,13 +168,13 @@ const SaleReturn = () => {
    
  
 const columns = [
-  { title: 'sale id', dataIndex: 'saleDetailId' },
+  //{ title: 'sale id', dataIndex: 'saleDetailId' },
   { title: 'Product', dataIndex: 'productName' },
-{
-  title: 'Is Strip',
-  dataIndex: 'isStrip',
-  render: (value) => value ? 'Yes' : 'No'
-},
+// {
+//   title: 'Is Strip',
+//   dataIndex: 'isStrip',
+//   render: (value) => value ? 'Yes' : 'No'
+// },
 
   { title: 'Sale Rate', dataIndex: 'unitSaleRate' },
   { title: 'Discount %', dataIndex: 'discountPercent' },
@@ -222,13 +238,11 @@ const handleReturnQtyChange = (value, index, maxQty) => {
 
   updatedItems[index].returnQty = intVal;
   
-  // Calculate return profit for this item
   const profitPerUnit = parseFloat(updatedItems[index].profitPerUnit || 0);
   updatedItems[index].returnProfit = intVal * profitPerUnit;
   
   setCartItems(updatedItems);
 
-  // Calculate totals
   const totalReturnAmount = updatedItems.reduce((sum, item) => {
     const qty = parseInt(item.returnQty || 0);
     const rate = parseFloat(item.afterFinalDiscountAmount || 0);
@@ -239,30 +253,47 @@ const handleReturnQtyChange = (value, index, maxQty) => {
 
   setTotalReturnAmount(totalReturnAmount);
    
-
-  // Recalculate form totals
+ 
   recalculateAmounts(form1, totalReturnAmount, setFinalAmount);
 };
 
+ 
 
 const recalculateAmounts = (form, totalReturnAmount, setFinalAmount) => {
-  const { totalAmount, paidAmount, paidOrReturn } = form.getFieldsValue();
+  const { netAmount, paidAmount, remainingAmountOld, paidOrReturn } = form.getFieldsValue();
 
-  const total = parseFloat(totalAmount || 0);
+  const total = parseFloat(netAmount || 0);
   const paid = parseFloat(paidAmount || 0);
-  const paidReturn = parseFloat(paidOrReturn || 0);
   const returned = parseFloat(totalReturnAmount || 0);
+  const paidReturn = parseFloat(paidOrReturn || 0);
 
-  const finalAmount = total - paid - returned;
+const oldReturnAMount = parseFloat(remainingAmountOld || 0);
+  const finalAmount = oldReturnAMount - returned;
   const remaining = finalAmount - paidReturn;
+  const shouldShowPaymentMethod = paidReturn !== 0;
 
   setShowPaymentMethod(paidReturn !== 0);
 
-  setFinalAmount(finalAmount);  
-  form.setFieldsValue({
+
+
+  setFinalAmount(finalAmount);
+
+  const fieldsToSet = {
     finalAmount: finalAmount.toFixed(2),
     remainingAmount: remaining.toFixed(2)
-  });
+  };
+
+  // Auto-fill only once if not touched
+  if (!isPaidReturnTouched) {
+    fieldsToSet.paidOrReturn = finalAmount.toFixed(2);
+  }
+
+  form.setFieldsValue(fieldsToSet);
+  if (shouldShowPaymentMethod && paymentMethod.length > 0 && !form.getFieldValue("paymentMethodId")) {
+    const firstPaymentMethod = paymentMethod[0];
+    form.setFieldsValue({ paymentMethodId: firstPaymentMethod.paymentMethodId });
+    setPaymentMethodRemainingAmount(firstPaymentMethod?.remaining || '');
+  }
 };
 
 
@@ -283,15 +314,25 @@ const handleSubmit = async () => {
       return;
     }
 
-    // Filter items that have return quantity
     const returnItems = cartItems.filter(item => 
       parseInt(item.returnQty || 0) > 0
     );
 
     if (returnItems.length === 0) {
-      Toaster.error('Please specify return quantity for at least one item');
+      Toaster.warning('Please specify return quantity for at least one item');
       return;
     }
+
+
+  const remainingAmount11 = parseFloat(paymentMethodRemainingAmount) || 0;
+  const paidOrReturn = parseFloat(formData.paidOrReturn || 0);
+
+  if (totalReturnAmount > remainingAmount11 && paidOrReturn < 0 ) {
+    Toaster.warning('Insufficient balance in selected payment method');
+  return;
+  }
+
+
 
     // Validate return items
     const invalidItems = returnItems.filter(item => {
@@ -307,14 +348,33 @@ const handleSubmit = async () => {
       Toaster.error('Some return items have invalid data. Please check return quantities.');
       return;
     }
-
-    // if (paidAmount > payableAmount) {
-    //   Toaster.error('Paid amount cannot be greater than payable amount');
-    //   // return;
-    // }
+ 
     
     if (showPaymentMethod && !formData.paymentMethodId) {
       Toaster.error('Please select a payment method');
+      return;
+    }
+     const customerName = formData.CustomerName || '';
+        
+
+     const remainingAmount = parseFloat(formData.remainingAmount || 0);
+      const isWalkingCustomer = customerName.includes('Walking');
+
+     if (isWalkingCustomer) {
+      if (Math.abs(remainingAmount) > 0.01) {  
+        Toaster.warning('Walking customers must have 0 remaining amount. Please ensure paid amount equals final amount.');
+        return;
+      }
+      
+     
+      if (Math.abs(paidOrReturn - finalAmount) > 0.01) {
+        Toaster.warning('Walking customers must pay the full amount. Paid amount must equal final amount.');
+        return;
+      }
+    }
+ 
+    if (showPaymentMethod && !formData.paymentMethodId) {
+      Toaster.warning('Please select a payment method');
       return;
     }
 
@@ -330,7 +390,8 @@ const handleSubmit = async () => {
       returnAmount: parseInt(item.returnQty) * parseFloat(item.afterFinalDiscountAmount),
       returnProfit: parseFloat(item.returnProfit),
       unitSaleRate: parseFloat(item.unitSaleRate),
-      afterFinalDiscountAmount: parseFloat(item.afterFinalDiscountAmount)
+      afterFinalDiscountAmount: parseFloat(item.afterFinalDiscountAmount),
+      isStrip: item.isStrip || false,
     }));
 
     const payload = {
@@ -341,19 +402,20 @@ const handleSubmit = async () => {
       returnItemAmount: totalReturnAmount,
       paidOrReturn : parseFloat(formData.paidOrReturn || 0),
       totalAmount: parseFloat(formData.totalAmount),
-      DiscountAmount: parseFloat(formData.supplierDiscount || 0),
-      // FinalAmount: parseFloat(formData.netAmount),
+      DiscountAmount: parseFloat(formData.supplierDiscount || 0),      
       netPayableAmount: isNaN(parseFloat(formData.totalAmountWithOld)) ? 0 : parseFloat(formData.totalAmountWithOld),
       paidAmount,
+      returnToCustomer:parseFloat(formData.paidOrReturn || 0),
       remaining: parseFloat(formData.remainingAmount || 0),
       paymentMethodId: formData.paymentMethodId || 0,
-      returnDetails: returnDetails, // Send return details instead of all sale details
+      date:  new Date().toISOString().split('T')[0],
+      returnDetails: returnDetails,
     };
 
-    console.log('Return Payload:', payload); // For debugging
+    console.log('Return Payload:', payload); 
 
  
-    await returnSale(payload); // Using existing endpoint for now
+    await returnSale(payload); 
 
     Toaster.success('Sale return processed successfully.');
     form1.resetFields();            
@@ -370,7 +432,7 @@ const handleSubmit = async () => {
     setLoadingSave(false);
     console.error('Submission error:', error);
     if (error.errorFields) {
-      Toaster.error('Please fill all required fields correctly');
+      Toaster.warning('Please fill all required fields correctly');
     } else {
       Toaster.error('An error occurred while processing the return');
     }
@@ -537,6 +599,24 @@ form={formSearch}
       </Form.Item>
     </Col>
 
+     <Col span={24}>
+      <Form.Item name="discountAmount" label="Discount Amount" style={{ marginBottom: 0 }}>
+        <Input disabled />
+      </Form.Item>
+    </Col>
+
+ <Col span={24}>
+      <Form.Item name="netAmount" label="Net Amount" style={{ marginBottom: 0 }}>
+        <Input disabled />
+      </Form.Item>
+    </Col> 
+
+<Col span={24}>
+      <Form.Item name="alreadyReturned" label="Already Return" style={{ marginBottom: 0 }}>
+        <Input disabled />
+      </Form.Item>
+    </Col>
+
     <Col span={24}>
       <Form.Item name="paidAmount" label="Paid Amount" style={{ marginBottom: 0 }}>
         <InputNumber
@@ -548,7 +628,11 @@ form={formSearch}
         />
       </Form.Item>
     </Col>
-
+    <Col span={24}>
+      <Form.Item name="remainingAmountOld" label="Old Remaining Amount" style={{ marginBottom: 0 }}>
+        <Input disabled />
+      </Form.Item>
+    </Col>
     <Col span={24}>
       <Form.Item label="Return Amount" style={{ marginBottom: 0 }}>
         <Input disabled value={totalReturnAmount.toFixed(2)} />
@@ -569,6 +653,7 @@ form={formSearch}
           step={1}
           precision={2}
           onChange={() => {
+            setIsPaidReturnTouched(true);
             recalculateAmounts(form1, totalReturnAmount, setFinalAmount);
           }}
           onKeyPress={(e) => {

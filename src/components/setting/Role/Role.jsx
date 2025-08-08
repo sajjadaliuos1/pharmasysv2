@@ -6,186 +6,204 @@ import "jspdf-autotable";
 
 import { ModuleRegistry } from 'ag-grid-community';
  import { AllCommunityModule } from "ag-grid-community";
-import {  message, Button, Empty } from "antd";
+import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
+
+import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
-import { getPaymentByDateRange } from "../../../api/API";
+import {getRole } from "../../../api/API";
 
-import { useLocation } from 'react-router-dom';
-import dayjs from 'dayjs';
-import { useNavigate } from "react-router-dom";
+import RoleModal from "./RoleModol";
+
 ModuleRegistry.registerModules([
   AllCommunityModule, 
  
 ]);
 
-const  PaymentDetail = () => {
+const Role = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
-  const navigate = useNavigate();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
-  const [dateRange, setDateRange] = 
-  useState([
-   dayjs().subtract(30, 'day'), // 30 days ago
-  dayjs() // Today
-  ]);
+  
+  const AddnewModal = useCallback((record) => {
+    setEditingRecord(record ? { ...record } : { typeId: '', typeName: '' });
+    setIsModalVisible(true);
+  }, []);
 
-    const location = useLocation();
-  const { paymentId , paymentName } = location.state || {};
+  const handleEdit = useCallback((id) => {
+    const record = rowData.find(item => item.typeId === id);
+    if (record) {
+      AddnewModal(record);
+    }
+  }, [AddnewModal, rowData]);
 
+  // const handleDelete = useCallback(async (id) => {
+  //   console.log("Delete Role id:", id);
+  //   try {
+  //     const response = await deleteCategory(id);
+  //     if(response.data.status === "Success"){
+  //     handleRefreshData();
+  //   Toaster.success(response.data.message);
+  //     } else {
+  //       Toaster.error(response.data.message);
+  //     }
+  //   } catch (err) {
+  //     setError(err.message || 'Failed to delete data');
+  //     messageApi.error({ content: `Failed to delete data: ${err.message || 'Unknown error'}`, key: 'deletingData' });
+  //     console.error('Error deleting data:', err);
+  //   }
+  // }, [rowData, messageApi]);
 
    const getColumnDefs = useCallback(() => {
     return [
       {
-        headerName: 'S#',
+        headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,  
-        sortable: false,
-        filter:false,    
+        minWidth: 80,
+        // width: 80,
+        //  pinned: 'left', 
       },
+    
       {
-        headerName: "Amount In",
-        field: "amountIn",
+        headerName: "Role Name",
+        field: "typeName",
         sortable: true,
         filter: true,
-        minWidth: 120,
-      },
-       {
-        headerName: "Amount out",
-        field: "amountOut",
-        sortable: true,
-        filter: true,
-        minWidth: 120,
-      },
-       {
-        headerName: "Remaining",
-        field: "remaining",  
-        sortable: false,
-        filter:false,
-        minWidth: 120,
-      },
-          
-     {
-        headerName: "Description",
-        field: "description",
-        sortable: true,
-        filter: true,
-        minWidth: 180,
-      },
-           {
-        headerName: "Date",
-        field: "date",
-        sortable: true,
-        filter: true,
+       
         minWidth: 140,
       },
+     
+      {
+        headerName: "Actions",
+        field: "actions",
+        sortable: false,
+        filter: false,
+        //  pinned: 'right', 
+        // minWidth: 110,
+        cellRenderer: (params) => {
+          return (
+            <Space size="middle">
+              <Tooltip title="Edit">
+                <Button 
+                  icon={<EditOutlined />} 
+                  text={params.data.typeId}
+                  onClick={() => handleEdit(params.data.typeId)} 
+                  size="small"
+                />
+              </Tooltip>
+             
+            </Space>
+          );
+        },
+        // suppressSizeToFit: true,
+      }
     ];
-  }, [screenSize]);
+  }, [screenSize, handleEdit]);
   
   const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
 
-// Updated fetchPaymentDetailData function
-const fetchPaymentDetailData = useCallback(async () => {
-  if (loadingRef.current || !paymentId) return;  // Add paymentId check
-  
-  loadingRef.current = true;
-  setLoading(true);
-  
-  try {
-    if (dateRange[0] && dateRange[1]) {
-      const startDate = dateRange[0].format('YYYY-MM-DD');
-      const endDate = dateRange[1].format('YYYY-MM-DD');
-      
-      const response = await getPaymentByDateRange(paymentId, startDate, endDate);
-      console.log('API Response:', response.data);
-      
-      if (!response?.data) {
+  const fetchInvoiceData = useCallback(async () => {
+    if (loadingRef.current) return;
+    
+    loadingRef.current = true;
+    setLoading(true);
+    
+    try {
+      const response = await getRole();
+      // Handle potential null response safely
+      if (!response || !response.data) {
         throw new Error("Invalid response from server");
       }
-      
-      const data = response.data.data || [];
+      console.log("Role data fetched successfully:", response.data);
+      const data = response?.data?.data || [];
       setRowData(data);
       setFilteredData(data);
       
-      // Simplified message logic
-      messageApi[data.length ? 'success' : 'info']({ 
-        content: data.length 
-          ? 'Payment records loaded successfully' 
-          : 'No records found for selected criteria',
-        key: 'loadingData'
-      });
-    } else {
-      messageApi.info({ 
-        content: 'Please select a date range', 
-        key: 'loadingData' 
-      });
-      setRowData([]);
-      setFilteredData([]);
+      if (data.length > 0) {
+        messageApi.success({ content: 'Data loaded successfully', key: 'loadingData' });
+      } else {
+        messageApi.info({ content: 'No Role data available', key: 'loadingData' });
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to fetch data');
+      messageApi.error({ content: `Failed to fetch data: ${err.message || 'Unknown error'}`, key: 'loadingData' });
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+      loadingRef.current = false; 
     }
-  } catch (err) {
-    console.error('Error:', err);
-    messageApi.error({ 
-      content: `Failed to fetch records: ${err.message || 'Unknown error'}`,
-      key: 'loadingData'
-    });
-    setError(err.message);
-  } finally {
-    setLoading(false);
-    loadingRef.current = false;
-  }
-}, [messageApi, dateRange, paymentId]);  // Added paymentId to dependencies
+  }, [messageApi]);
 
-// Consolidated refresh function
-const handleRefreshData = useCallback(async () => {
-  await fetchPaymentDetailData();  // Reuse the same logic
-}, [fetchPaymentDetailData]);
+  const handleRefreshData = useCallback(async () => {
+    if (loadingRef.current) return;
+    
+    setLoading(true);
+    loadingRef.current = true;
 
-
-useEffect(() => {
-  if (paymentId && dateRange[0] && dateRange[1]) {
-    handleRefreshData();
-  }
-}, [paymentId, dateRange, handleRefreshData]);
+    try {
+      const response = await getRole();
+    
+      if (!response) {
+        throw new Error("Failed to fetch categories");
+      }
+      
+      const data = response?.data?.data || [];
+      
+      setRowData(data);
+      setFilteredData(data);
+      
+      if (gridRef.current?.api) {
+        gridRef.current.api.setRowData(data);
+        gridRef.current.api.refreshCells();
+      }
+      
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      Toaster.error("Failed to fetch categories");
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  }, []);
 
   const handleExportPDF = useCallback(() => {
-      const fileName = prompt("Enter file name for PDF:", "category-data");
-      if (!fileName) return;
-      const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text('Category Report', 14, 22);
-      doc.setFontSize(11);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-      
-      // Include serial number and exclude actions column
-      const columns = ['S.No', 'Name','Description', 'Amount In', 'Amount Out', 'Remaining'];
-      
-      
-      const rows = rowData.map((row, index) => [
-        index + 1,
-        row.name || '',
-        row.description || '',
-        row.amountIn || '',  
-        row.amountOut || '',
-        row.remaining || '',
-      ]);
-  
-      doc.autoTable({
-        head: [columns],
-        body: rows,
-        startY: 40,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [66, 139, 202] }
-      });
-      doc.save(`${fileName}.pdf`);
-    }, [rowData]);
+    const fileName = prompt("Enter file name for PDF:", "category-data");
+    if (!fileName) return;
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Role Report', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+    
+    // Include serial number and exclude actions column
+    const columns = ['S.No', 'Role ID', 'Role Name'];
+    
+    const rows = rowData.map((row, index) => [
+      index + 1,
+      row.typeId || '',
+      row.typeName || ''
+    ]);
+
+    doc.autoTable({
+      head: [columns],
+      body: rows,
+      startY: 40,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [66, 139, 202] }
+    });
+    doc.save(`${fileName}.pdf`);
+  }, [rowData]);
 
   const handleExportExcel = useCallback(() => {
     if (gridRef.current?.api) {
@@ -198,8 +216,8 @@ useEffect(() => {
         }));
       
       gridRef.current.api.exportDataAsCsv({
-        fileName: 'payment-data.csv',
-        sheetName: 'Payment',
+        fileName: 'category-data.csv',
+        sheetName: 'Categories',
         columnKeys: columnsToExport
           .filter(col => col.field) // Only include columns with field property
           .map(col => col.field),   // Extract field names for columnKeys
@@ -247,28 +265,15 @@ useEffect(() => {
     }
   }, [messageApi, setAutoHeight, setFixedHeight, handleFullscreen]);
 
-const handleDateChange = (dates) => {
-  setDateRange(dates); // Store the array directly
-  
-  if (dates && dates[0] && dates[1]) {
-    console.log('Start Date:', dates[0].format('YYYY-MM-DD'));
-    console.log('End Date:', dates[1].format('YYYY-MM-DD'));
-  } else {
-    console.log('No date selected');
-    setDateRange([null, null]); // Reset to null array when cleared
-  }
-};
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: `Payment Details of ${paymentName}`,
+    title: "Role Management",
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-     onAddNew: () => navigate('/paymentMethod'),
+    onAddNew: () => AddnewModal(null),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
-    dateRange,
-    handleDateChange,
     searchText,
     rowData,
     screenSize
@@ -285,12 +290,12 @@ const handleDateChange = (dates) => {
   
   useEffect(() => {
     setLoading(true);
-    fetchPaymentDetailData();
+    fetchInvoiceData();
     
     return () => {
       loadingRef.current = false;
     };
-  }, [fetchPaymentDetailData]);
+  }, [fetchInvoiceData]);
 
   useEffect(() => {
     const filterData = () => {
@@ -300,7 +305,8 @@ const handleDateChange = (dates) => {
       }
       
       const searchLower = searchText.toLowerCase();
-      const filtered = rowData.filter(row =>    
+      const filtered = rowData.filter(row =>
+        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
         (row.typeName && row.typeName.toLowerCase().includes(searchLower))
       );
   
@@ -318,7 +324,14 @@ const handleDateChange = (dates) => {
     return () => clearTimeout(handler);
   }, [searchText, rowData]);
  
- 
+  const handleModalSave = useCallback(() => { 
+    Toaster.success(editingRecord?.typeId ? "Role updated successfully!" : "Role added successfully!");
+   
+    setIsModalVisible(false);
+     
+    handleRefreshData();
+  }, [editingRecord?.typeId, handleRefreshData]);
+  
 
   const renderLoadingState = () => (
     <div style={{ 
@@ -362,6 +375,7 @@ const handleDateChange = (dates) => {
   );
   
   return (
+    
     <div className="container mt-2">
     <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
       {contextHolder}
@@ -404,10 +418,20 @@ const handleDateChange = (dates) => {
           )}
         </div>
       )}
-
-       </div>    
+      
+      <RoleModal
+        visible={isModalVisible}
+        title={editingRecord?.typeId ? `Edit Role` : 'Add New Role'}
+        button={editingRecord?.typeId ? 'Update' : 'Save'}
+        onCancel={() => setIsModalVisible(false)}
+        initialValues={editingRecord}
+        setIsModalVisible={setIsModalVisible}
+        onSave={handleModalSave}
+      />
+    </div>
+    
     </div>
   );
 };
 
-export default PaymentDetail;
+export default Role;

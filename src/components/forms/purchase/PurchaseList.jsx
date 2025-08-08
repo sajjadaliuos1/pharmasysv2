@@ -15,6 +15,7 @@ import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
 import { getPurchaseByDateRange } from "../../../api/API";
 import dayjs from 'dayjs';
+import { useNavigate } from "react-router-dom";
 
 ModuleRegistry.registerModules([
   AllCommunityModule, 
@@ -22,6 +23,7 @@ ModuleRegistry.registerModules([
 ]);
 
 const  PurchaseList = () => {
+  const navigate = useNavigate();
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [purchaseDetailsId, setPurchaseDetailsId] = useState(null);
@@ -30,6 +32,7 @@ const  PurchaseList = () => {
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [supplerName, setSupplerName] = useState('');
   const [editingRecord, setEditingRecord] = useState(null);
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
@@ -43,68 +46,64 @@ const  PurchaseList = () => {
    const getColumnDefs = useCallback(() => {
     return [
       {
-        headerName: 'S.No',
+        headerName: 'S.#',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
+        minWidth: 60,
+        sortable: false,
+       filter: false,
         // width: 80,
         //  pinned: 'left', 
       },
       {
-        headerName: "Purchase No",
+        headerName: "Inv #",
         field: "invoiceNo",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 90,
       },
        {
         headerName: "Name",
         field: "supplierName",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 180,
       },
        {
-        headerName: "Total Items",
+        headerName: "Items",
         field: "totalItems",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 80,
       },
           
      {
-        headerName: "Total Amount",
+        headerName: "Amount",
         field: "totalAmount",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 120,
       },
            {
         headerName: "Discount",
         field: "discount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 100,
       },
                  {
-        headerName: "Paid Amount",
+        headerName: "Paid",
         field: "paidAmount",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 100,
       },
-    //        {
-    //     headerName: "finalAmount",
-    //     field: "finalAmount",
-    //     sortable: true,
-    //     filter: true,
-    //     minWidth: 140,
-    //   },
+   
                  {
-        headerName: "Remaining",
+        headerName: "Remain",
         field: "remaining",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 90,
       },
         {
         headerName: "Date",
@@ -127,7 +126,9 @@ const  PurchaseList = () => {
                       <Button 
                         icon={<InfoCircleOutlined />} 
                         onClick={() => {
-                          setPurchaseDetailsId(params.data.purchaseId); 
+                          setPurchaseDetailsId(params.data.purchaseId);
+                          setSupplerName(params.data.supplierName); 
+                          
                           setIsModalVisible(true);
                         }}
                         size="small"
@@ -314,7 +315,7 @@ const handleDateChange = (dates) => {
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-    // onAddNew: () => AddnewModal(null),
+    onAddNew: () => navigate('/purchase'),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
     dateRange,
@@ -352,7 +353,7 @@ const handleDateChange = (dates) => {
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
         // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
-        (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+        (row.supplierName && row.supplierName.toLowerCase().includes(searchLower))
       );
   
       setFilteredData(filtered);
@@ -464,6 +465,7 @@ const handleDateChange = (dates) => {
   onCancel={() => {
     setIsModalVisible(false);
   }}
+  supplierName={supplerName}
   loading={loading}
     purchaseId={purchaseDetailsId} 
 />

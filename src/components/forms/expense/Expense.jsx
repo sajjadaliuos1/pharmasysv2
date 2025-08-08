@@ -49,12 +49,14 @@ const Expense = () => {
       {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
+        minWidth: 50,
+        filter: false,
+        sortable:false,
+         width: 80,
         //  pinned: 'left', 
       },
       {
-        headerName: "Expense Name",
+        headerName: "Expense Type",
         field: "expenseCategory",
         sortable: true,
         filter: true,
@@ -65,7 +67,7 @@ const Expense = () => {
         field: "amount",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 100,
       },
        {
         headerName: "Payment Method",
@@ -78,9 +80,9 @@ const Expense = () => {
      {
         headerName: "Description",
         field: "description",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+             filter: false,
+        sortable:false,
+        minWidth: 240,
       },
            {
         headerName: "Date",

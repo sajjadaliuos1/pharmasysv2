@@ -517,6 +517,7 @@ const handleSubmit = async () => {
   try {
     const formData = await form1.validateFields(); 
     if (cartItems.length === 0) {
+      Toaster.warning("Please add at least one product to the table.");
       message.error("Please add at least one product to the table.");
       return;
     }

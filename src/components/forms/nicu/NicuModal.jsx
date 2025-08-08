@@ -97,11 +97,7 @@ const NicuModal = ({ visible, title, onCancel, initialValues, onSave, button }) 
           <Col span={12}>
             <Form.Item
               name="referBy"
-              label="Doctor Name"
-              rules={[
-                { required: true, message: 'Please enter doctor name', whitespace: true },
-                { max: 100 },
-              ]}
+              label="Refer By (Dr.)"              
             >
               <Input placeholder="Enter doctor name" />
             </Form.Item>
@@ -124,7 +120,7 @@ const NicuModal = ({ visible, title, onCancel, initialValues, onSave, button }) 
             <Form.Item
               name="contact"
               label="Contact"
-              rules={[{ required: true, message: 'Please enter contact' }]}
+               
             >
               <Input placeholder="Enter contact" />
             </Form.Item>
@@ -134,7 +130,7 @@ const NicuModal = ({ visible, title, onCancel, initialValues, onSave, button }) 
             <Form.Item
               name="address"
               label="Address"
-              rules={[{ required: true, message: 'Please enter address' }]}
+              
             >
               <Input placeholder="Enter address" />
             </Form.Item>
@@ -144,24 +140,13 @@ const NicuModal = ({ visible, title, onCancel, initialValues, onSave, button }) 
             <Form.Item
               name="bed"
               label="Bed No"
-              rules={[{ required: true, message: 'Please enter bed no' }]}
+               
             >
               <Input placeholder="Enter bed number" />
             </Form.Item>
           </Col>
-
-          <Col span={12}>
-            <Form.Item
-              name="fee"
-              label="Fee"
-              rules={[{ required: true, message: 'Please enter fee' }]}
-            >
-              <Input placeholder="Enter total fee" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Form.Item
+ <Col span={12}>
+             <Form.Item
           name="admissionDatetime"
           label="Admission Date & Time"
           rules={[{ required: true, message: 'Please select date and time' }]}
@@ -173,7 +158,10 @@ const NicuModal = ({ visible, title, onCancel, initialValues, onSave, button }) 
             placeholder="Select date and time"
           />
         </Form.Item>
+</Col>
+        </Row>
 
+     
         <Form.Item name="description" label="Description">
           <Input.TextArea
             placeholder="Enter description"

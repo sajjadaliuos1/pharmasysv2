@@ -71,8 +71,8 @@ const ExpenseCategory = () => {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
         minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
+               filter: false,
+        sortable:false, 
       },
     
       {

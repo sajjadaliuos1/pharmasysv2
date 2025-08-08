@@ -3,16 +3,17 @@ import { Modal, Typography } from 'antd';
 import { AgGridReact } from "ag-grid-react";
 import { message } from "antd";
 import { getPurchaseDetailsById } from "../../../api/API";
+import Loader from '../../common/Loader';
 
 const { Title } = Typography;
 
-const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex, purchaseId }) => {
+const PurchaseListModal = ({ visible, onCancel,supplierName, purchaseDetails,  width, zIndex, purchaseId }) => {
   const gridRef = useRef(null);
   const [error, setError] = useState(null);
   const [rowData, setRowData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
-  
+  const [loading, setLoading] = useState(false);
   // Extract data safely
   const mainData = purchaseDetails?.data || purchaseDetails || {};
   const itemsData = mainData?.items || rowData; // Use fetched rowData if items not available
@@ -29,6 +30,7 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
     if (!purchaseId) return;
      
     try {
+      setLoading(true);
       const response = await getPurchaseDetailsById(purchaseId);
       console.log('Purchase Details Response:', response.data);
       if (!response?.data) {
@@ -49,7 +51,7 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
       });
       setError(err.message);
     } finally {
-      
+      setLoading(false);
     }
   }, [ messageApi]);
 
@@ -65,29 +67,37 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
   // Column definitions for AG Grid - Updated to match your data structure
   const columnDefs = useMemo(() => [
     {
-      headerName: 'S.No',
+      headerName: '#',
       valueGetter: (params) => params.node.rowIndex + 1,
-      minWidth: 70,
-      width: 70,
+      minWidth: 40,
+      width: 40,
+      sortable: false,
+        filter: false,
     },
     {
       headerName: "Name",
       field: "productName",
-      minWidth: 150,
+      minWidth: 110,
     },
     {
       headerName: "Batch No",
       field: "batchNo",
-      minWidth: 130,
+      minWidth: 80,
+    },
+    {
+      headerName: "Barcode",
+      field: "barcode",
+      minWidth: 80,
     },
     {
       headerName: "Quantity",
-      headerClass: 'quantity-header',
-      headerStyle: { color: 'red', 'background-color': 'green' },
+      headerClass: 'sale-header',
+       
+      // headerStyle: { color: 'red', 'background-color': 'lightgreen',  },
       children: [
-        { headerName: "Purchase Qty", field: "purchaseQuantity", minWidth: 130 },
-        { headerName: "Remaining Qty", field: "remainingQuantity", minWidth: 130 },
-        { headerName: "Remaining Open Strip", field: "remainingOpenStrip", minWidth: 180 },
+        { headerName: "Purchase", field: "purchaseQuantity", width:40, minWidth: 90 },
+        { headerName: "Remaining", field: "remainingQuantity", width:40,minWidth: 90 },
+        { headerName: "Strip", field: "remainingOpenStrip", width:40,minWidth: 90 },
       ]
     },
     {
@@ -95,20 +105,25 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
       headerClass: 'purchase-header',
       children: [
         {
-          headerName: "Purchase Rate",
+          headerName: "Rate",
           field: "purchaseRate",
-          minWidth: 130,
+          width:40, minWidth: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Discount %",
+          headerName: "Disc %",
           field: "purchaseDiscountPercent",
-          minWidth: 130,
+         width:40, minWidth: 90,
+        },
+         {
+          headerName: "Disc 2 %",
+          field: "purchaseDiscountAmount",
+         width:40, minWidth: 90,
         },
         {
-          headerName: "Final Rate",
+          headerName: "Final",
           field: "finalPurchaseRate",
-          minWidth: 130,
+           width:40, minWidth: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         }
       ]
@@ -118,26 +133,26 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
       headerClass: 'sale-header',
       children: [
         {
-          headerName: "Sale Rate",
+          headerName: "Rate",
           field: "saleRate",
-          minWidth: 130,
+          width:40, minWidth: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Discount %",
+          headerName: "Disc%",
           field: "saleDiscountPercent",
-          minWidth: 130,
+          width:40, minWidth: 80,
         },
         {
-          headerName: "Final Rate",
+          headerName: "Final",
           field: "finalSaleRate",
-          minWidth: 130,
+          width:40, minWidth: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Min Sale Rate",
+          headerName: "Min Rate",
           field: "minimumSaleRate",
-          minWidth: 150,
+           width:40, minWidth: 100,
         }
       ]
     },
@@ -146,34 +161,30 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
       headerClass: 'strip-header',
       children: [
         {
-          headerName: "Strip Rate",
+          headerName: "Rate",
           field: "stripRate",
-          minWidth: 130,
+         width:40, minWidth: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Discount %",
+          headerName: "Disc%",
           field: "stripDiscountPercent",
-          minWidth: 130,
+          width:40, minWidth: 80,
         },
         {
-          headerName: "Final Rate",
+          headerName: "Final",
           field: "finalStripRate",
-          minWidth: 130,
+          width:40, minWidth: 90,
           valueFormatter: (params) => params.value ? parseFloat(params.value).toFixed(2) : '0.00',
         },
         {
-          headerName: "Min Strip Rate",
+          headerName: "Min Rate",
           field: "minimumStripRate",
-          minWidth: 150,
+          width:40, minWidth: 100,
         }
       ]
     },
-    {
-      headerName: "Barcode",
-      field: "barcode",
-      minWidth: 150,
-    },
+    
     // {
     //   headerName: "Total Amount",
     //   valueGetter: (params) => {
@@ -203,9 +214,10 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
       <Modal
         title={
           <Title level={4} style={{ margin: 0 }}>
-            Purchase Details - Invoice #{mainData?.purchaseId || purchaseId || 'N/A'}
+            Purchase Details - {supplierName || 'N/A'}
           </Title>
         }
+        
         open={visible}
         onCancel={onCancel}
         footer={null}
@@ -216,7 +228,7 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
       >
         {/* Items Grid */}
         <div style={{ marginTop: 24 }}>
-          <Title level={5} style={{ marginBottom: 16 }}>Purchase Items</Title>
+          {/* <Title level={5} style={{ marginBottom: 16 }}>Purchase Items</Title> */}
           <div 
             className="ag-theme-alpine" 
             style={{
@@ -226,10 +238,12 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
               fontSize: '13px'
             }}
           >
+           
             <AgGridReact
               gridOptions={{ suppressMenuHide: true }}
               columnDefs={columnDefs}
               ref={gridRef}
+              loading={loading } 
               rowData={itemsData}
               defaultColDef={defaultColDef}
               pagination={false}
@@ -250,6 +264,7 @@ const PurchaseListModal = ({ visible, onCancel, purchaseDetails,  width, zIndex,
                   <div>No items found in this purchase</div>
                 </div>
               )}
+
             />
           </div>
         </div>

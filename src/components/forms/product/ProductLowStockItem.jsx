@@ -29,20 +29,23 @@ const ProductLowStockItem = () => {
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
   const [editingId, setEditingId] = useState(null);
-  const [updatedRecords, setUpdatedRecords] = useState(new Set()); // Track updated records
+  const [updatedRecords, setUpdatedRecords] = useState(new Set());  
   
-  const [stockAlertValues, setStockAlertValues] = useState({}); // Store input values
+  const [stockAlertValues, setStockAlertValues] = useState({}); 
   
 
   const handleEdit = useCallback(async (params) => {
 
     const productId = params.data.productId;
-    const qty = parseInt(params.data.alertQty); 
+    const qty = parseInt(params.data?.alertQty, 10);
     const stockAlert = params.data.stockAlert;
-    if(qty === undefined || qty === null || qty === "") {
-      Toaster.error("Please enter a valid stock alert quantity");
-    return;
-    }
+    
+if (!params.data?.alertQty || isNaN(qty) || qty <= 0) {
+  Toaster.warning("Please enter a valid stock alert quantity");
+  return;
+}
+
+
     if( qty === stockAlert) {
       Toaster.info("No changes made to stock alert");
     return;}
@@ -64,13 +67,11 @@ const ProductLowStockItem = () => {
             )
           );
           
-          // Mark as updated
           setUpdatedRecords(prev => new Set([...prev, productId]));
           
           Toaster.success("Stock alert updated successfully");
           
-          // Refresh the grid
-          if (gridRef.current?.api) {
+           if (gridRef.current?.api) {
             gridRef.current.api.refreshCells({ force: true });
           }
         } else {
@@ -87,18 +88,19 @@ const ProductLowStockItem = () => {
   const getColumnDefs = useCallback(() => {
     return [
       {
-        headerName: 'S.No',
+        headerName: 'S#',
         valueGetter: (params) => params.node.rowIndex + 1,
-        minWidth: 80,
-        width: 80,
-        maxWidth: 80,
+        minWidth: 50,
+        width: 50,         
+        sortable: false,
+        filter:false,
       },
       {
         headerName: "Product Name",
         field: "productName",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 230,
       },
       {
         headerName: "Current Stock",

@@ -12,7 +12,7 @@ import { useTableHeader } from '../../common/useTableHeader';
 
 import Loader from "../../common/Loader";
 import {getSupplerPaymentByDateRange } from "../../../api/API";
-
+import { useNavigate } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 
@@ -28,7 +28,7 @@ const  SupplierPaymentDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
-
+const navigate = useNavigate();
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
@@ -45,9 +45,18 @@ const  SupplierPaymentDetails = () => {
    const getColumnDefs = useCallback(() => {
     return [
       {
-        headerName: 'S.No',
+        headerName: 'S#',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,       
+        minWidth: 45,   
+        sortable:false,
+        filter: false,    
+      },
+      {
+        headerName: "Net Amount",
+        field: "amount",
+        sortable: true,
+        filter: true,
+        minWidth: 140,
       },
       {
         headerName: "Paid",
@@ -72,7 +81,7 @@ const  SupplierPaymentDetails = () => {
         minWidth: 140,
       },
          {
-        headerName: "Payment Type",
+        headerName: "Paid From",
         field: "paymentMethod",
         sortable: true,
         filter: true,
@@ -264,7 +273,7 @@ const handleDateChange = (dates) => {
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-    // onAddNew: () => AddnewModal(null),
+    onAddNew: () => navigate('/supplier'),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
     dateRange,

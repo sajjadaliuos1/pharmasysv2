@@ -225,7 +225,7 @@
   font-size: 12px;
 }
 
-.dropdown-item a {
+/* .dropdown-item a {
   color: #5B6670;
   text-decoration: none;
   font-size: 14px;
@@ -234,7 +234,7 @@
   padding: 5px 10px;
   border-radius: 3px;
   transition: all 0.3s ease;
-}
+} */
 
 /* Hover effect for dropdown items */
 .dropdown-item a:hover {
@@ -303,10 +303,11 @@
   margin-right: 10px; /* Space between the icon and badge */
   cursor: pointer;
   transition: color 0.3s ease;
+    color: #f39c12;
 }
 
 .profile-container .navbar-icon:hover {
-  color: #f39c12;
+  color: #f5d5a1;
 }
 
 .profile-dropdown {
@@ -339,7 +340,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 8px;
+  /* padding: 8px; */
   font-size: 14px;
   text-decoration: none;
   color: #333;
@@ -449,4 +450,12 @@
 .profit-cell {
   background-color: #fce4ec; /* light pink */
   color: #c2185b;
+}
+
+.profile-name{
+  width: 100%;
+  height: 100%;
+  text-transform: uppercase;
+  color: #F39E12;
+  border-radius: 4px;
 }

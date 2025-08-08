@@ -32,6 +32,7 @@ const ProductAvailableStock = () => {
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
   const [editingId, setEditingId] = useState(null);
+    const [editingProduct, setEditingProduct] = useState(null);
   
 
  
@@ -78,6 +79,7 @@ const getColumnDefs = useCallback(() => {
                {
                  setIsModalVisible(true);
                  setEditingId(params.data.productId);
+                 setEditingProduct(params.data.productName)
                  }
                 }
               size="small"
@@ -391,6 +393,7 @@ const getColumnDefs = useCallback(() => {
                  width={500}
                  zIndex={3000}
              visible={isModalVisible}
+             productName={editingProduct}
              onCancel={() => {
               setIsModalVisible(false);
               setEditingId(null);

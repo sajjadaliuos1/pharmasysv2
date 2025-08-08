@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DatePicker, Modal, Form, Button, Input, message, Row, Col, Select, Divider, Card, InputNumber } from 'antd';
-import { createNicuRecord,getPayment } from '../../../api/API';
+import { DischargeNicuPaitent,getPayment } from '../../../api/API';
 import dayjs from 'dayjs';
 import ReusableDropdown from '../../common/ReusableDropdown';
 const { Option } = Select;
@@ -25,15 +25,8 @@ const NicuDischargeModal = ({ visible, title, onCancel, initialValues, onSave, b
 
         if (formValues.admissionDatetime) {
           formValues.admissionDatetime = dayjs(formValues.admissionDatetime);
-        }
-
-        if (formValues.dischargeDatetime) {
-          formValues.dischargeDatetime = dayjs(formValues.dischargeDatetime);
-        }else {
-          // If no discharge date in initial values, set to current time
-          formValues.dischargeDatetime = dayjs();
-        }
-
+        } 
+          formValues.dischargeDatetime = dayjs();      
         form.setFieldsValue(formValues);
       } else {
         const defaultValues = {
@@ -45,12 +38,12 @@ const NicuDischargeModal = ({ visible, title, onCancel, initialValues, onSave, b
           bed: '',
           admissionDatetime: dayjs(),  
           description: '',
-          dischargeDatetime: dayjs(), // Set to current date/time
+          dischargeDatetime: dayjs(),  
           totalAmount: '',
           paidAmount: '',
-          discount: 0, // Default discount to 0
+          discount: 0, 
           paymentMethodId: '',
-          remainingAmount: 0, // Default remaining to 0
+          remainingAmount: 0,  
         };
         form.setFieldsValue(defaultValues);
       }
@@ -68,10 +61,21 @@ const NicuDischargeModal = ({ visible, title, onCancel, initialValues, onSave, b
         paymentList.forEach(s => map.set(s.paymentMethodId, s));
         setPaymentMethodMap(map);
 
-        if (paymentList.length > 0) {
-          const firstItem = paymentList[0];
-          form.setFieldsValue({ paymentMethodId: firstItem.paymentMethodId });
-          setPaymentMethodRemainingAmount(firstItem.remaining || '');
+        if (paymentList.length > 0 && !form.getFieldValue("paymentMethodId")) {
+          let firstId = 0;
+
+  // Prefer payment method where name includes "Lab"
+  const getLabAmount = paymentList.find(s => s.name?.includes('Nicu'));
+
+  if (getLabAmount) {
+    firstId = getLabAmount.paymentMethodId;
+  } else {
+    const firstPaymentMethod = paymentList[0];
+    firstId = firstPaymentMethod.paymentMethodId;
+  }
+          
+          form.setFieldsValue({ paymentMethodId: firstId });
+          setPaymentMethodRemainingAmount(firstId.remaining || '');
         }
       } else {
         message.warn("No payment Method found or unexpected response format.");
@@ -84,13 +88,12 @@ const NicuDischargeModal = ({ visible, title, onCancel, initialValues, onSave, b
     }
   };
 
-  // Function to calculate amounts automatically
+
   const calculateAmounts = (totalAmount, discount, paidAmount) => {
     const total = totalAmount || 0;
     const discountValue = discount || 0;
     const netAmount = total - discountValue;
     
-    // If paid amount is not manually set, use net amount
     const paid = paidAmount !== undefined ? paidAmount : netAmount;
     const remaining = netAmount - paid;
     
@@ -149,12 +152,17 @@ const NicuDischargeModal = ({ visible, title, onCancel, initialValues, onSave, b
 
       const payload = {
         ...values,
-        nicuId: values.nicuId || null,
-        admissionDatetime: formattedDateTime,
+        nicuId: values.nicuId,        
         dischargeDatetime: formattedDischargeDateTime,
+        FinalFee: values.totalAmount,
+        discount: values.discount??0,
+        paid: values.paidAmount,
+        remainingAmount: values.remainingAmount,
+        description: values.description,
+        paymentmethodId: values.paymentMethodId || null,
       };
 
-      const response = await createNicuRecord(payload);
+      const response = await DischargeNicuPaitent(payload);
 
       if (!response || !response.data) throw new Error("Invalid response from server");
 
@@ -283,10 +291,6 @@ const NicuDischargeModal = ({ visible, title, onCancel, initialValues, onSave, b
                 <Form.Item
                   name="referBy"
                   label="Referring Doctor"
-                  rules={[
-                    { required: true, message: 'Please enter doctor name', whitespace: true },
-                    { max: 100, message: 'Doctor name cannot exceed 100 characters' }
-                  ]}
                 >
                   <Input 
                     placeholder="Enter referring doctor name" 
@@ -298,9 +302,7 @@ const NicuDischargeModal = ({ visible, title, onCancel, initialValues, onSave, b
                 <Form.Item 
                   name="bed" 
                   label="Bed Number"
-                  rules={[
-                    { required: true, message: 'Please enter bed number' }
-                  ]}
+                 
                 >
                   <Input 
                     placeholder="Enter bed number" 

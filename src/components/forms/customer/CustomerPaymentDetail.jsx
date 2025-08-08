@@ -10,8 +10,9 @@ import { ModuleRegistry } from 'ag-grid-community';
 import {  message, Button, Empty, Space, Tooltip, Popconfirm } from "antd";
 import useScreenSize from '../../common/useScreenSize';
 import { useTableHeader } from '../../common/useTableHeader';
+import { RollbackOutlined } from '@ant-design/icons';
 
-
+import { useNavigate } from "react-router-dom";
 import { Toaster } from "../../common/Toaster";
 import Loader from "../../common/Loader";
 import { getCustomerPaymentByDateRange } from "../../../api/API";
@@ -35,6 +36,7 @@ const  CustomerPaymentDetail = () => {
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = 
   useState([
    dayjs().subtract(30, 'day'), // 30 days ago
@@ -43,55 +45,88 @@ const  CustomerPaymentDetail = () => {
 
     const location = useLocation();
   const { customerId , customerName } = location.state || {};
-
+const handleReverse = useCallback((id,paid) => {
+  // You can open a modal or directly call an API
+  Toaster.success(`Reversing transaction for customer ID: ${id}`);
+   Toaster.success(`Reversing transaction for customer ID: ${paid}`);
+}, []);
 
    const getColumnDefs = useCallback(() => {
-    return [
-      {
-        headerName: 'S.No',
-        valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
+  const isWalkingCustomer = customerName?.toLowerCase().includes('walking');
+
+  const baseColumns = [
+    {
+      headerName: 'S.No',
+      valueGetter: (params) => params.node.rowIndex + 1,
+      minWidth: 80,
+    },
+    {
+      headerName: "Amount In/ sale",
+      field: "amount",
+      sortable: true,
+      filter: true,
+      minWidth: 140,
+    },
+    {
+      headerName: "Discount",
+      field: "discount",
+      sortable: true,
+      filter: true,
+      minWidth: 140,
+    },
+    {
+      headerName: "Amount Out / Paid",
+      field: "paid",
+      sortable: true,
+      filter: true,
+      minWidth: 140,
+    },
+    {
+      headerName: "Remaining",
+      field: "remaining",
+      sortable: true,
+      filter: true,
+      minWidth: 140,
+    },
+    {
+      headerName: "Date",
+      field: "date",
+      sortable: true,
+      filter: true,
+      minWidth: 140,
+    },
+  ];
+
+  if (!isWalkingCustomer) {
+    baseColumns.push({
+      headerName: "Actions",
+      field: "actions",
+      sortable: false,
+      filter: false,
+      pinned: 'right',
+      minWidth: 80,
+      width: 80,
+      cellRenderer: (params) => {
+        const paidAmount = parseFloat(params.data?.paid || 0);
+        if (paidAmount > 0) {
+          return (
+            <Tooltip title="Reverse Transaction">
+              <Button
+                icon={<RollbackOutlined />}
+                size="small"
+                onClick={() => handleReverse(customerId,params.data?.paid)}
+              />
+            </Tooltip>
+          );
+        }
+        return null;
       },
-      {
-        headerName: "Amount In/ sale",
-        field: "amount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-       {
-        headerName: "Discount",
-        field: "discount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-       {
-        headerName: "Amount Out / Paid",
-        field: "paid",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-          
-     {
-        headerName: "Remaining",
-        field: "remaining",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-           {
-        headerName: "Date",
-        field: "date",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-    ];
-  }, [screenSize]);
+    });
+  }
+
+  return baseColumns;
+}, [customerName, handleReverse]);
+
   
   const columnDefs = useMemo(() => getColumnDefs(), [getColumnDefs]);
 
@@ -267,7 +302,7 @@ const handleDateChange = (dates) => {
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-    // onAddNew: () => AddnewModal(null),
+    onAddNew: () => navigate('/customer'),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
     dateRange,

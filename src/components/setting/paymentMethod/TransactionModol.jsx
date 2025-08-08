@@ -3,6 +3,7 @@ import { Modal, Form, Button, Input, message, Row, Col, Card, Statistic, Alert }
 import { transactionPayment } from '../../../api/API';
 import { DollarCircleOutlined } from '@ant-design/icons';
 import preventWheelChange from '../../common/PreventWheel';
+import {Toaster} from '../../common/Toaster';
 
 const TransactionModal = ({ visible, title, onCancel, initialValues, onSave, button }) => {
   const [form] = Form.useForm();
@@ -65,7 +66,7 @@ const TransactionModal = ({ visible, title, onCancel, initialValues, onSave, but
       await form.validateFields();
       if ((!values.amountIn || values.amountIn === '') && 
           (!values.amountOut || values.amountOut === '')) {
-        message.error('Please enter either Amount In or Amount Out');
+        Toaster.info('Please enter either Amount In or Amount Out');
         setBtnLoading(false);
         return;
       }
@@ -73,14 +74,9 @@ const TransactionModal = ({ visible, title, onCancel, initialValues, onSave, but
  
       const finalRemaining = parseFloat(values.remaining);
       if (finalRemaining < 0) {
-        Modal.confirm({
-          title: 'Warning: Negative Balance',
-          content: 'This transaction will result in a negative balance. Do you want to proceed?',
-          okText: 'Yes, proceed',
-          cancelText: 'Cancel',
-          onOk: () => submitTransaction(values),
-          onCancel: () => setBtnLoading(false)
-        });
+        Toaster.warning('Remaining balance cannot be negative. Please adjust Amount In or Amount Out.');
+        setBtnLoading(false);
+        return;
       } else {
         submitTransaction(values);
       }

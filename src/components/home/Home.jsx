@@ -240,7 +240,7 @@ const Home = () => {
 
       {/* Main Statistics Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} md={8} lg={6}>
+        <Col xs={24} sm={12} md={8} lg={8}>
           <Card>
             <Statistic
               title="Total Sales"
@@ -252,7 +252,7 @@ const Home = () => {
             <Text type="secondary">Last six months sales record</Text>
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
+        <Col xs={24} sm={12} md={8} lg={8}>
           <Card>
             <Statistic
               title="Total Profit"
@@ -264,7 +264,7 @@ const Home = () => {
             <Text type="secondary">Last six months profit record</Text>
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
+        <Col xs={24} sm={12} md={8} lg={8}>
           <Card>
             <Statistic
               title="Total Expenses"
@@ -276,7 +276,7 @@ const Home = () => {
             <Text type="secondary">Last six months expenses record</Text>
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
+        {/* <Col xs={24} sm={12} md={8} lg={6}>
           <Card>
             <Statistic
               title="Lab Amount"
@@ -287,7 +287,7 @@ const Home = () => {
             />
             <Text type="secondary">Last six months L.Amount record</Text>
           </Card>
-        </Col>
+        </Col> */}
       </Row>
 
       {/* Secondary Statistics */}

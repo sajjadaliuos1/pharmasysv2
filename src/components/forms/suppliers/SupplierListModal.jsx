@@ -2,6 +2,7 @@ import React, { useEffect,useState } from 'react';
 import { Modal, Form, Button, Input, message, Row, Col, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import { createSupplier } from '../../../api/API';
+import { Toaster } from '../../common/Toaster';
 
 
 const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,button, setIsModalVisible }) => {
@@ -11,7 +12,6 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
   
   useEffect(() => {
     if (visible) {
-      // Check if supplierId exists and is not 0 to determine if it's an update
       const hasInitial = !!(initialValues?.supplierId && initialValues.supplierId !== 0);
       setIsUpdate(hasInitial);
       
@@ -26,7 +26,10 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
         form.resetFields();
         // Set current date as default
         form.setFieldsValue({
-          date: dayjs()
+          date: dayjs(),
+          paid :0,
+          amount: 0,
+          remaining: 0,
         });
       }
     }
@@ -43,23 +46,19 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
     });
   };
 
-  // Handle amount field change
   const handleAmountChange = (e) => {
     const value = e.target.value;
     form.setFieldsValue({ amount: value });
     
-    // Calculate remaining after a short delay to ensure form value is updated
     setTimeout(() => {
       calculateRemaining();
     }, 0);
   };
 
-  // Handle paid field change
   const handlePaidChange = (e) => {
     const value = e.target.value;
     form.setFieldsValue({ paid: value });
     
-    // Calculate remaining after a short delay to ensure form value is updated
     setTimeout(() => {
       calculateRemaining();
     }, 0);
@@ -72,6 +71,7 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
              await form.validateFields();
       }
       catch (error) {
+        Toaster.error("Please fill all required fields correctly.");
         setBtnLoading(false);
         return;
       }
@@ -139,7 +139,10 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
         form={form}
         layout="vertical"
         initialValues={{
-          date: dayjs() // Set current date as form's initial value
+          date: dayjs(),
+          amount: 0,
+          paid: 0,
+          remaining: 0,
         }}
       >
         <Form.Item name="supplierId" noStyle />
@@ -183,6 +186,9 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
               <Form.Item
                 name="amount"
                 label="Amount"
+                 rules={[
+                { required: true, message: 'Amount Must be Value' ,},                
+              ]}
               >
                 <Input 
                   type='number' 
@@ -201,6 +207,9 @@ const SupplierListModal = ({ visible, title, onCancel, initialValues, onSave,but
             <Form.Item
               name="paid"
               label="Paid"
+              rules={[
+                { required: true, message: 'Paid Amount Must be Value' ,},                
+              ]}
             >
               <Input 
                 type='number' 

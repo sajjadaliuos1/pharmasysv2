@@ -17,7 +17,7 @@ import {useCompanyInfo } from '../../common/CompanyInfoContext';
 import Loader from "../../common/Loader";
 import { getSaleDateRange } from "../../../api/API";
 import dayjs from 'dayjs';
-
+import { useNavigate } from "react-router-dom";
 import {NewSaleInvoice} from "../../utils/NewSaleInvoice";
 
 ModuleRegistry.registerModules([
@@ -34,7 +34,7 @@ const  SaleRecord = () => {
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  
+  const navigate = useNavigate();
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
@@ -68,70 +68,98 @@ const handlePrint = async (invoiceId) => {
    const getColumnDefs = useCallback(() => {
     return [
       {
-        headerName: 'S.No',
+        headerName: 'S#',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
+        minWidth: 50,        
+          sortable: false,
+        filter: false,
       },
       {
-        headerName: "Invoice No",
+        headerName: "Inv #",
         field: "invoiceNo",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 90,
       },
        {
         headerName: "Name",
         field: "customerName",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 180,
       },
        {
-        headerName: "Total Items",
+        headerName: "Items",
         field: "totalItems",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 70,
       },
           
      {
-        headerName: "Total Amount",
+        headerName: "Amount",
         field: "totalAmount",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 120,
       },
            {
         headerName: "Discount",
         field: "discountAmount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 95,
       },
                  {
-        headerName: "Paid Amount",
+        headerName: "Paid",
         field: "paidAmount",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 100,
       },
   
                  {
-        headerName: "Remaining",
+        headerName: "Remain",
         field: "remaining",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 90,
+      },          
+      
+                 {
+        headerName: "Return",
+        field: "returnItemAmount",
+        sortable: false,
+        filter: false,
+        minWidth: 90,
       },              
-        {
-        headerName: "Date",
-        field: "date",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
+       {
+  headerName: "Date",
+  field: "createdDateTime",
+  sortable: true,
+  filter: true,
+  minWidth: 190,
+  valueFormatter: (params) => {
+    if (!params.value) return '';
+    const date = new Date(params.value);
+
+    const pad = (n) => n < 10 ? '0' + n : n;
+
+    const day = pad(date.getDate());
+    const month = pad(date.getMonth() + 1); // months are zero-based
+    const year = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = pad(date.getMinutes());
+    const seconds = pad(date.getSeconds());
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+
+    return `${day}/${month}/${year} ${pad(hours)}:${minutes}:${seconds} ${ampm}`;
+  }
+},
+
             {
               headerName: "Actions",
               field: "actions",
@@ -197,7 +225,6 @@ const fetchPaymentDetailData = useCallback(async () => {
       setRowData(data);
       setFilteredData(data);
       
-      // Simplified message logic
       messageApi[data.length ? 'success' : 'info']({ 
         content: data.length 
           ? 'Payment records loaded successfully' 
@@ -346,7 +373,7 @@ const handleDateChange = (dates) => {
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-    // onAddNew: () => AddnewModal(null),
+    onAddNew: () => navigate('/sale'),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
     dateRange,
@@ -379,12 +406,10 @@ const handleDateChange = (dates) => {
       if (!searchText.trim()) {
         setFilteredData(rowData);
         return;
-      }
-      
+      }      
       const searchLower = searchText.toLowerCase();
-      const filtered = rowData.filter(row =>
-        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
-        (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+      const filtered = rowData.filter(row =>      
+        (row.customerName && row.customerName.toLowerCase().includes(searchLower))
       );
   
       setFilteredData(filtered);

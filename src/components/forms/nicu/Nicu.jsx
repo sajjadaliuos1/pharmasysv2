@@ -30,7 +30,7 @@ const Nicu = () => {
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-    const [isDischargeModalVisible, setIsDischargeModalVisible] = useState(false);
+  const [isDischargeModalVisible, setIsDischargeModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
@@ -70,8 +70,7 @@ const Nicu = () => {
   
    const handlePrint = async (invoiceId) => {
        let company = companyInfo;
-       
-       
+              
        if (!company) {
           company = await fetchCompanyInfo(); 
          if (!company) {
@@ -97,14 +96,7 @@ const Nicu = () => {
         field: "nicuNo",
         sortable: true,
         filter: true,
-        minWidth: 80,
-      },
-      {
-        headerName: "Refer By",
-        field: "referBy",
-        sortable: true,
-        filter: true,
-        minWidth: 150,
+        minWidth: 70,
       },
       {
         headerName: "Patient Name",
@@ -118,11 +110,18 @@ const Nicu = () => {
         field: "contact",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 110,
       },
       {
         headerName: "Address",
         field: "address",
+        sortable: true,
+        filter: true,
+        minWidth: 150,
+      },
+       {
+        headerName: "Refer By (Dr.)",
+        field: "referBy",
         sortable: true,
         filter: true,
         minWidth: 150,
@@ -132,7 +131,7 @@ const Nicu = () => {
         field: "bed",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 100,
       },
      {
   headerName: "Admission Time",
@@ -152,7 +151,7 @@ const Nicu = () => {
         sortable: false,
         filter: false,
          pinned: 'right',  
-        minWidth: 180,
+        minWidth: 140,
         cellRenderer: (params) => {
           return (
             <Space size="middle">
@@ -172,7 +171,7 @@ const Nicu = () => {
                   <Button 
                   icon={<PrinterOutlined />} 
                   text={params.data.nicuId}
-                  onClick={() => handlePrint(params.data.nicuId)} 
+                  onClick={() => handlePrint(params.data.nicuNo)} 
                   size="small"
                 />
               
@@ -220,13 +219,10 @@ const Nicu = () => {
 
   const handleRefreshData = useCallback(async () => {
     if (loadingRef.current) return;
-    
     setLoading(true);
     loadingRef.current = true;
-
     try {
-      const response = await getNicuPatient();
-    
+      const response = await getNicuPatient(true);
       if (!response) {
         throw new Error("Failed to fetch categories");
       }

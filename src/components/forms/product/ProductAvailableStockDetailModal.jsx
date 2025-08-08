@@ -6,7 +6,7 @@ import { getProductInventoryDetail } from "../../../api/API";
 
 const { Title } = Typography;
 
-const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails,  width, zIndex, productId }) => {
+const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails, productName,  width, zIndex, productId }) => {
   const gridRef = useRef(null);
   const [error, setError] = useState(null);
   const [rowData, setRowData] = useState([]);
@@ -69,6 +69,11 @@ const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails,  
       valueGetter: (params) => params.node.rowIndex + 1,
       minWidth: 70,
       width: 70,
+    },
+    {
+      headerName: "Inv No",
+      field: "invoiceNo",
+      width: 95,
     },
     {
       headerName: "Batch No",
@@ -177,7 +182,7 @@ const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails,  
       <Modal
         title={
           <Title level={4} style={{ margin: 0 }}>
-            Purchase Details - Invoice #{mainData?.productId || productId || 'N/A'}
+            Stock Details of : {mainData?.productName || productName || 'N/A'}
           </Title>
         }
         open={visible}
@@ -190,7 +195,7 @@ const ProductAvailableStockDetailModal = ({ visible, onCancel, productDetails,  
       >
         {/* Items Grid */}
         <div style={{ marginTop: 24 }}>
-          <Title level={5} style={{ marginBottom: 16 }}>Purchase Items</Title>
+          {/* <Title level={5} style={{ marginBottom: 16 }}>Purchase Items</Title> */}
           <div 
             className="ag-theme-alpine" 
             style={{

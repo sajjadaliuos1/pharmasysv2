@@ -1,6 +1,9 @@
 import React from "react";
 import { HashRouter, BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Home from "../components/home/Home";
+import SellerHome from "../components/home/SellerHome";
+import LabHome from "../components/home/LabHome";
+import { useAuthContext } from "../context/AuthContext";
 import Login from "../components/home/Login";
 import ToastProvider from "../components/common/Toaster";
 import Navbar from "../components/navbar/Navbar"
@@ -28,6 +31,7 @@ import ProductLowStockItem from "../components/forms/product/ProductLowStockItem
 import ProductAvailableStock from "../components/forms/product/ProductAvailableStock";
 import Expense from "../components/forms/expense/Expense";
 import User from "../components/forms/users/User";
+
 // LaboratoryDetail
 // BookTest
 import LaboratoryDetail from "../components/forms/laboratory/LaboratoryDetails";
@@ -35,6 +39,16 @@ import BookTest from "../components/forms/laboratory/BookTest";
 import LaboratoryList from "../components/forms/laboratory/LaboratoryList";
 import Nicu from "../components/forms/nicu/Nicu";
 import NicuList from "../components/forms/nicu/NicuList";
+import Summary from "../components/forms/summary/Summary";
+import SignUp from "../components/home/Signup";
+import DirectPrintComponent from "../components/forms/extra/DirectPrintComponent";
+import PurchaseReturn from "../components/forms/purchase/PurchaseReturn";
+import Role from "../components/setting/Role/Role"; 
+
+import NearToExpireitem from "../components/forms/product/NearToExpireitem";
+import ExpiredProducts from "../components/forms/product/ExpiredProducts";
+import BackupRestore from "../components/setting/BackupRestore";
+
 const isAuthenticated = () => {
   return !!localStorage.getItem("authToken"); 
 };
@@ -43,17 +57,30 @@ const ProtectedRoute = () => {
   return isAuthenticated() ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
+ 
+
 
 const AppRoutes = () => {
+   const { user } = useAuthContext();
+  const roleId = parseInt(user?.role, 10); // safely parse
   return (
     <HashRouter>
       <Navbar></Navbar>
       <ToastProvider />
       <div className="content">
       <Routes>
+       <Route path="/signup" element={<SignUp/>}/>
         <Route path="/login" element={<Login />} />
         <Route element={<ProtectedRoute />}>         
-        <Route path="/" element={<Home />} />
+   <Route
+  path="/"
+  element={ roleId === 2 ? (<SellerHome />) : roleId === 3 ? (<LabHome />) : 
+    (
+      <Home />
+    )
+  }
+/>
+
         <Route path="/category" element={<Category />} /> 
         <Route path="/subCategory" element={<SubCategory />} /> 
         <Route path="/uom" element={<Uom/>} /> 
@@ -65,6 +92,7 @@ const AppRoutes = () => {
         <Route path="/shop" element={<Shop />} />
         <Route path="/sale" element={<Sale />} />
         <Route path="/salereturn" element={<SaleReturn />} />
+        <Route path="/backuprestore" element={<BackupRestore />} />
         <Route path="/customer" element={<Customer/>} />
         <Route path="/purchaseList" element={<PurchaseList />} />
         <Route path="/purchaseRecrod" element={<Purchase/>} />
@@ -80,8 +108,15 @@ const AppRoutes = () => {
         <Route path="/laboratoryDetails" element={<LaboratoryDetail/>} /> 
           <Route path="/booktest" element={<BookTest/>} />
           <Route path="/laboratorylist" element={<LaboratoryList/>} />
+          <Route path="/directPrintComponent" element={<DirectPrintComponent/>} />
+          
+<Route path="/purchaseReturn" element={<PurchaseReturn />} />
   <Route path="/nicu" element={<Nicu/>} />
   <Route path="/niculist" element={<NicuList/>} />
+  <Route path="/summary" element={<Summary/>} />
+ <Route path="/role" element={<Role/>} />
+<Route path="productNearToExpire" element={<NearToExpireitem />}/>
+        <Route path="expiredproduct" element={<ExpiredProducts />}/>
 
         </Route>
       </Routes>

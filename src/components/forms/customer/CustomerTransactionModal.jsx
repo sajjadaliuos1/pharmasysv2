@@ -451,7 +451,7 @@ const CustomerTransactionModal = ({ visible, title, onCancel, initialValues, onS
 
           <Form.Item
             name="paymentMethodId"
-            label={`Payment Method - ${paymentMethodRemainingAmount}`}
+            label={`Payment Method : ${paymentMethodRemainingAmount}`}
             style={{ width: '100%' }}
           >
             <ReusableDropdown

@@ -2,34 +2,37 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../../context/AuthContext';
 import './navbar.css';
-import { 
-  FaRegUser, 
- 
- FaBalanceScale ,
+import {
+  FaRegUser,
+  FaBalanceScale,
   FaList,
   FaTachometerAlt,
-  FaShoppingBasket,
   FaListAlt,
   FaCog,
-  FaUniversity,
   FaCreditCard,
-  FaUserEdit,
-  FaHandshake,
-  FaBoxOpen, 
-  FaTruck,  
+  FaBoxOpen,
+  FaTruck,
   FaCartArrowDown,
-  FaShoppingCart ,
+  FaShoppingCart,
   FaStore,
   FaClipboardList,
   FaTruckLoading,
   FaUserFriends,
   FaUser,
-  FaFileInvoiceDollar, 
-  FaUndo
+  FaFileInvoiceDollar,
+  FaUndo,
+  FaArrowDown,
+  FaArrowUp,
+  FaMoneyBillWave,
+  FaFlask,
+   FaProcedures,
+  FaHourglassHalf,
+  FaTimesCircle,
 } from 'react-icons/fa';
-import { RiLogoutCircleRLine } from "react-icons/ri";
-import { GrUserWorker} from "react-icons/gr";
-import {  GiBuyCard } from "react-icons/gi";
+import { RiLogoutCircleRLine } from 'react-icons/ri';
+import { BiTestTube } from "react-icons/bi";        // For Test Types
+import { MdLibraryAdd } from "react-icons/md";      // For Book Test
+import { TbReportSearch } from "react-icons/tb";    // For Test Records
 
 const Navbar = () => {
   const { user, logout } = useAuthContext();
@@ -45,7 +48,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       localStorage.clear();
-       localStorage.removeItem("companyInfo");
+      localStorage.removeItem('companyInfo');
       sessionStorage.clear();
       window.location.reload();
       logout();
@@ -59,82 +62,74 @@ const Navbar = () => {
   };
 
   const toggleDropdown = (index) => {
-    setDropdownOpen((prev) => {
-      if (prev[index]) {
-        return {};
-      }
-      return { [index]: true };
-    });
+    setDropdownOpen((prev) => (prev[index] ? {} : { [index]: true }));
   };
-  
+
   const closeSidebar = () => {
     setIsSidebarOpen(false);
   };
 
-  // Helper function to check if main menu item should be active
   const isMainItemActive = (item) => {
-    if (item.path) {
-      return item.path === location.pathname;
-    }
-    // For dropdown items, check if any sub-item is active
+    if (item.path) return item.path === location.pathname;
     if (item.dropdown && item.links) {
-      return item.links.some(subItem => subItem.path === location.pathname);
+      return item.links.some((subItem) => subItem.path === location.pathname);
     }
     return false;
   };
 
   const getLinks = () => {
     switch (roleId) {
-      case 1: // Admin
+      case 1:
         return [
           { path: '/', label: 'Dashboard', icon: <FaTachometerAlt /> },
           {
             label: 'Setting',
-            icon: <FaCog  />,
+            icon: <FaCog />,
             dropdown: true,
             links: [
               { path: '/shop', label: 'Shop', icon: <FaStore /> },
               { path: '/category', label: 'Category', icon: <FaListAlt /> },
-              { path: '/subCategory', label: 'Sub Category', icon: <FaList  /> },
-              { path: '/uom', label: 'UOM', icon: <FaBalanceScale  /> },
-              { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },              
+              { path: '/subCategory', label: 'Sub Category', icon: <FaList /> },
+              { path: '/uom', label: 'UOM', icon: <FaBalanceScale /> },
+			        { path: '/role', label: 'Role', icon: <FaBalanceScale /> },
+              { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },
+               { path: '/backuprestore', label: 'Back up Restore', icon: <FaCreditCard /> },
+              //  { path: '/directPrintComponent', label: 'Register Form', icon: <FaUserEdit /> },
+       
             ],
           },
           {
             label: 'Product',
-            icon: <FaBoxOpen  />,
+            icon: <FaBoxOpen />,
             dropdown: true,
             links: [
-              { path: '/productList', label: 'product', icon: <FaClipboardList  /> },
-              { path: '/productLowStockItem', label: 'Low Stock Product', icon: <FaList  /> },
-              { path: '/productAvailableStock', label: 'Available Stock', icon: <FaList  /> },
+              { path: '/productList', label: 'Product', icon: <FaClipboardList /> },
+              { path: '/productLowStockItem', label: 'Low Product Stock', icon: <FaArrowDown /> },
+              { path: '/productAvailableStock', label: 'All Product Stock ', icon: <FaArrowUp /> },
+              { path: '/productNearToExpire', label: 'Short Expiry  ', icon: <FaHourglassHalf /> },
+              { path: '/expiredproduct', label: 'Expired  ', icon: <FaTimesCircle /> },
             ],
           },
           {
             label: 'Supplier',
             icon: <FaTruck />,
             dropdown: true,
-            links: [
-              { path: '/supplier', label: 'Suppliers', icon: <FaTruckLoading  /> },
-            ],
+            links: [{ path: '/supplier', label: 'Suppliers', icon: <FaTruckLoading /> }],
           },
-           {
+          {
             label: 'Customer',
-            icon: <FaUserFriends  />,
+            icon: <FaUserFriends />,
             dropdown: true,
-            links: [
-              { path: '/customer', label: 'Customer', icon: <FaUser  /> },
-            ],
+            links: [{ path: '/customer', label: 'Customer', icon: <FaUser /> }],
           },
           {
             label: 'Purchase',
-            icon: <FaCartArrowDown  />,
+            icon: <FaCartArrowDown />,
             dropdown: true,
-            links: [              
-              { path: '/purchaseRecrod', label: 'Purchase', icon: <FaFileInvoiceDollar  /> },
-              { path: '/purchase', label: 'Purchase', icon: <FaCartArrowDown  /> },
-              { path: '/purchaseList', label: 'Purchase List', icon: <FaList  /> },
-              
+            links: [
+               { path: '/purchase', label: 'Purchase', icon: <FaFileInvoiceDollar /> },
+               { path: '/purchaseReturn', label: 'Purchase Return', icon: <FaUndo /> },
+               { path: '/purchaseList', label: 'Purchase List', icon: <FaList /> },
             ],
           },
           {
@@ -142,71 +137,125 @@ const Navbar = () => {
             icon: <FaShoppingCart />,
             dropdown: true,
             links: [
-               { path: '/sale', label: 'Sale', icon: <FaShoppingCart  /> },
-               { path: '/saleReturn', label: 'Sale Return', icon: <FaUndo  /> },
-               { path: '/saleRecord', label: 'Sale Record', icon: <FaFileInvoiceDollar /> },
-                
+              { path: '/sale', label: 'Sale', icon: <FaShoppingCart /> },
+              { path: '/saleReturn', label: 'Sale Return', icon: <FaUndo /> },
+              { path: '/saleRecord', label: 'Sale Record', icon: <FaFileInvoiceDollar /> },
             ],
           },
           {
             label: 'Expense',
-            icon: <FaShoppingCart />,
+            icon: <FaMoneyBillWave />,
             dropdown: true,
             links: [
-               { path: '/expense', label: 'Expense', icon: <FaShoppingCart  /> },
-             { path: '/expenseCategory', label: 'Expense Category', icon: <FaShoppingCart  /> },
-                
+              { path: '/expense', label: 'Expense', icon: <FaMoneyBillWave /> },
+              { path: '/expenseCategory', label: 'Expense Category', icon: <FaListAlt /> },
             ],
           },
           {
             label: 'Laboratory',
-            icon: <FaCreditCard />,
+            icon: <FaFlask />,
             dropdown: true,
             links: [
-              { path: '/laboratoryDetails', label: 'Laboratory', icon: <FaCreditCard /> },
-              { path: '/booktest', label: 'Book Test', icon: <FaCreditCard /> },
-              { path: '/laboratorylist', label: 'Laboratory List', icon: <FaCreditCard /> },
-               { path: '/nicu', label: 'Nicu', icon: <FaCreditCard /> },
-               { path: '/niculist', label: 'Nicu List', icon: <FaCreditCard /> },
-            ]
+              { path: '/booktest', label: 'Book Test', icon: <MdLibraryAdd /> },
+              { path: '/laboratorylist', label: 'Test Records', icon: <TbReportSearch /> },
+              { path: '/laboratoryDetails', label: 'Tests Setup', icon: <BiTestTube /> },
+              { path: '/nicu', label: 'Nicu', icon: <FaProcedures /> },
+              { path: '/niculist', label: 'Nicu Records', icon: <FaListAlt /> },
+            ],
           },
           {
             label: 'User',
             icon: <FaRegUser />,
             dropdown: true,
-            links: [
-              { path: '/user', label: 'User', icon: <FaUser /> },
-            ]
+            links: [{ path: '/user', label: 'User', icon: <FaUser /> }],
           },
+           { path: '/summary', label: 'Summary', icon: <FaClipboardList /> },
         ];
-      case 2: // Manager
+      case 2:
         return [
+         { path: '/', label: 'Dashboard', icon: <FaTachometerAlt /> },
           {
             label: 'Setting',
-            icon: <FaStore />,
+            icon: <FaCog />,
             dropdown: true,
             links: [
-              { path: '/Shop', label: 'Shop', icon: <FaStore /> },
+              { path: '/shop', label: 'Shop', icon: <FaStore /> },
               { path: '/category', label: 'Category', icon: <FaListAlt /> },
-              { path: '/brand', label: 'Brand', icon: <FaShoppingBasket /> },
-              { path: '/bank', label: 'Bank', icon: <FaUniversity /> },
+              { path: '/subCategory', label: 'Sub Category', icon: <FaList /> },
+              { path: '/uom', label: 'UOM', icon: <FaBalanceScale /> },
+			  { path: '/role', label: 'Role', icon: <FaBalanceScale /> },
               { path: '/paymentMethod', label: 'Payment Method', icon: <FaCreditCard /> },
-              { path: '/registerForm', label: 'Register Form', icon: <FaUserEdit /> },
+              //  { path: '/directPrintComponent', label: 'Register Form', icon: <FaUserEdit /> },
+       
             ],
           },
-          { path: '/dashboard', label: 'Manager Dashboard', icon: <FaTachometerAlt /> },
-          { path: '/team', label: 'Team', icon: <GrUserWorker /> },
-          { path: '/bank', label: 'Bank', icon: <FaUniversity /> },
-        ];
-      case 3: // User
-        return [
           {
-            label: 'Investers',
-            icon: <FaHandshake />,
+            label: 'Product',
+            icon: <FaBoxOpen />,
             dropdown: true,
             links: [
-              { path: '/investorInvestment', label: 'Investor Investment', icon: <GiBuyCard /> }
+              { path: '/productList', label: 'Product', icon: <FaClipboardList /> },
+              { path: '/productLowStockItem', label: 'Low Product Stock', icon: <FaArrowDown /> },
+              { path: '/productAvailableStock', label: 'All Product Stock ', icon: <FaArrowUp /> },
+              { path: '/productNearToExpire', label: 'Short Expiry  ', icon: <FaHourglassHalf /> },
+              { path: '/expiredproduct', label: 'Expired  ', icon: <FaTimesCircle /> },
             ],
+          },
+          {
+            label: 'Supplier',
+            icon: <FaTruck />,
+            dropdown: true,
+            links: [{ path: '/supplier', label: 'Suppliers', icon: <FaTruckLoading /> }],
+          },
+          {
+            label: 'Customer',
+            icon: <FaUserFriends />,
+            dropdown: true,
+            links: [{ path: '/customer', label: 'Customer', icon: <FaUser /> }],
+          },
+          {
+            label: 'Purchase',
+            icon: <FaCartArrowDown />,
+            dropdown: true,
+            links: [
+               { path: '/purchase', label: 'Purchase', icon: <FaFileInvoiceDollar /> },
+               { path: '/purchaseReturn', label: 'Purchase Return', icon: <FaUndo /> },
+               { path: '/purchaseList', label: 'Purchase List', icon: <FaList /> },
+            ],
+          },
+          {
+            label: 'Sale',
+            icon: <FaShoppingCart />,
+            dropdown: true,
+            links: [
+              { path: '/sale', label: 'Sale', icon: <FaShoppingCart /> },
+              { path: '/saleReturn', label: 'Sale Return', icon: <FaUndo /> },
+              { path: '/saleRecord', label: 'Sale Record', icon: <FaFileInvoiceDollar /> },
+            ],
+          },
+          {
+            label: 'Nicu',
+            icon: <FaMoneyBillWave />,
+            dropdown: true,
+            links: [
+             { path: '/nicu', label: 'Nicu', icon: <FaProcedures /> },
+              { path: '/niculist', label: 'Nicu Records', icon: <FaListAlt /> },
+            ],
+          },
+         
+        ];
+      case 3:
+        return [
+            { path: '/', label: 'Dashboard', icon: <FaTachometerAlt /> },
+          {
+            label: 'Laboratory',
+            icon: <FaFlask />,
+            dropdown: true,
+            links: [
+              { path: '/booktest', label: 'Book Test', icon: <MdLibraryAdd /> },
+              { path: '/laboratorylist', label: 'Test Records', icon: <TbReportSearch /> },
+              { path: '/laboratoryDetails', label: 'Tests Setup', icon: <BiTestTube /> },
+                         ],
           },
         ];
       default:
@@ -217,9 +266,7 @@ const Navbar = () => {
   return (
     <>
       <nav className="navbar custom-justify sticky-top navbar-light bg-light w-auto">
-        <label className="navbar-brand">
-          Store Management System
-        </label>
+        <label className="navbar-brand">Pharmacy Management System</label>
         <div className="profile-container">
           <FaRegUser
             style={{ fontSize: '30px', marginRight: '30px' }}
@@ -229,10 +276,19 @@ const Navbar = () => {
           <div
             className={`profile-dropdown ${isProfileDropdownOpen ? 'open' : ''}`}
             onMouseLeave={() => setIsProfileDropdownOpen(false)}
-          >
-            <Link to="/profile" className="dropdown-item">Profile</Link>
-            <Link to="/settings" className="dropdown-item">Settings</Link>
-            <div className="dropdown-item" onClick={handleLogout}>Logout</div>
+          >{/*
+            <Link to="/profile" className="dropdown-item">
+              Profile
+            </Link>
+            <Link to="/settings" className="dropdown-item">
+              Settings
+            </Link>*/}
+            <div className="dropdown-item">
+              <span className="profile-name">{user.email}</span>
+            </div>
+            <div className="dropdown-item" onClick={handleLogout}>
+              Logout
+            </div>
           </div>
         </div>
       </nav>
@@ -261,35 +317,47 @@ const Navbar = () => {
                     <div className="sidebar-link" onClick={() => toggleDropdown(index)}>
                       {item.icon}
                       <span className="sidebar-label">{item.label}</span>
-                      <span className={`dropdown-arrow ${dropdownOpen[index] ? 'open' : ''}`}>▼</span>
+                      <span className={`dropdown-arrow ${dropdownOpen[index] ? 'open' : ''}`}>
+                        ▼
+                      </span>
                     </div>
                   ) : (
-                    <Link to={item.path} className="sidebar-link" onClick={() => {
-                      closeSidebar();
-                      const newDropdownState = Object.keys(dropdownOpen).reduce((acc, key) => {
-                        acc[key] = false;
-                        return acc;
-                      }, {});
-                      setDropdownOpen(newDropdownState);
-                    }}>
+                    <Link
+                      to={item.path}
+                      className="sidebar-link"
+                      onClick={() => {
+                        closeSidebar();
+                        const newDropdownState = Object.keys(dropdownOpen).reduce((acc, key) => {
+                          acc[key] = false;
+                          return acc;
+                        }, {});
+                        setDropdownOpen(newDropdownState);
+                      }}
+                    >
                       {item.icon}
                       <span className="sidebar-label">{item.label}</span>
                     </Link>
                   )}
-                  
+
                   {item.dropdown && dropdownOpen[index] && (
                     <ul className="dropdown">
                       {item.links.map((subItem, subIndex) => (
                         <li
                           key={subIndex}
-                          className={`dropdown-item ${subItem.path === location.pathname ? 'active' : ''}`}
+                          className={`dropdown-item ${
+                            subItem.path === location.pathname ? 'active' : ''
+                          }`}
                         >
-                          <Link 
-                            to={subItem.path} 
-                            onClick={closeSidebar} 
-                            className={`dropdown-link ${subItem.path === location.pathname ? 'active' : ''}`}
+                          <Link
+                            to={subItem.path}
+                            onClick={closeSidebar}
+                            className={`dropdown-link ${
+                              subItem.path === location.pathname ? 'active' : ''
+                            }`}
                           >
-                            {subItem.icon && <span className="dropdown-icon">{subItem.icon}</span>}
+                            {subItem.icon && (
+                              <span className="dropdown-icon">{subItem.icon}</span>
+                            )}
                             {subItem.label}
                           </Link>
                         </li>

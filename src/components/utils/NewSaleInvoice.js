@@ -273,9 +273,8 @@ const createdDateTime = new Date(invoiceData.data.data.sale.createdDateTime);
           <div class="header">
             <div class="center shop-name">${companyInfo.data.shopName || 'Shop Name'}</div>
             <div class="center shop-address">${companyInfo.data.phoneNo || ''} - ${companyInfo.data.contactNo || ''}</div>
-            <div class="center shop-address">${companyInfo.data.address || ''}</div>
-          </div>
-          
+            <div class="center shop-address">${companyInfo.data.shopDetail || ''}</div>
+          </div>          
         <div class="invoice-info">
   <div class="row-top">
     <span><span class="bold">INV#:</span> ${invoiceNo}</span>

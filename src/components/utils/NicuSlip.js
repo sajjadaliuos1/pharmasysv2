@@ -29,9 +29,16 @@ export const NicuSlip = async (invoiceNo, companyInfo) => {
       : '';
 
     const dischargeDatetime = invoiceData?.data?.data?.dischargeDatetime;
-    const discharge = dischargeDatetime
-      ? new Date(dischargeDatetime).toLocaleDateString("en-GB")
-      : '';
+const discharge = dischargeDatetime
+  ? new Date(dischargeDatetime).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    })
+  : '';
 
     let printWindow = window.open("", "_blank");
 
@@ -293,7 +300,7 @@ export const NicuSlip = async (invoiceNo, companyInfo) => {
                 <span class="amount-label">Sub Total:</span>
                 <span class="amount-dots"></span>
                 <span class="amount-value">
-                  <span class="currency">Rs:</span>${(invoiceData?.data?.data?.FinalFee ?? 0).toFixed(2)}
+                  <span class="currency">Rs:</span>${(invoiceData?.data?.data?.finalFee ?? 0).toFixed(2)}
                 </span>
               </div>
 

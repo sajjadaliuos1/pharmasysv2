@@ -95,8 +95,7 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
     try {
       setBtnLoading(true);
       const values = await form.validateFields();
-      
-      // Check if at least one amount is entered
+            
       const paidAmount = parseFloat(values.paid) || 0;
       const discountAmount = parseFloat(values.Discount) || 0;
       
@@ -106,7 +105,6 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
         return;
       }
 
-//setPaymentMethodRemainingAmount
  if (paymentMethodRemainingAmount < paidAmount) {
         Toaster.error('Paid amount exceeds the available balance in the selected payment method');
         
@@ -116,14 +114,10 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
 
       const finalRemaining = parseFloat(values.Remaining);
       if (finalRemaining < 0) {
-        Modal.confirm({
-          title: 'Warning: Negative Balance',
-          content: 'This transaction will result in a negative balance. Do you want to proceed?',
-          okText: 'Yes, proceed',
-          cancelText: 'Cancel',
-          onOk: () => submitTransaction(values),
-          onCancel: () => setBtnLoading(false)
-        });
+      Toaster.error('Paid amount exceeds the supplier available balance');
+        
+        setBtnLoading(false);
+        return;
       } else {
         submitTransaction(values);
       }
@@ -266,7 +260,7 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
           <Col span={12}>
             <Form.Item
               name="Discount"
-              label="Discount Given"
+              label="Discount"
               rules={[{
                 validator: (_, value) => {
                   const paid = form.getFieldValue('paid');
@@ -307,7 +301,7 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
           <Col xs={24} sm={24} md={12} lg={12} xl={12}>
             <Form.Item
               name="Remaining"
-              label="New Remaining Balance"
+              label="Remaining Balance"
               rules={[{ required: true, message: 'Remaining amount is required' }]}
             >
               <Input
@@ -358,8 +352,8 @@ const SupplierTransaction = ({ visible, title, onCancel, initialValues, onSave, 
           </Col>
 
           <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-            <Form.Item name="Description" label="Transaction Note">
-              <Input.TextArea rows={1} placeholder="Enter Transaction Note" />
+            <Form.Item name="Description" label="Description">
+              <Input.TextArea rows={1} placeholder="Description" />
             </Form.Item>
           </Col>
         </Row>

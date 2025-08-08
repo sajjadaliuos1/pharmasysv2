@@ -84,49 +84,58 @@ const ProductList = () => {
 const getColumnDefs = useCallback(() => {
   return [
     {
-      headerName: 'S.No',
+      headerName: 'S#',
       valueGetter: (params) => params.node.rowIndex + 1,
-      minWidth: 80,
-      width: 80,
-      maxWidth: 80,
+      minWidth: 50,  
+      width: 50,     
+        sortable: false,
+        filter:false,
     },
     {
       headerName: "Product Name",
       field: "productName",
       sortable: true,
       filter: true,
-      minWidth: 140,
+      minWidth: 180,
     },
         {
       headerName: "Category",
       field: "categoryName",
-      minWidth: 100,
+      minWidth: 160,
     },
     {
       headerName: "Subcategory",
       field: "subCategoryName",
-      minWidth: 100,
+      minWidth: 160,
     },
     {
       headerName: "UOM",
       field: "uom",
-      minWidth: 100,
+      minWidth: 70,       
+        sortable: false,
+        filter:false,
     },
     {
       headerName: "Barcode",
       field: "barcode",
-      minWidth: 140,
+      minWidth: 120,
+      
     },
     {
       headerName: "Stock Alert",
       field: "stockAlert",
-      minWidth: 100,
+      minWidth: 90,
+       
+        sortable: false,
+        filter:false,
     },
     
     {
       headerName: "Strip/Box",
       field: "stripPerBox",
-      minWidth: 100,
+      minWidth: 100,       
+        sortable: false,
+        filter:false,
     },
     {
       headerName: "Actions",
@@ -363,7 +372,7 @@ const getColumnDefs = useCallback(() => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-         (row.typeName && row.typeName.toLowerCase().includes(searchLower))
+         (row.productName && row.productName.toLowerCase().includes(searchLower))
       );
       setFilteredData(filtered);
     };
@@ -464,10 +473,10 @@ const getColumnDefs = useCallback(() => {
               ref={gridRef}
               rowData={filteredData}
               defaultColDef={defaultColDef}
-              pagination={true}
+              pagination={false}
               popupParent={popupParent}
-              paginationPageSize={10}
-              paginationPageSizeSelector={[ 10, 20, 50, 100]}
+             // paginationPageSize={10}
+              //paginationPageSizeSelector={[ 10, 20, 50, 100]}
               domLayout='normal'
               suppressCellFocus={true}
               animateRows={true}

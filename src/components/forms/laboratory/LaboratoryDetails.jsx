@@ -68,11 +68,13 @@ const LaboratoryDetails = () => {
    const getColumnDefs = useCallback(() => {
     return [
       {
-        headerName: 'S.No',
+        headerName: 'S#',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
+        minWidth: 50,
+        width:50,
+         filter: false,
+        sortable:false,
+
       },
     
       {
@@ -105,7 +107,7 @@ const LaboratoryDetails = () => {
         sortable: true,
         filter: true,
        
-        minWidth: 140,
+        minWidth: 190,
       },
       {
         headerName: "Actions",

@@ -13,7 +13,7 @@ import { TestSlip } from '../../utils/TestSlip';
 import Loader from "../../common/Loader";
 import { testRecord } from "../../../api/API";
 import dayjs from 'dayjs';
-
+import { useNavigate } from "react-router-dom";
 import LaboratoryListModol from "./LaboratoryListModal";
 import { useCompanyInfo } from '../../common/CompanyInfoContext';
 ModuleRegistry.registerModules([
@@ -29,11 +29,13 @@ const  LaboratoryList = () => {
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingRecord, setEditingRecord] = useState(null);
-  const [newTestNo, setNewTestNo] = useState();
+const [patientName, setPatientName] = useState('');
+
+
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
   const loadingRef = useRef(false); 
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = 
   useState([
    dayjs().subtract(30, 'day'), // 30 days ago
@@ -59,68 +61,69 @@ const  LaboratoryList = () => {
    const getColumnDefs = useCallback(() => {
     return [
       {
-        headerName: 'S.No',
+        headerName: 'S#',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
+        minWidth: 50,
+                filter: false,
+        sortable:false,
       },
    {
-        headerName: "Test No",
+        headerName: "Test #",
         field: "testNo",
         sortable: true,
         filter: true,
-        minWidth: 110,
+        minWidth: 90,
       },
        {
-        headerName: "Customer Name",
-        field: "customerName",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-        {
-        headerName: "Contact No",
-        field: "contactNo",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
-      },
-      {
         headerName: "Doctor Name",
         field: "doctorName",
         sortable: true,
         filter: true,
         minWidth: 140,
       },
+       {
+        headerName: "Customer Name",
+        field: "customerName",
+        sortable: true,
+        filter: true,
+        minWidth: 180,
+      },
+        {
+        headerName: "Contact",
+        field: "contactNo",
+        sortable: true,
+        filter: true,
+        minWidth: 120,
+      },
+     
           
      {
-        headerName: "Total Test",
+        headerName: "Tests",
         field: "totalTest",
-        sortable: true,
-        filter: true,
-        minWidth: 110,
+        sortable: false,
+        filter: false,
+        minWidth: 65,
       },
       {
-        headerName: "Total Amount",
+        headerName: "Amount",
         field: "totalAmount",
-        sortable: true,
-        filter: true,
-        minWidth: 110,
+        sortable: false,
+        filter: false,
+        minWidth: 88,
       },
            {
         headerName: "Discount",
         field: "discount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 92,
       },
                  {
-        headerName: "Paid Amount",
+        headerName: "Paid",
         field: "paidAmount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 75,
       },
          
         {
@@ -128,7 +131,7 @@ const  LaboratoryList = () => {
         field: "date",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 110,
       },
             {
               headerName: "Actions",
@@ -145,6 +148,7 @@ const  LaboratoryList = () => {
                         icon={<InfoCircleOutlined />} 
                         onClick={() => {
                           setTestDetailsId(params.data.testRecordId); 
+                           setPatientName(params.data.customerName); 
                           setIsModalVisible(true);
                         }}
                         size="small"
@@ -224,9 +228,9 @@ const fetchPaymentDetailData = useCallback(async () => {
   }
 }, [messageApi, dateRange]);  // Added paymentId to dependencies
 
-// Consolidated refresh function
+
 const handleRefreshData = useCallback(async () => {
-  await fetchPaymentDetailData();  // Reuse the same logic
+  await fetchPaymentDetailData();   
 }, [fetchPaymentDetailData]);
 
 // useEffect hook
@@ -267,6 +271,23 @@ useEffect(() => {
       });
       doc.save(`${fileName}.pdf`);
     }, [rowData]);
+
+// Fixed total paid amount calculation
+const totalPaidAmount = useMemo(() => {
+  return filteredData.reduce((sum, item) => sum + (parseFloat(item.paidAmount) || 0), 0);
+}, [filteredData]);
+
+const filteredDoctor = useMemo(() => {
+  if (!searchText.trim()) return null;
+  
+  const searchLower = searchText.toLowerCase();
+  const doctorRecord = filteredData.find(row => 
+    row.doctorName && row.doctorName.toString().toLowerCase().includes(searchLower) ||
+    row.contactNo && row.contactNo.toString().toLowerCase().includes(searchLower)
+  );
+  
+  return doctorRecord ? doctorRecord.doctorName : null;
+}, [searchText, filteredData]);
 
   const handleExportExcel = useCallback(() => {
     if (gridRef.current?.api) {
@@ -345,7 +366,7 @@ const handleDateChange = (dates) => {
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-    // onAddNew: () => AddnewModal(null),
+    onAddNew: () => navigate('/booktest'),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
     dateRange,
@@ -382,8 +403,8 @@ const handleDateChange = (dates) => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
-        (row.customerName && row.customerName.toLowerCase().includes(searchLower))
+        (row.doctorName && row.doctorName.toString().toLowerCase().includes(searchLower)) ||
+        (row.customerName && row.customerName.toString().toLowerCase().includes(searchLower))
       );
   
       setFilteredData(filtered);
@@ -444,7 +465,7 @@ const handleDateChange = (dates) => {
   );
   
   return (
-    
+    <div>
     <div className="container mt-2">
     <div className="category-management-container" style={{ padding: '0px', maxWidth: '100%' }}>
       {contextHolder}
@@ -462,45 +483,99 @@ const handleDateChange = (dates) => {
           }}
         >
           {filteredData.length === 0 ? renderEmptyState() : (
-            <AgGridReact
-              gridOptions={{ suppressMenuHide: true }}
-              columnDefs={columnDefs}
-              ref={gridRef}
-              rowData={filteredData}
-              defaultColDef={defaultColDef}
-              pagination={true}
-              popupParent={popupParent}
-              paginationPageSize={10}
-              paginationPageSizeSelector={[ 10, 20, 50, 100]}
-              domLayout='normal'
-              suppressCellFocus={true}
-              animateRows={true}
-              enableCellTextSelection={true}
-              onGridReady={params => {
-                params.api.sizeColumnsToFit();
-                if (screenSize === 'xs') {
-                  params.api.setGridOption('rowHeight', 40);
-                }
-              }}
-              onFirstDataRendered={params => params.api.sizeColumnsToFit()}
-            />
+             <AgGridReact
+           gridOptions={{ suppressMenuHide: true }}
+                          columnDefs={columnDefs}
+                          ref={gridRef}
+                          rowData={filteredData}
+                          defaultColDef={defaultColDef}
+                          pagination={true}
+                          popupParent={popupParent}
+                          paginationPageSize={10}
+                          paginationPageSizeSelector={[ 10, 20, 50, 100]}
+                          domLayout='normal'
+                          suppressCellFocus={true}
+                          animateRows={true}
+                          enableCellTextSelection={true}
+                          onGridReady={params => {
+                            params.api.sizeColumnsToFit();
+                            if (screenSize === 'xs') {
+                              params.api.setGridOption('rowHeight', 40);
+                            }
+                          }}
+            onFirstDataRendered={params => params.api.sizeColumnsToFit()}
+                        />
           )}
         </div>
+        
       )}
       
+      {/* Enhanced Footer with conditional display */}
+      {filteredData.length > 0 && (
+        <div className="ag-grid-custom-footer" style={{
+          padding: '10px 15px',
+          backgroundColor: '#f5f5f5',
+          borderTop: '1px solid #d9d9d9',
+          borderLeft: '1px solid #d9d9d9',
+          borderRight: '1px solid #d9d9d9',
+          borderBottom: '1px solid #d9d9d9',
+          borderRadius: '0 0 6px 6px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: '14px',
+          fontWeight: '500'
+        }}>
+          <div className="footer-info">
+            {searchText.trim() ? (
+              <>
+                {filteredDoctor && (
+                  <span style={{ color: '#1890ff', marginRight: '15px' }}>
+                    Doctor: {filteredDoctor}
+                  </span>
+                )}
+                <span style={{ color: '#666' }}>
+                  Showing {filteredData.length} record(s)
+                </span>
+              </>
+            ) : (
+              <span style={{ color: '#666' }}>
+                Total Records: {filteredData.length}
+              </span>
+            )}
+          </div>
+          <div className="footer-total" style={{
+            color: '#52c41a',
+            fontSize: '16px',
+            fontWeight: 'bold'
+          }}>
+            {searchText.trim() ? 
+              `Filtered Total Paid: Rs ${totalPaidAmount.toLocaleString()}` : 
+              `Total Paid Amount: Rs ${totalPaidAmount.toLocaleString()}`
+            }
+          </div>
+        </div>
+      )}
 
 <LaboratoryListModol 
       width={500}
       zIndex={3000}
-  visible={isModalVisible}
-  onCancel={() => {
-    setIsModalVisible(false);
-  }}
-  loading={loading}
-    testId={testDetailsId} 
-/>
+      visible={isModalVisible}
+      onCancel={() => {
+      setIsModalVisible(false);
+      }}
+      loading={loading}
+      testId={testDetailsId} 
+      patientName={patientName}
+     onSuccess={() => {
+    setIsModalVisible(false);      
+    handleRefreshData();
+      }}
+
+    />
     </div>
     
+    </div>
     </div>
   );
 };

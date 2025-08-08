@@ -104,17 +104,20 @@ const handleDetails = useCallback((id, name) => {
 
   const getColumnDefs = useCallback(() => [
     {
-      headerName: 'S.No',
+      headerName: 'S#',
       valueGetter: (params) => params.node.rowIndex + 1,
-      minWidth: 80,
+      minWidth: 50,
+       
+        sortable: false,
+        filter:false,
     },
-    { headerName: "Supplier Name", field: "name", sortable: true, filter: true, minWidth: 140 },
-    { headerName: "Contact", field: "contact", sortable: true, filter: true, minWidth: 140 },
-    { headerName: "Address", field: "address", sortable: true, filter: true, minWidth: 140 },
-    { headerName: "Amount", field: "amount", sortable: true, filter: true, minWidth: 140 },
-    { headerName: "Discount", field: "discount", sortable: true, filter: true, minWidth: 140 },
-    { headerName: "Paid", field: "paid", sortable: true, filter: true, minWidth: 140 },
-    { headerName: "Remaining", field: "remaining", sortable: true, filter: true, minWidth: 140 },
+    { headerName: "Supplier Name", field: "name", sortable: true, filter: true, minWidth: 180 },
+    { headerName: "Contact #", field: "contact", sortable: true, filter: true, minWidth: 120 },
+    { headerName: "Address", field: "address", sortable: false, filter: false, minWidth: 140 },
+    { headerName: "Amount", field: "amount", sortable: false, filter: false, minWidth: 100 },
+    { headerName: "Discount", field: "discount", sortable: false, filter: false, minWidth: 100 },
+    { headerName: "Paid", field: "paid", sortable: false, filter: false, minWidth: 100 },
+    { headerName: "Remain", field: "remaining", sortable: false, filter: false, minWidth: 100 },
     { headerName: "Description", field: "description", sortable: true, filter: true, minWidth: 140 },
     {
       headerName: "Actions",

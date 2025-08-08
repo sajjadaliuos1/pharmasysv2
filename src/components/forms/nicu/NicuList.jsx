@@ -17,6 +17,7 @@ import { NicuSlip } from '../../utils/NicuSlip';
 import { useCompanyInfo } from '../../common/CompanyInfoContext';
 import NicuDischargeModal from "./NicuDischargeModal";
 import { Toaster } from "../../common/Toaster";
+import { useNavigate } from "react-router-dom";
 ModuleRegistry.registerModules([
   AllCommunityModule, 
  
@@ -25,22 +26,20 @@ ModuleRegistry.registerModules([
 const  NicuList = () => {
   const [rowData, setRowData] = useState([]);
   const [searchText, setSearchText] = useState("");
-  const [nicuDetailsId, setNicuDetailsId] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
-  const [newTestNo, setNewTestNo] = useState();
   const gridRef = useRef(null);
   const screenSize = useScreenSize(gridRef);
-   const [isDischargeModalVisible, setIsDischargeModalVisible] = useState(false);
+  const [isDischargeModalVisible, setIsDischargeModalVisible] = useState(false);
   const loadingRef = useRef(false); 
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = 
   useState([
-   dayjs().subtract(30, 'day'), 
-  dayjs() 
+   dayjs().subtract(30, 'day'), // 30 days ago
+  dayjs() // Today
   ]);
   const { companyInfo, fetchCompanyInfo } = useCompanyInfo();
 
@@ -70,19 +69,25 @@ const  NicuList = () => {
              AddDischargeModal(record);
            }
          }, [AddDischargeModal, rowData]);
+         const formatDate = (value) => {
+           if (!value) return '';
+           return dayjs(value).format('DD-MM-YYYY hh:mm:ss A');
+         };
    const getColumnDefs = useCallback(() => {
   return [
     {
-      headerName: 'S.No',
+      headerName: '#',
       valueGetter: (params) => params.node.rowIndex + 1,
-      minWidth: 80,
+      minWidth: 48,
+       sortable: false,
+      filter: false,
     },
     {
-      headerName: "Nicu No",
+      headerName: "Inv#",
       field: "nicuNo",
       sortable: true,
       filter: true,
-      minWidth: 110,
+      minWidth: 80,
     },
     {
       headerName: "Patient Name",
@@ -101,12 +106,12 @@ const  NicuList = () => {
     {
       headerName: "Address",
       field: "address",
-      sortable: true,
-      filter: true,
+      sortable: false,
+      filter: false,
       minWidth: 140,
     },
     {
-      headerName: "Refer By",
+      headerName: "Refer By (Dr.)",
       field: "referBy",
       sortable: true,
       filter: true,
@@ -115,44 +120,46 @@ const  NicuList = () => {
     {
       headerName: "Bed No",
       field: "bed",
-      sortable: true,
-      filter: true,
-      minWidth: 110,
+      sortable: false,
+      filter: false,
+      minWidth: 90,
     },
     {
-      headerName: "Total Fee",
+      headerName: "Fee",
       field: "finalFee",
-      sortable: true,
-      filter: true,
-      minWidth: 140,
+      sortable: false,
+      filter: false,
+      minWidth: 90,
     },
     {
       headerName: "Discount",
       field: "discount",
-      sortable: true,
-      filter: true,
-      minWidth: 140,
+     sortable: false,
+      filter: false,
+      minWidth: 90,
     },
     {
-      headerName: "Paid Amount",
+      headerName: "Paid",
       field: "paid",
-      sortable: true,
-      filter: true,
-      minWidth: 140,
+      sortable: false,
+      filter: false,
+      minWidth: 90,
     },
     {
-      headerName: "AdmissionDate",
+      headerName: "Admit Date",
       field: "admissionDatetime",
       sortable: true,
       filter: true,
-      minWidth: 140,
+      minWidth: 185,
+      valueFormatter: params => formatDate(params.value)
     },
     {
       headerName: "Discharge Date",
       field: "dischargeDatetime",
       sortable: true,
       filter: true,
-      minWidth: 140,
+      minWidth: 185,
+      valueFormatter: params => formatDate(params.value)
     },
     
     {
@@ -245,9 +252,9 @@ const fetchPaymentDetailData = useCallback(async () => {
     setLoading(false);
     loadingRef.current = false;
   }
-}, [messageApi, dateRange]); 
+}, [messageApi, dateRange]);  // Added paymentId to dependencies
 
-
+// Consolidated refresh function
 const handleRefreshData = useCallback(async () => {
   await fetchPaymentDetailData();  // Reuse the same logic
 }, [fetchPaymentDetailData]);
@@ -259,7 +266,6 @@ useEffect(() => {
   }
 }, [dateRange, handleRefreshData]);
 
-// new commeted cod eby inam
   const handleExportPDF = useCallback(() => {
       const fileName = prompt("Enter file name for PDF:", "category-data");
       if (!fileName) return;
@@ -291,6 +297,24 @@ useEffect(() => {
       });
       doc.save(`${fileName}.pdf`);
     }, [rowData]);
+
+// Calculate totals for filtered data
+const totalPaidAmount = useMemo(() => {
+  return filteredData.reduce((sum, item) => sum + (parseFloat(item.paid) || 0), 0);
+}, [filteredData]);
+
+// Get filtered doctor/referBy name for display
+const filteredDoctor = useMemo(() => {
+  if (!searchText.trim()) return null;
+  
+  const searchLower = searchText.toLowerCase();
+  const doctorRecord = filteredData.find(row => 
+    (row.referBy && row.referBy.toLowerCase().includes(searchLower)) ||
+    (row.contact && row.contact.toLowerCase().includes(searchLower))
+  );
+  
+  return doctorRecord ? (doctorRecord.referBy || `Contact: ${doctorRecord.contact}`) : null;
+}, [searchText, filteredData]);
 
   const handleExportExcel = useCallback(() => {
     if (gridRef.current?.api) {
@@ -365,11 +389,11 @@ const handleDateChange = (dates) => {
 };
 
   const { renderMobileHeader, renderDesktopHeader } = useTableHeader({
-    title: `Nicu Details`,
+    title: `Nicu Records`,
     onRefresh: handleRefreshData,
     onExportExcel: handleExportExcel,
     onExportPDF: handleExportPDF,
-    // onAddNew: () => AddnewModal(null),
+    onAddNew: () => navigate('/nicu'),
     onTableSizeChange: handleTableSizeChange,
     onSearchChange: (e) => setSearchText(e.target.value),
     dateRange,
@@ -406,8 +430,9 @@ const handleDateChange = (dates) => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-         (row.patientName && row.patientName.toLowerCase().includes(searchLower)) ||
-        (row.contact && row.contact.toLowerCase().includes(searchLower))
+         (row.referBy && row.referBy.toLowerCase().includes(searchLower)) ||
+        (row.contact && row.contact.toLowerCase().includes(searchLower)) ||
+        (row.patientName && row.patientName.toLowerCase().includes(searchLower))
        
       );
   
@@ -514,6 +539,66 @@ const handleDateChange = (dates) => {
               onFirstDataRendered={params => params.api.sizeColumnsToFit()}
             />
           )}
+        </div>
+      )}
+      
+      {/* Enhanced Footer with NICU totals */}
+      {filteredData.length > 0 && (
+        <div className="ag-grid-custom-footer" style={{
+          padding: '15px',
+          backgroundColor: '#f5f5f5',
+          borderTop: '1px solid #d9d9d9',
+          borderLeft: '1px solid #d9d9d9',
+          borderRight: '1px solid #d9d9d9',
+          borderBottom: '1px solid #d9d9d9',
+          borderRadius: '0 0 6px 6px',
+          fontSize: '14px',
+          fontWeight: '500'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <div className="footer-info">
+              {searchText.trim() ? (
+                <>
+                  {filteredDoctor && (
+                    <span style={{ color: '#1890ff', marginRight: '15px' }}>
+                      {filteredDoctor.startsWith('Contact:') ? filteredDoctor : `Dr. ${filteredDoctor}`}
+                    </span>
+                  )}
+                  <span style={{ color: '#666' }}>
+                    Showing {filteredData.length} record(s)
+                  </span>
+                </>
+              ) : (
+                <span style={{ color: '#666' }}>
+                  Total Records: {filteredData.length}
+                </span>
+              )}
+            </div>
+            
+            <div className="footer-totals" style={{
+              display: 'flex',
+              gap: '20px',
+              flexWrap: 'wrap',
+              alignItems: 'center'
+            }}>
+         <div style={{
+                color: '#52c41a',
+                fontSize: '15px',
+                fontWeight: 'bold'
+              }}>
+                {searchText.trim() ? 
+                  `Filtered Paid: Rs ${totalPaidAmount.toLocaleString()}` : 
+                  `Total Paid: Rs ${totalPaidAmount.toLocaleString()}`
+                }
+              </div>
+            </div>
+          </div>
         </div>
       )}
       

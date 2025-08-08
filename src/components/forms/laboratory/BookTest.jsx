@@ -81,16 +81,28 @@ useEffect(() => {
   const net = total - (parseFloat(discount) || 0);
   setNetTotal(net);
 
-  const remaining = net - (parseFloat(paidAmount) || 0);
-  setRemainingAmount(remaining);
+  const paid = net;
+  setPaidAmount(paid);
 
-  // Optionally update form fields too
+  setRemainingAmount(0);
+
   form1.setFieldsValue({
     totalAmount: total,
     netAmount: net,
+    paidAmount: paid,
+    remaining: 0,
+  });
+}, [cart, discount]);
+
+useEffect(() => {
+  const remaining = netTotal - (parseFloat(paidAmount) || 0);
+  setRemainingAmount(remaining);
+
+  form1.setFieldsValue({
     remaining: remaining,
   });
-}, [cart, discount, paidAmount]);
+}, [paidAmount, netTotal]);
+
 
 const fetchPaymentMethod = async () => {
     try {
@@ -106,12 +118,12 @@ const fetchPaymentMethod = async () => {
         setPaymentMethodMap(map);
     
       if (paymentList.length > 0 && !form1.getFieldValue("PaymentMethodId")) {
-let firstId = 0;
-        const getSajjad = paymentList.find(s => s.name.includes('HBl'));
-        if (getSajjad) {
-         firstId   = getSajjad.paymentMethodId;
-        }
-        else{
+      let firstId = 0;
+      const getLabAmount = paymentList.find(s => s.name.includes('Lab'));
+      if (getLabAmount) {
+         firstId   = getLabAmount.paymentMethodId;
+      }
+      else{
       const firstPaymentMethod = paymentList[0];
        firstId = firstPaymentMethod.paymentMethodId;
        }
@@ -129,7 +141,7 @@ let firstId = 0;
       setLoadingPaymentMethod(false);
     }
   };
-// Fetch Test number
+
 const fetchTestNo = async () => {
   try {
      setLoadingTests(true);
@@ -160,6 +172,7 @@ const fetchTestNo = async () => {
       return null;
     }
   };
+
   const handleTestChange = (testId) => {
     setSelectedTestId(testId);
     const selected = testList.find(test => test.testId === testId);
@@ -179,7 +192,7 @@ const fetchTestNo = async () => {
     }
   };
 
-const handleAddOrUpdate = () => {
+ const handleAddOrUpdate = () => {
   form.validateFields(['testId', 'testAmount', 'processingTime', 'description']).then(values => {
     const newItem = {
       testId: values.testId,
@@ -192,36 +205,39 @@ const handleAddOrUpdate = () => {
 
     const existingIndex = cart.findIndex(item => item.testId === values.testId);
 
+    // Calculate updated cart based on whether we're editing or adding
+    let updatedCart = [...cart];
+
     if (editingIndex !== null) {
-      const updated = [...cart];
-      updated[editingIndex] = newItem;
-      setCart(updated);
-
-      const totalAmount = updated.reduce((sum, item) => sum + parseFloat(item.testAmount || 0), 0);
-
-      form1.setFieldsValue({
-        totalAmount: totalAmount,
-        netAmount: totalAmount - (parseFloat(discount) || 0),
-        remaining: totalAmount - (parseFloat(discount) || 0) - (parseFloat(paidAmount) || 0)
-      });
-
+      updatedCart[editingIndex] = newItem;
+      setCart(updatedCart);
       setEditingIndex(null);
     } else if (existingIndex !== -1) {
       Toaster.error('This test is already in the cart.');
       return;
     } else {
-      const newCart = [...cart, newItem];
-      setCart(newCart);
-
-      const totalAmount = newCart.reduce((sum, item) => sum + parseFloat(item.testAmount || 0), 0);
-
-      form1.setFieldsValue({
-        totalAmount: totalAmount,
-        netAmount: totalAmount - (parseFloat(discount) || 0),
-        remaining: totalAmount - (parseFloat(discount) || 0) - (parseFloat(paidAmount) || 0)
-      });
+      updatedCart = [...cart, newItem];
+      setCart(updatedCart);
     }
 
+    // Recalculate totals
+    const totalAmount = updatedCart.reduce((sum, item) => sum + parseFloat(item.testAmount || 0), 0);
+    const net = totalAmount - (parseFloat(discount) || 0);
+    const paid = net;
+    const remaining = 0;
+
+    // Set values in form and local state
+    form1.setFieldsValue({
+      totalAmount: totalAmount,
+      netAmount: net,
+      paidAmount: paid,
+      remaining: remaining
+    });
+
+    setPaidAmount(paid);
+    setRemainingAmount(remaining);
+
+    // Reset fields for new entry
     form.resetFields(['testId', 'testAmount', 'processingTime', 'description']);
     setSelectedTestId(null);
   }).catch(() => {
@@ -253,14 +269,23 @@ const handleDelete = (index) => {
     setEditingIndex(null);
   }
 
-  // Always update totals after deletion
-  const totalAmount = updated.reduce((sum, item) => sum + parseFloat(item.testAmount || 0), 0);
-
+   const totalAmount = updated.reduce((sum, item) => sum + parseFloat(item.testAmount || 0), 0);
+const net = totalAmount - (parseFloat(discount) || 0);
+const paid = net;
+const remaining = 0;
+  // form1.setFieldsValue({
+  //   totalAmount: totalAmount,
+  //   netAmount: totalAmount - (parseFloat(discount) || 0),
+  //   remaining: totalAmount - (parseFloat(discount) || 0) - (parseFloat(paidAmount) || 0)
+  // });
   form1.setFieldsValue({
-    totalAmount: totalAmount,
-    netAmount: totalAmount - (parseFloat(discount) || 0),
-    remaining: totalAmount - (parseFloat(discount) || 0) - (parseFloat(paidAmount) || 0)
-  });
+  totalAmount: totalAmount,
+  netAmount: net,
+  paidAmount: paid,
+  remaining: remaining
+});
+setPaidAmount(paid);
+setRemainingAmount(remaining);
 };
 
 
@@ -314,7 +339,7 @@ const handleSubmit = async () => {
   try {
      
     if (!patientName) {
-      Toaster.error('Please fill in all patient information fields.');
+      Toaster.warning('Please fill in all patient information fields.');
       return;
     }
 
@@ -361,7 +386,7 @@ const handleSubmit = async () => {
        maxCompletionTime: maxCompletionTime,
       remainingAmount: remainingAmount,
       date: new Date().toISOString().slice(0, 10),
-      paymentMethodId: 4,
+      paymentMethodId: form1.getFieldValue("paymentMethodId") || 0,
       createdBy: 1,
       TestDetail: cart.map(item => ({
         testId: item.testId,       
@@ -387,10 +412,16 @@ const handleSubmit = async () => {
       
     // Reset UI
     form1.resetFields();
+    form.resetFields();
+    setPatientName('');
+    setMobile('');
+    setAddress('');
+    setdoctorName('');
     setCart([]);
     setDiscount(0);
     setPaidAmount(0);
     setLoadingSave(false);
+    fetchPaymentMethod();
   } catch (error) {
     console.error(error);
     setLoadingSave(false);
@@ -483,7 +514,7 @@ const { companyInfo, fetchCompanyInfo } = useCompanyInfo();
             </Form.Item>
           </Col>
      <Col span={6}>
-            <Form.Item label="Refer by(Dr.)">
+            <Form.Item label="Refer by (Dr.)">
               <Input
                 placeholder="Doctor Name"
                 value={doctorName}

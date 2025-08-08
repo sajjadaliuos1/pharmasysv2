@@ -100,7 +100,7 @@ useEffect(() => {
 
 
 const perStripRateLabel = useMemo(() => {
-  return `Strip Rate - ${stripPerBox || ''}`;
+  return `Strip Rate : ${stripPerBox || ''}`;
 }, [stripPerBox]);
 
  
@@ -118,24 +118,124 @@ const handleValuesChange = (changedValues, allValues) => {
       stripDiscount: changedValues.saleDiscount
     });
   }
- 
-  if (changedValues.quantity !== undefined) {
-    handlePurchaseChange(allValues);
+
+ if (changedValues.manufactureDate) {
+    const manufactureDate = dayjs(changedValues.manufactureDate);
+
+    const expiryNotification = manufactureDate.add(1, 'year').add(9, 'months');
+    const expireDate = manufactureDate.add(2, 'year');
+
+    form.setFieldsValue({
+      dates: [expiryNotification, expireDate]
+    });
   }
 
-
-  if (changedValues.purchaseRate !== undefined || changedValues.purchaseDiscount !== undefined) {
+  if (changedValues.purchaseRate !== undefined || changedValues.purchaseDiscount !== undefined  || changedValues.purchaseAmount !== undefined || changedValues.quantity !== undefined) {
     handlePurchaseChange(allValues);
   }
   if (changedValues.saleRate !== undefined || changedValues.saleDiscount !== undefined) {
  
     handleSaleChange(allValues);      
   }
-  if (changedValues.stripDiscount !== undefined) {    
-    handleStripChange(allValues);
-  } 
+
+  if(changedValues.perStripRate != undefined || changedValues.stripDiscount !== undefined){
+    handleStripRateChange(allValues);
+  }
+  
 };
+     const handlePurchaseChange = (allValues) => {
+  const purchaseRate = parseFloat(allValues.purchaseRate) || 0;
+  const discount1 = parseFloat(allValues.purchaseDiscount) || 0;
+  const discount2 = parseFloat(allValues.purchaseAmount) || 0;
+  const quantity = parseFloat(allValues.quantity) || 0;
+
+  // Apply first discount
+  const afterFirstDiscount = purchaseRate - (purchaseRate * discount1) / 100;
+
+  // Apply second discount on the discounted value
+  const finalRate = afterFirstDiscount - (afterFirstDiscount * discount2) / 100;
+
+  const roundedFinalRate = parseFloat(finalRate.toFixed(2));
+  const totalPurchaseAmount = parseFloat((quantity * roundedFinalRate).toFixed(2));
+
+  setCalculatedValues(prev => ({
+    ...prev,
+    finalPurchaseRate: roundedFinalRate,
+  }));
+
+  form.setFieldsValue({
+    finalPurchaseRate: roundedFinalRate,
+    totalPurchaseAmount: totalPurchaseAmount,
+  });
+};
+
  
+    const handleSaleChange = (allValues) => {
+   
+    const saleRate = parseFloat(allValues.saleRate) || 0;
+    const saleDiscount = allValues.saleDiscount === null || allValues.saleDiscount === undefined ? 0 : parseFloat(allValues.saleDiscount);
+
+    
+    const discount = Math.min(saleDiscount, 100);
+
+    const discountAmount = (saleRate * discount) / 100;
+    const finalRate = parseFloat((saleRate - discountAmount).toFixed(2));
+
+    const perStriprateCalculated = allValues.saleRate / stripPerBox || 0;
+    
+    const stripDiscount = parseFloat(discount) || 0;
+
+      
+   const aaa = isProductStrip
+  ? parseFloat((perStriprateCalculated - (perStriprateCalculated * stripDiscount) / 100).toFixed(2))
+  : 0; 
+
+     const purchasePrice = allValues.saleRate;
+   
+     const perRate = purchasePrice / stripPerBox;
+ 
+         
+    setCalculatedValues(prev => ({
+      ...prev,
+      finalSaleRate: finalRate,
+      perStripRate : perRate,
+      finalStripRate: aaa,
+
+    }));
+ 
+    form.setFieldValue('finalSaleRate', finalRate);        
+    form.setFieldValue('perStripRate', perRate);
+    form.setFieldValue('finalStripRate', aaa);
+    form.setFieldValue('minStripSaleRate', aaa);
+
+
+     };
+
+ 
+     const handleStripRateChange = (allValues) => {    
+  const stripRate = allValues.perStripRate || 0;
+  const stripDiscount = allValues.stripDiscount === null || allValues.stripDiscount === undefined
+    ? 0
+    : parseFloat(allValues.stripDiscount);
+
+  // Store original strip rate in state/form if needed
+  form.setFieldValue('stripRate', stripRate);
+
+  // Calculate discounted rate
+  const discountedRate = isProductStrip ? (stripRate - (stripRate * stripDiscount) / 100) : 0;
+
+  // Update state and form values
+  setCalculatedValues(prev => ({
+    ...prev,
+    finalStripRate: discountedRate,
+    stripRate: stripRate  // Save strip rate too
+  }));
+
+  form.setFieldValue('finalStripRate', discountedRate);
+  form.setFieldValue('minStripSaleRate', discountedRate);   
+};
+
+
 const handleValuesChange2 = (changedValues, allValues) => {
    const values = form1.getFieldsValue();
 
@@ -273,86 +373,7 @@ setProducts(productList);
       fetchPaymentMethod(); 
     setShowPaymentModal(false);  
   };
-   const handlePurchaseChange = (allValues) => {
-    const purchaseRate = parseFloat(allValues.purchaseRate) || 0;
-    const purchaseDiscount = allValues.purchaseDiscount === null || allValues.purchaseDiscount === undefined ? 0 : parseFloat(allValues.purchaseDiscount);
-   const quantity = parseFloat(allValues.quantity) || 0;
-
-    const discount = Math.min(purchaseDiscount, 100);
-
-    const discountAmount = (purchaseRate * discount) / 100;
-    const finalRate = parseFloat((purchaseRate - discountAmount).toFixed(2));
-
-    const totalPurchaseAmount = parseFloat((quantity * finalRate).toFixed(2));
-    
-    setCalculatedValues(prev => ({
-      ...prev,
-      finalPurchaseRate: finalRate,
-    }));
-
-   form.setFieldsValue({
-    finalPurchaseRate: finalRate,
-    totalPurchaseAmount: totalPurchaseAmount,
-    
-    });
-    };
-    
  
-    const handleSaleChange = (allValues) => {
-   
-    const saleRate = parseFloat(allValues.saleRate) || 0;
-    const saleDiscount = allValues.saleDiscount === null || allValues.saleDiscount === undefined ? 0 : parseFloat(allValues.saleDiscount);
-
-    
-    const discount = Math.min(saleDiscount, 100);
-
-    const discountAmount = (saleRate * discount) / 100;
-    const finalRate = parseFloat((saleRate - discountAmount).toFixed(2));
-
-    const perStriprateCalculated = allValues.saleRate / stripPerBox || 0;
-    
-    const stripDiscount = parseFloat(discount) || 0;
-
-      
-   const aaa = isProductStrip
-  ? parseFloat((perStriprateCalculated - (perStriprateCalculated * stripDiscount) / 100).toFixed(2))
-  : 0; 
-
-     const purchasePrice = allValues.saleRate;
-   
-     const perRate = purchasePrice / stripPerBox;
- 
-         
-    setCalculatedValues(prev => ({
-      ...prev,
-      finalSaleRate: finalRate,
-      perStripRate : perRate,
-      finalStripRate: aaa,
-
-    }));
- 
-    form.setFieldValue('finalSaleRate', finalRate);        
-    form.setFieldValue('perStripRate', perRate);
-    form.setFieldValue('finalStripRate', aaa);
-    form.setFieldValue('minStripSaleRate', aaa);
-
-
-     };
-
-     const handleStripChange = (allValues) => {    
-  const stripRate = allValues.perStripRate || 0;
-    const stripDiscount = allValues.stripDiscount === null || allValues.stripDiscount === undefined ? 0 : parseFloat(allValues.stripDiscount);
-  
-    const aaa = isProductStrip ? (stripRate- (stripRate * stripDiscount)/100 ) : 0;
- 
-    setCalculatedValues(prev => ({
-      ...prev,
-      finalStripRate: aaa
-    }));
-
-     form.setFieldValue('finalStripRate', aaa);
-     form.setFieldValue('minStripSaleRate', aaa);   
-     };
 
     const handleBarcodeEnter = (e) => {
   if (e.key === 'Enter') {
@@ -371,8 +392,8 @@ setProducts(productList);
   }
     };
 
-  const startDate = dayjs().add(6, 'month').startOf('month'); // 1 Dec 2025
-  const endDate = startDate.add(3, 'month'); // 1 Mar 2026
+  const startDate = dayjs().add(6, 'month').startOf('month');  
+  const endDate = startDate.add(3, 'month');  
 
  const handleAddOrUpdate = (values) => {
  
@@ -393,7 +414,7 @@ setProducts(productList);
     manufactureDate: formattedManufactureDate,
     expiryDate: formattedExpireDate,
     purchaseDiscountPercent: values.purchaseDiscount || 0,
-    purchaseDiscountAmount:0,
+    purchaseDiscountAmount:values.purchaseAmount || 0,
     totalPurchaseAmount : values.totalPurchaseAmount,
     minimumSaleRate: values.minSaleRate || 0,
     stripRate: !isFinite(values.perStripRate) ? 0 : values.perStripRate,
@@ -438,6 +459,7 @@ setProducts(productList);
     dates: [startDate, endDate],
     isSoldInStrips: false,
     purchaseDiscount: 0,
+    purchaseAmount: 0,
     saleDiscount: 0,
     stripDiscount: null,
     finalPurchaseRate: 0,
@@ -481,6 +503,7 @@ setProducts(productList);
 
       saleDiscount: item.saleDiscount,
       purchaseDiscount: item.purchaseDiscount,
+      purchaseAmount: item.purchaseAmount,
       finalPurchaseRate: item.finalPurchaseRate,
       finalSaleRate: item.finalSaleRate,
       totalPurchaseAmount : item.totalPurchaseAmount,
@@ -527,7 +550,8 @@ setProducts(productList);
 
  
     { title: 'Purchase Rate', dataIndex: 'purchaseRate' },
-    { title: 'Discount %', dataIndex: 'purchaseDiscount' },
+    { title: 'Disc %', dataIndex: 'purchaseDiscount' },
+    { title: 'Disc 2 %', dataIndex: 'purchaseAmount' },
     { title: 'Final Purchase', dataIndex: 'finalPurchaseRate' },
     { title: 'Total Purchase Amount', dataIndex: 'totalPurchaseAmount' },
 
@@ -555,7 +579,7 @@ const handleSubmit = async () => {
     setLoading(true);
     const formData = await form1.validateFields(); 
     if (cartItems.length === 0) {
-      Toaster.error("Please add at least one product to the table.");
+      Toaster.warning("Please add at least one product to the table.");
       return;
     }    
     if (!formData.supplierId || formData.supplierId === 0) {
@@ -647,7 +671,8 @@ const handleSubmit = async () => {
       }}
         initialValues={{   
         isSoldInStrips: false,                   
-        purchaseDiscount: 0,   
+        purchaseDiscount: 0,  
+        purchaseAmount: 0, 
         saleDiscount: 0,
         stripDiscount: null,
         finalPurchaseRate: 0,
@@ -735,7 +760,15 @@ const handleSubmit = async () => {
         label="Quantity"
         rules={[{ required: true, message: 'Please enter quantity' }]}
       >
-        <Input type="number" placeholder="Enter quantity" />
+        
+          <InputNumber            
+            style={{ width: '100%' }}
+            min={0}
+            step="1"           
+            placeholder="Enter quantity"
+            parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+          />
+
       </Form.Item>
     </Col>
 
@@ -811,30 +844,70 @@ const handleSubmit = async () => {
 
     </Row>
 
+    
     <Row align="middle" style={{ marginBottom: '16px' }}>
-      <Col span={8}>
-        <Text strong>Discount %:</Text>
-      </Col>
-      <Col span={16}>
-        <Form.Item name="purchaseDiscount" noStyle>
-          <InputNumber
-            prefix={<span>%</span>}
-            style={{ width: '100%' }}
-            min={0}
-            max={100}
-            step="0.01"
-            precision={2}
-            placeholder="Enter discount %"
-            onFocus={() => {
-            const value = form.getFieldValue("purchaseDiscount");
-            if (value === 0) {
-                form.setFieldsValue({ purchaseDiscount: null });
-               }
-               }}
-          />
-        </Form.Item>
-      </Col>
-    </Row>
+  <Col span={8}>
+    <Text strong>Discount 1 %:</Text>
+  </Col>
+  <Col span={8}>
+    <Form.Item name="purchaseDiscount" noStyle>
+      <InputNumber
+        prefix={<span>%</span>}
+        style={{ width: '100%' }}
+        min={0}
+        max={100}
+        step="0.01"
+        precision={2}
+        placeholder="Enter discount 1 %"
+        onFocus={() => {
+          const value = form.getFieldValue("purchaseDiscount");
+          if (value === 0) {
+            form.setFieldsValue({ purchaseDiscount: null });
+          }
+        }}
+        onBlur={() => {
+          const value = form.getFieldValue("purchaseDiscount");
+          if (value === null || value === undefined || value === '') {
+            form.setFieldsValue({ purchaseDiscount: 0 });
+          }
+        }}
+      />
+    </Form.Item>
+  </Col>
+   <Col span={7} offset={1}>
+    <Form.Item name="purchaseAmount" noStyle>
+      <InputNumber
+        prefix={<span>%</span>}
+        style={{ width: '100%' }}
+        min={0}
+        max={100}
+        step="0.01"
+        precision={2}
+        placeholder="Enter discount 2 %"
+        onFocus={() => {
+          const value = form.getFieldValue("purchaseAmount");
+          if (value === 0) {
+            form.setFieldsValue({ purchaseAmount: null });
+          }
+        }}
+        onBlur={() => {
+          const value = form.getFieldValue("purchaseAmount");
+          if (value === null || value === undefined || value === '') {
+            form.setFieldsValue({ purchaseAmount: 0 });
+          }
+        }}
+      />
+    </Form.Item>
+  </Col>
+</Row>
+
+{/* <Row align="middle" style={{ marginBottom: '16px' }}>
+  <Col span={8}>
+    <Text strong>Discount 2 %:</Text>
+  </Col>
+ 
+</Row> */}
+
 
     <Row align="middle" style={{ marginBottom: '16px' }}>
       <Col span={8}>
@@ -923,27 +996,38 @@ const handleSubmit = async () => {
           <Text strong style={{ fontSize: '13px' }}>Discount %:</Text>
         </Col>
         <Col span={16}>
-          <Form.Item
-            name="saleDiscount"
-            rules={[{ required: true, message: 'Please enter sale discount' }]}
-            noStyle
-          >
-            <InputNumber
-              prefix={<span>%</span>}
-              style={{ width: '100%', height: '32px' }}
-              min={0}
-              max={100}
-              step="0.01"
-              precision={2}
-              placeholder="Enter discount %"
-               onFocus={() => {
-            const value = form.getFieldValue("saleDiscount");
-            if (value === 0) {
-                form.setFieldsValue({ saleDiscount: null });
-               }
-               }}
-            />
-          </Form.Item>
+         <Form.Item
+  name="saleDiscount"
+  rules={[{ required: true, message: 'Please enter sale discount' }]}
+  noStyle
+>
+  <InputNumber
+    prefix={<span>%</span>}
+    style={{ width: '100%', height: '32px' }}
+    min={0}
+    max={100}
+    step="0.01"
+    precision={2}
+    placeholder="Enter discount %"
+
+    // Optional: Clear if 0 for cleaner UX
+    onFocus={() => {
+      const value = form.getFieldValue("saleDiscount");
+      if (value === 0) {
+        form.setFieldsValue({ saleDiscount: null });
+      }
+    }}
+
+    // Set to 0 only if left empty
+    onBlur={() => {
+      const value = form.getFieldValue("saleDiscount");
+      if (value === null || value === undefined || value === '') {
+        form.setFieldsValue({ saleDiscount: 0 });
+      }
+    }}
+  />
+</Form.Item>
+
         </Col>
       </Row>
 
@@ -1001,7 +1085,7 @@ const handleSubmit = async () => {
       }}>
     <Row align="middle" style={{ marginBottom: '16px' }}>
       <Col span={8}>
-        <Text strong style={{ fontSize: '13px' }}>{perStripRateLabel}:</Text>
+        <Text strong style={{ fontSize: '13px' }}>{perStripRateLabel}</Text>
       </Col>
       <Col span={16}>
         <Form.Item name="perStripRate" noStyle>
@@ -1011,8 +1095,8 @@ const handleSubmit = async () => {
             min={0}
             step="1"
             precision={2}
-            placeholder="Enter strip rate"
-            disabled
+            placeholder="Enter strip rate" 
+             disabled={!isProductStrip}            
           />
         </Form.Item>
       </Col>
@@ -1094,6 +1178,7 @@ const handleSubmit = async () => {
   pagination={false}
   bordered
   columns={columns}
+
   scroll={{ x: 'max-content' }}
   locale={{
     emptyText: (

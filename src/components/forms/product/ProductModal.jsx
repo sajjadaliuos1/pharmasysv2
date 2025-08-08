@@ -39,16 +39,20 @@ useEffect(() => {
         isStrip: initialValues.isStrip || false,
         stockAlert : initialValues.stockAlert,
       });
+    
 
       setIsStripChecked(initialValues.isStrip || false);
       setCategoryId(initialValues.categoryId);
-      setSubCategoryId(initialValues.subCategoryId);
+      setSubCategoryId(initialValues.subCategoryId ===0 ?'':initialValues.subCategoryId);
       setUomId(initialValues.uomId);
     } else {
       form.resetFields();
       form.setFieldsValue({
         isStrip: false,
         categoryId: null,
+        subCategories: null,
+        productName: null,
+        stockAlert: null,
       });
       setIsStripChecked(false);
       setCategoryId(null);

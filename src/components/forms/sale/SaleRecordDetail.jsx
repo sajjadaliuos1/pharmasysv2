@@ -152,7 +152,7 @@ const columnDefs = useMemo(() => [
     },
     {
       headerName: 'Return Amount',
-      field: 'returnedItemAmount',
+      field: 'returnItemAmount',
       width: 140,
       cellClass: 'sale-cell',
       valueFormatter: (params) =>

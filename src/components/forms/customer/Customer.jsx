@@ -50,13 +50,15 @@ const Customer = () => {
           const record = rowData.find(item => item.customerId === id);
           if (record) {
             showTransactionModal(record);
+
           }
         }, [showTransactionModal, rowData]);
           const handleTransactionModalSave = useCallback(() => { 
             Toaster.success("Transaction processed successfully!");
+             handleRefreshData();
             setIsTransactionModalVisible(false);
-            // handleRefreshData();
-          }, []);
+            
+          });
 
   const AddnewModal = useCallback((record) => {
     setEditingRecord(record ? { ...record } : { CustomerId: '', customerName: '', contact :'', address: '', amount: '', discount : '', paid :'', remaining :'', date :''});
@@ -64,7 +66,23 @@ const Customer = () => {
   }, []);
 
   const handleEdit = useCallback((id) => {
+
     const record = rowData.find(customer => customer.customerId === id);
+  
+  if (!record) {
+    Toaster.error('Customer not found');
+    return;
+  }
+
+  // Check if customer name contains "walking" (case-insensitive)
+  const customerName = record.customerName || '';
+  const isWalkingCustomer = customerName.includes('Walking');
+
+  if (isWalkingCustomer) {
+    Toaster.warning('Walking customers cannot be edited');
+    return;
+  }
+    // const record = rowData.find(customer => customer.customerId === id);
     if (record) {
       AddnewModal(record);
     }
@@ -80,8 +98,21 @@ const Customer = () => {
   }, [navigate]);
 
   const handleDelete = useCallback(async (id) => {
-    console.log("Delete category id:", id);
+   
     try {
+
+   const customerToDelete = rowData.find(customer => customer.customerId === id);
+    if (!customerToDelete) {
+      Toaster.error('Customer not found');
+      return;
+    }
+    const customerName = customerToDelete.customerName || '';
+    const isWalkingCustomer = customerName.includes('Walking');
+
+    if (isWalkingCustomer) {
+      Toaster.warning('Walking customers cannot be deleted');
+      return;
+    }
       const response = await deleteCustomer(id);
       if(response.data.status === "Success"){
       handleRefreshData();
@@ -101,9 +132,10 @@ const Customer = () => {
       {
         headerName: 'S.No',
         valueGetter: (params) => params.node.rowIndex + 1, 
-        minWidth: 80,
-        // width: 80,
-        //  pinned: 'left', 
+        minWidth: 60,
+        width: 60,
+        sortable: false,
+        filter:false,
       },
     
       {
@@ -111,50 +143,49 @@ const Customer = () => {
         field: "customerName",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 180,
       },
             {
         headerName: "Contact",
         field: "contact",
         sortable: true,
         filter: true,
-        minWidth: 140,
+        minWidth: 160,
       },
             {
         headerName: "Address",
         field: "address",
-        sortable: true,
-        filter: true,
+        sortable: false,
+        filter: false,
         minWidth: 140,
       },
             {
         headerName: "Amount",
         field: "amount",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 100,
       },
             {
         headerName: "Discount",
         field: "discount",
-        sortable: true,
-        filter: true,
-       
-        minWidth: 140,
+        sortable: false,
+        filter: false,
+        minWidth: 95,
       },
             {
         headerName: "Paid",
         field: "paid",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+       sortable: false,
+        filter: false,
+        minWidth: 95,
       },
             {
-        headerName: "Remaining",
+        headerName: "Remain",
         field: "remaining",
-        sortable: true,
-        filter: true,
-        minWidth: 140,
+       sortable: false,
+        filter: false,
+        minWidth: 90,
       },
             
 
@@ -411,8 +442,7 @@ const Customer = () => {
       
       const searchLower = searchText.toLowerCase();
       const filtered = rowData.filter(row =>
-        // (row.typeId && row.typeId.toString().toLowerCase().includes(searchLower)) ||
-        (row.name && row.name.toLowerCase().includes(searchLower))
+        (row.customerName && row.customerName.toLowerCase().includes(searchLower))
       );
   
       setFilteredData(filtered);

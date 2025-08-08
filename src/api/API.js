@@ -2,10 +2,10 @@ import axios from "axios";
 
 const API = axios.create({
   //  baseURL: "https://ph.idotsolution.com/api",
-     baseURL: "http://192.168.100.7:5277/api", //  Office
-    // baseURL: "http://192.168.10.12:5277/api", // Home
+     baseURL: "http://192.168.100.3:5277/api", //  Office
+    // baseURL: "http://192.168.10.19:5277/api", // Home
     //  baseURL: "http://192.168.10.8:5277/api", // Clg
-    // baseURL: "http://192.168.0.112:5277/api", // Mobile Hotspot 
+    // baseURL: "http://192.168.146.9:5277/api", // Mobile Hotspot 
 });
 
 API.interceptors.request.use((config) => {
@@ -26,7 +26,7 @@ export const deleteUser = (id) => API.post(`/Employee/employee/${id}`);
 export const createAuthUser = (data) => API.post('/Account/register', data); 
 
 export const getRole = () => API.get('/Setting/roles');
-
+export const addRole = (data) => API.post('/Setting/roles', data);
 export const getShop = () => API.get('/Setting/shop');  
 export const createShop = (data) => API.post('/Setting/shop', data, {
     headers: {
@@ -95,7 +95,10 @@ export const getPurchaseByDateRange = (startDate, endDate) => {
   });
 };
 export const getPurchaseDetailsById = (id) => API.get(`Purchase/getPurchaseRecord/${id}`);
-
+export const getPurchaseReturnItems = (id) => API.get(`Purchase/GetPurchaseRecordReturn/${id}`);
+export const NearToExpire = (id) => API.get('Purchase/nearToExpire');
+export const ExpiredProduct = (id) => API.get('Purchase/expiredProduct');
+export const returnPurchase = (data) => API.post('/Purchase/purchaseReturn', data);
 
 // customer Api
 export const getCustomer = () => API.get('/Customer/customer');
@@ -108,11 +111,10 @@ export const getCustomerPaymentByDateRange = (id, startDate, endDate) => {
   });
 };
 
-
+export const CloseInvoice = (id) => API.delete(`/Sale/closeInvoice/${id}`);
 
 
 // Sale Api
-export const CloseInvoice = (id) => API.delete(`/Sale/closeInvoice/${id}`);
 export const getNewInvoice = () => API.get('/Sale/newInvoice');
 export const getBoxProduct = () => API.get('/Sale/boxProduct');
 export const getStripProduct = () => API.get('/Sale/stripProduct');
@@ -150,6 +152,11 @@ export const testRecord = (startDate, endDate) => {
     params: { startDate, endDate } 
   });
 };
+export const deleteTestRecord = ( testRecordDetailId, createdBy) => {
+   return API.get(`TestReport/deleteTestDetail`, { 
+    params: { testRecordDetailId, createdBy } 
+  });
+};
 
 //NICU
 
@@ -162,4 +169,50 @@ export const getNicuRecord = (startDate, endDate) => {
   });
 };
 export const getNicuPrint = (id) => API.get(`Nicu/getNicuPrint/${id}`);
+export const DischargeNicuPaitent = (data) => API.post('/Nicu/dischargeNicuPaitent', data);
+
+// summary 
+export const getSaleAmountDateRange = (startDate, endDate) => {
+   return API.get(`Summary/amountProfit`, { 
+    params: { startDate, endDate } 
+  });
+};
+
+export const getSaleProfit= (startDate, endDate) => {
+   return API.get(`Summary/getSaleProfit`, { 
+    params: { startDate, endDate } 
+  });
+};
+export const getExpenseAmount= (startDate, endDate) => {
+   return API.get(`Summary/getExpenseAmount`, { 
+    params: { startDate, endDate } 
+  });
+}; 
+
+export const getLabAmount= (startDate, endDate) => {
+   return API.get(`Summary/getLabAmount`, { 
+    params: { startDate, endDate } 
+  });
+}; 
+export const getNicuAmount= (startDate, endDate) => {
+   return API.get(`Summary/getNicuAmount`, { 
+    params: { startDate, endDate } 
+  });
+}; 
+
+export const getSupplierArrear = () => API.get('/Summary/getSupplierArrear');
+export const getCustomerArrear = () => API.get('/Summary/getCustomerArrear');
+export const getPaymentMethodAmount = () => API.get('/Summary/getPaymentMethodAmount');
+export const createBackup = (data) =>
+  API.post('/Backup/backup', data, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  export const restoreBackup = (data) => API.post('/Backup/restore', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 export default API;

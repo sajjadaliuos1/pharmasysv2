@@ -105,17 +105,12 @@ const ExpenseModal = ({ visible, title, onCancel, initialValues, onSave, button,
                 expenseCategoryId: values.typeId ? Number(values.typeId) : 0,                
             };
 
-            console.log("Submitting payload:", payload);
-           
-
-            // Call API
             const response = await createExpense(payload);
 
             if (!response || !response.data) {
                 throw new Error("Invalid response from server");
             }
-
-
+            
             if (response.data.status === "Success") {
                 form.resetFields();
 

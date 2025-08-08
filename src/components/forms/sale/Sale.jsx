@@ -68,7 +68,7 @@ const [loadingInvoices, setLoadingInvoices] = useState(false);
  
 
 const [newInvChecking, setNewInvChecking] = useState();
-
+const [isChecked, setIsChecked] = useState(false);
  const [totalItems, setTotalItems] = useState(0);
 
 const [roundOffTotalAmount,setRoundOffTotalAmount] = useState(0)
@@ -79,30 +79,8 @@ const [roundOffTotalAmount,setRoundOffTotalAmount] = useState(0)
      fetchCustomer();
     fetchInvoiceNo();
     fetchPaymentMethod();
+    // fetchStripProduct();
   }, []);
-  
- 
-// useEffect(() => {
-//   const discountedTotal = cartItems.reduce((sum, item) => {
-//       return sum + parseFloat(item.totalAmount || item.saleItemAmount || 0);
-//   }, 0);
-
-//   const rounded = applyRoundOff(discountedTotal).toFixed(2);
-
-//   const allValues = form1.getFieldsValue();
-
-//   if (allValues.totalAmount !== rounded) {
-//     // Update totalAmount
-//     form1.setFieldsValue({ totalAmount: rounded });
-
-//     // Immediately update all dependent fields
-//     handleForm1Change({ totalAmount: rounded }, {
-//       ...allValues,
-//       totalAmount: rounded
-//     });
-//   }
-// }, [cartItems]);
-
  
 
 const totalItemAmount = useMemo(() => {
@@ -130,7 +108,6 @@ const fetchInvoiceNo = async () => {
     setLoadingCustomer(false);
   }
 }; 
-
 
 const getInvoiceNo = async () => {
   try {
@@ -207,6 +184,7 @@ const fetchInvoicesByCustomer = async (customerId) => {
   
   const stripProductCache = useRef(null);
   const boxProductCache = useRef(null);  
+
   const fetchBoxProduct = async () => {
     if (boxProductCache.current) {
     setProducts(boxProductCache.current);
@@ -298,7 +276,7 @@ stripProductCache.current = productList;
           netAmount: totalItemAmount,
           payableAmount: (parseFloat(totalItemAmount || 0) + parseFloat(remaining || 0)).toFixed(2)
         });
-      // setShowPaymentMethod(false);
+      
       fetchInvoicesByCustomer(customerId);
       }
     
@@ -344,9 +322,8 @@ stripProductCache.current = productList;
       setLoadingPaymentMethod(false);
     }
   };
-
    
-const createNewInvoiceNo = async () => {
+  const createNewInvoiceNo = async () => {
   try {
     const invoiceNo = await getInvoiceNo();
 
@@ -388,40 +365,46 @@ const currentFormValues = form1.getFieldsValue();
     console.error("Error creating new invoice:", err);
     Toaster.error("Failed to create new invoice number.");
   }
-};
-
+  };
 
   const columns = [
   {
     title: 'Actions',
     render: (_, __, index) => (
       <Space>
-        <Button icon={<EditOutlined />} onClick={() => handleEdit(index)} />
+        {/* <Button icon={<EditOutlined />} onClick={() => handleEdit(index)} /> */}
         <Button icon={<DeleteOutlined />} onClick={() => handleDelete(index)} danger />
       </Space>
     ),
   },
 
   { title: 'Product', dataIndex: 'productName' },
+
   { title: 'Batch No', dataIndex: 'batchNo' },
+  { title: 'P Rate', dataIndex: 'unitPurchaseRate' },
   { title: 'Sale Rate', dataIndex: 'unitSaleRate' },
   { title: 'Discount %', dataIndex: 'discountPercent' },
   { title: 'Net Rate', dataIndex: 'finalRate' },
+  // {title:'Disc 1', dataIndex: 'afterDiscountAmount'},
+  // {title:'Disc 2', dataIndex: 'afterFinalDiscountAmount'},
   { title: 'Qty', dataIndex: 'saleQuantity' },  
   { 
     title: 'Total Amount', 
     dataIndex: 'saleItemAmount',
     render: (value) => `Rs. ${parseFloat(value || 0).toFixed(2)}`
   }, 
+   { title: 'profit', dataIndex: 'profit' },
 ];
-
-
 
 const calculateRoundOffAndProfit = (items) => {
   if (!items || items.length === 0) return items;
 
-  const totalFinalAmount = items.reduce((sum, item) => {
-    return sum + parseFloat(item.finalAmount || item.saleItemAmount || 0);
+  // const totalFinalAmount = items.reduce((sum, item) => {
+  //   return sum + parseFloat(item.finalAmount || item.saleItemAmount || 0);
+  // }, 0);
+
+    const totalFinalAmount = items.reduce((sum, item) => {
+    return sum + parseFloat(item.saleItemAmount || 0);
   }, 0);
 
   const roundedTotal = applyRoundOff(totalFinalAmount);
@@ -430,17 +413,21 @@ const calculateRoundOffAndProfit = (items) => {
   const totalItems = items.length;
   const roundOffPerItem = totalItems > 0 ? roundOffDifference / totalItems : 0;
 
-  return items.map(item => {
-    const finalAmount = parseFloat(item.finalAmount || item.saleItemAmount || 0);
-    const purchaseRate = parseFloat(item.unitPurchaseRate || 0);
+  return items.map(item => {   
     const quantity = parseFloat(item.saleQuantity || 0);
-    
-    const totalProfit = (finalAmount + roundOffPerItem) - (purchaseRate * quantity);
+    const calculateProfit =  parseFloat(item.afterFinalDiscountAmount  || 0) - parseFloat(item.unitPurchaseRate || 0);
+    const ttfprft = calculateProfit * quantity;
+    const ttfprftWithRoundOff = ttfprft + roundOffPerItem;
+    const roundedProfit = parseFloat(ttfprftWithRoundOff.toFixed(2));
+    const finalAmount= (parseFloat(item.saleItemAmount||0)); 
+    const unitSaleRate =(finalAmount + roundOffPerItem)/quantity;
 
     return {
       ...item,
+      afterDiscountAmount: parseFloat(unitSaleRate.toFixed(2)),
+      afterFinalDiscountAmount: parseFloat(unitSaleRate.toFixed(2)),
       roundOffAmount: roundOffPerItem,
-      profit: totalProfit
+      profit: roundedProfit
     };
   });
 };
@@ -448,23 +435,23 @@ const calculateRoundOffAndProfit = (items) => {
  
 
  const calculateAdditionalDiscountByRate = (cartItems, totalDiscount) => {
-  if (!totalDiscount || totalDiscount <= 0) {
-    const itemsWithoutDiscount = cartItems.map(item => {
-      const finalRate = parseFloat(item.finalRate || 0);
-      const afterDiscountAmount = finalRate; 
+  // if (!totalDiscount || totalDiscount <= 0) {
+  //   const itemsWithoutDiscount = cartItems.map(item => {
+  //     const finalRate = parseFloat(item.finalRate || 0);
+  //     const afterDiscountAmount = finalRate; 
       
-      return {
-        ...item,
-        additionalDiscount: 0,
-        singleItemDiscount: 0,
-        afterDiscountAmount: afterDiscountAmount,
-        afterFinalDiscountAmount: afterDiscountAmount, 
-        finalAmount: parseFloat(item.saleItemAmount || 0)
-      };
-    });
+  //     return {
+  //       ...item,
+  //       additionalDiscount: 0,
+  //       singleItemDiscount: 0,
+  //       afterDiscountAmount: afterDiscountAmount,
+  //       afterFinalDiscountAmount: afterDiscountAmount, 
+  //       finalAmount: parseFloat(item.saleItemAmount || 0)
+  //     };
+  //   });
     
-    return calculateRoundOffAndProfit(itemsWithoutDiscount);
-  }
+  //   return calculateRoundOffAndProfit(itemsWithoutDiscount);
+  // }
 
   const totalWeightedAmount = cartItems.reduce((sum, item) => {
     const rate = parseFloat(item.unitSaleRate || 0);
@@ -473,6 +460,7 @@ const calculateRoundOffAndProfit = (items) => {
   }, 0);
 
   let remainingDiscount = totalDiscount;
+  
   const updatedItems = cartItems.map((item, index) => {
     const rate = parseFloat(item.unitSaleRate || 0);
     const quantity = parseFloat(item.saleQuantity || 0);
@@ -490,7 +478,7 @@ const calculateRoundOffAndProfit = (items) => {
     
     const singleItemDiscount = quantity > 0 ? itemDiscount / quantity : 0;
     
-    const afterDiscountAmount = finalRate;
+    const afterDiscountAmount = parseFloat(item.afterFinalDiscountAmount || 0);
     
     const afterFinalDiscountAmount = Math.max(0, afterDiscountAmount - singleItemDiscount);
     
@@ -499,10 +487,10 @@ const calculateRoundOffAndProfit = (items) => {
     
     return {
       ...item,
-      additionalDiscount: itemDiscount,
-      singleItemDiscount: singleItemDiscount,
-      afterDiscountAmount: afterDiscountAmount,
-      afterFinalDiscountAmount: afterFinalDiscountAmount,
+      additionalDiscount: parseFloat(itemDiscount.toFixed(2)),
+      singleItemDiscount: parseFloat(singleItemDiscount.toFixed(2)),
+      afterDiscountAmount: parseFloat(afterDiscountAmount.toFixed(2)),
+      afterFinalDiscountAmount:parseFloat(afterFinalDiscountAmount.toFixed(2)),
       finalAmount: finalAmount
     };
   });
@@ -560,7 +548,7 @@ if (finalRate < minSaleRate) {
     }
 
     const selectedProduct = productMap.get(values.purchaseInventoryId);
-
+form1.setFieldsValue({ supplierDiscount: 0 });
     console.log("cart Items === ", cartItems);
     let updatedCart;
 
@@ -578,7 +566,7 @@ if (finalRate < minSaleRate) {
         saleQuantity : enteredQuantity,
         isStrip: isChecked,        
         UnitPurchaseRate: finalPurchaseRate,
-        unitPurchaseRate: finalPurchaseRate,  
+        // unitPurchaseRate: finalPurchaseRate,  
         batchNo: BatchNo,  
         finalRate: finalRate.toFixed(2),  
         saleItemAmount: saleItemAmount.toFixed(2),
@@ -595,8 +583,10 @@ if (finalRate < minSaleRate) {
       if (existingIndex !== -1) {
         updatedCart = [...cartItems];
         const existingItem = updatedCart[existingIndex];
+        const unitPurchaRate = existingItem.unitPurchaseRate;
         const updatedQuantity = parseFloat(existingItem.saleQuantity || 0) + enteredQuantity;
         const updatedTotal = finalRate * updatedQuantity;
+        const ttPrft = unitPurchaRate * updatedQuantity;
         
         updatedCart[existingIndex] = {
           ...existingItem,
@@ -611,6 +601,7 @@ if (finalRate < minSaleRate) {
           isStrip: isChecked,
           afterDiscountAmount: finalRate,
           afterFinalDiscountAmount: finalRate,
+          // profit: parseFloat(ttPrft)
         };
       } else {
         const newItem = {
@@ -756,6 +747,7 @@ const handleDelete = (index) => {
     remainingAmount: remainingAmount.toFixed(2),
   });
 };
+
 const reapplyAdditionalDiscount = (updatedCart) => {
   const currentDiscount = parseFloat(form1.getFieldValue('supplierDiscount') || 0);
   if (currentDiscount > 0) {
@@ -793,6 +785,9 @@ const handleForm1Change = (changedValues, allValues) => {
   const remainingAmount = payableAmount - paidAmount;
   
   if (changedValues.supplierDiscount !== undefined) {
+
+    updateCartWithDiscount(supplierDiscount);
+
     const newPaidAmount = payableAmount; 
     form1.setFieldsValue({
       netAmount: netAmount.toFixed(2),
@@ -824,6 +819,75 @@ const handleForm1Change = (changedValues, allValues) => {
   }
 };
 
+// Ek hi method jo discount apply aur remove dono karta hai
+const updateCartWithDiscount = (discountAmount = 0) => {
+  if (!cartItems || cartItems.length === 0) return;
+  
+  // Agar discount 0 hai to original rates restore karo
+  if (discountAmount === 0) {
+    const updatedCart = cartItems.map(item => {
+      const saleRate = parseFloat(item.saleRate || item.finalRate || 0);
+      const costPrice = parseFloat(item.costPrice || 0);
+      const quantity = parseFloat(item.quantity || 0);
+      const totalAmount = saleRate * quantity;
+      const profitPerUnit = saleRate - costPrice;
+      
+      return {
+        ...item,
+        additionalDiscount: 0,
+        singleItemDiscount: 0,
+        afterFinalDiscountAmount: saleRate,
+        finalAmount: totalAmount,
+        profitPerUnit: profitPerUnit,
+        totalProfit: profitPerUnit * quantity
+      };
+    });
+    
+    setCartItems(updatedCart);
+    
+    const newTotalAmount = updatedCart.reduce((sum, item) => sum + parseFloat(item.finalAmount || 0), 0);
+    form1.setFieldsValue({ totalAmount: newTotalAmount.toFixed(2) });
+    return;
+  }
+  
+  // Discount apply karo
+  const totalSaleAmount = cartItems.reduce((sum, item) => {
+    const saleRate = parseFloat(item.afterDiscountAmount || 0);
+    const quantity = parseFloat(item.saleQuantity || 0);
+    return sum + (saleRate * quantity);
+  }, 0);
+  
+  if (totalSaleAmount === 0) return;
+  
+  const updatedCart = cartItems.map(item => {
+    const saleRate = parseFloat(item.afterDiscountAmount);
+    const costPrice = parseFloat(item.unitPurchaseRate || 0);
+    const quantity = parseFloat(item.saleQuantity || 0);
+    const itemSaleAmount = saleRate * quantity;
+    
+    // Proportional discount
+    const itemDiscountAmount = (itemSaleAmount / totalSaleAmount) * discountAmount;
+    const perUnitDiscount = itemDiscountAmount / quantity;
+    const afterDiscountRate = saleRate - perUnitDiscount;
+    const afterDiscountAmount = afterDiscountRate * quantity;
+    const profitPerUnit = afterDiscountRate - costPrice;
+    const profit = parseFloat((profitPerUnit * quantity).toFixed(2));
+    
+    return {
+      ...item,
+      singleItemDiscount: perUnitDiscount,
+      afterFinalDiscountAmount:parseFloat(afterDiscountRate.toFixed(2)),      
+      profit: profit
+    };
+  });
+  
+  setCartItems(updatedCart);
+  
+  const newTotalAmount = updatedCart.reduce((sum, item) => sum + parseFloat(item.finalAmount || 0), 0);
+  form1.setFieldsValue({ totalAmount: newTotalAmount.toFixed(2) });
+};
+
+ 
 
 const applyRoundOff = (amount) => {
   const numAmount = parseFloat(amount);
@@ -835,22 +899,8 @@ const applyRoundOff = (amount) => {
     return Math.ceil(numAmount / 10) * 10;
   }
 };
-
   
-  
-// const companyInfo = useCompanyInfo();
-
-// const handlePrint = async () => {
-
-//  const newInv = parseInt(newInvChecking, 10);
-//     const invno = newInv - 1;
-
-//     // await SaleInvoice(invno, companyInfo);
-//   await NewSaleInvoice(invno, companyInfo);
-//   };
-
-
-
+ 
 const { companyInfo, fetchCompanyInfo } = useCompanyInfo();
 
 
@@ -868,366 +918,7 @@ const newInv = parseInt(newInvChecking, 10);
 
     await NewSaleInvoice(invoiceId, company);
   };
-
-// const handlePrint = async () => {
-//   try {
-//     const newInv = parseInt(newInvChecking, 10);
-//     const invno = newInv - 1;
-//     const invoiceData = await getSalePrint(invno);
-
-//     console.log(companyInfo);
  
-
-//     let printWindow = window.open("", "_blank");
-
-//     printWindow.document.write(`
-//       <html>
-//         <head>
-//           <title>INVOICE ${invno}</title>
-//           <style>
-//             @media print {
-//               @page {
-//                 size: 80mm auto;
-//                 margin: 2mm;
-//               }
-//                 .sale-invoice-bar {
-//       background-color: black !important;
-//       color: white !important;
-//       -webkit-print-color-adjust: exact;
-//       print-color-adjust: exact;
-//     }
-//             }
-            
-//             body {
-//               font-family: Arial, sans-serif;
-//               font-size: 14px;
-//               line-height: 1.2;
-//               margin: 0;
-//               padding: 2mm;
-//               color: #000000;
-//               width: 72mm;
-//               background: white;
-//             }
-            
-//             .center {
-//               text-align: center;
-//             }
-            
-//             .left {
-//               text-align: left;
-//             }
-            
-//             .right {
-//               text-align: right;
-//             }
-            
-//             .bold {
-//               font-weight: bold;
-//             }
-            
-//             .header {
-//               margin-bottom: 3mm;
-//               border-bottom: 1px dashed #000000;
-//               padding-bottom: 2mm;
-//             }
-            
-//             .shop-name {
-//               font-size: 20px;
-//               font-weight: bold;
-//               margin-bottom: 1mm;
-//               color: #000000;
-//             }
-            
-//             .shop-address {
-//               font-size: 14px;
-//               color: #000000;
-              
-//             }
-            
-//            .invoice-info {
-//   margin: 2mm 0;
-//   font-size: 14px;
-//   color: #000000;
-// }
-
-// .invoice-info .row-top {
-//   display: flex;
-//   justify-content: space-between;
-//   // margin-bottom: 1mm;
-// }
- 
-// .invoice-info .bold {
-//   font-weight: bold;
-//   color: #000000;
-// }
-
-//             .sale-invoice-bar {
-//   background-color: black;
-//   color: white;
-//   text-align: center;
-//   padding: 4px 0;
-//   font-size: 16px;
-//   font-weight: bold;
-//   // margin: 4mm 0;
-//   letter-spacing: 1.5px;
-// }
-
-//            .items-header {
-//   border-top: 1px dashed #000000;
-//   border-bottom: 1px dashed #000000;
-//   padding: 1mm 0;
-//   margin: 2mm 0;
-//   font-weight: bold;
-//   font-size: 12px;  
-//   color: #000000;
-// }
-
-// .items-header span {
-//   white-space: nowrap;            
-//   overflow: hidden;
-//   text-overflow: ellipsis;
-//   padding: 0 2px;                 
-//   display: inline-block;          
-//   color: #000000;
-// }
-
-//             .item-container {
-//               // margin: 2mm 0;
-//               font-size: 13px;
-//               border-bottom: 1px dotted #000000;
-//               // padding-bottom: 1mm;
-//               color: #000000;
-//             }
-            
-//             .item-name-row {
-//               font-weight: bold;
-//               // margin-bottom: 1mm;
-//               word-wrap: break-word;
-//               overflow-wrap: break-word;
-//               color: #000000;
-//             }
-            
-//             .item-details-row {
-//               font-size: 14px;
-//               white-space: nowrap;
-//               overflow: hidden;
-//               display: flex;
-//               justify-content: space-between;
-//               color: #000000;
-//             }
-            
-//             .item-qty {
-//               width: 12%;
-//               text-align: center;
-//               color: #000000;
-//             }
-            
-//             .item-rate {
-//               width: 15%;
-//               text-align: right;
-//               color: #000000;
-//             }
-            
-//             .item-disc {
-//               width: 12%;
-//               text-align: center;
-//               color: #000000;
-//             }
-            
-//             .item-after-disc {
-//               width: 15%;
-//               text-align: right;
-//               color: #000000;
-//             }
-            
-//             .item-total {
-//               width: 18%;
-//               text-align: right;
-//               font-weight: bold;
-//               color: #000000;
-//             }
-            
-//     .totals {
-//     margin-top: 10px;
-//     font-size: 14px;
-//     font-family: monospace; /* Equal spacing for all characters */
-//   }
-
-//   .total-row {
-//     display: flex;
-//     white-space: nowrap;
-//   }
-
-//   .total-label {
-//     padding-right: 5px;
-//   }
-
-//   .dot-fill {
-//     flex-grow: 1;
-//     text-align: left;
-//     overflow: hidden;
-//   }
-
-//   .dot-fill::before {
-//     content: "........................................................................................................";
-//     display: inline-block;
-//     width: 100%;
-//     white-space: nowrap;
-//     overflow: hidden;
-//   }
-
-//   .total-value {
-//     padding-left: 5px;
-//     font-weight: bold;
-//   }
-             
-            
-//             .footer {
-//               margin-top: 4mm;
-//               border-top: 1px dashed #000000;
-//                text-align: center;
-//               font-size: 14px;
-//               color: #000000;
-//             }
-            
-//             .signature-line {
-              
-//               border-top: 1px solid #000000;
-//               text-align: center;
-//               font-size: 14px;
-//               padding-top: 1mm;
-//               color: #000000;
-//             }
-            
-            
-            
-//             * {
-//               box-sizing: border-box;
-//               color: #000000;
-//             }
-            
-//             /* Ensure proper spacing for thermal printer */
-//             .spacer {
-//               height: 2mm;
-//             }
-//           </style>
-//         </head>
-//         <body>
-//           <div class="header">
-//             <div class="center shop-name">${companyInfo.data.shopName}</div>
-//             <div class="center shop-address">${companyInfo.data.phoneNo} - ${companyInfo.data.contactNo}</div>
-//             <div class="center shop-address">${companyInfo.data.address}</div>
-//           </div>
-          
-//         <div class="invoice-info">
-//   <div class="row-top">
-//     <span><span class="bold">Invoice #:</span> ${invno}</span>
-//     <span class="right"><span class="bold"></span> ${invoiceData.data.data.sale.date}</span>
-//   </div>
-//   <div>
-//     <span class="bold">Customer:</span> ${invoiceData.data.data.sale.customerName}
-//   </div>
-// </div>
-// <div class="sale-invoice-bar">SALE INVOICE</div>
-          
-//           <div class="items-header">
-//             <div style="display: flex; justify-content: space-between;">
-//               <span style="width: 15%;">Qty</span>             
-//               <span style="width: 25%; text-align: right;">Unit Price</span>
-//               <span style="width: 20%; text-align: center;">Disc%</span>
-//               <span style="width: 25%; text-align: right;">Net Price</span>
-//               <span style="width: 18%; text-align: right;">Total</span>
-//             </div>
-//           </div>
-          
-//           ${invoiceData.data.data.details.map((item, index) => `
-//             <div class="item-container">
-//               <div class="item-name-row">${item.productName}</div>
-//               <div class="item-details-row">
-//                 <span class="item-qty">${item.netQuantity}</span>
-//                 <span class="item-rate">${item.unitSaleRate}</span>
-//                 <span class="item-disc">${item.discountPercent > 0 ? item.discountPercent + '%' : '-'}</span>
-//                 <span class="item-after-disc">${item.afterDiscountAmount}</span>
-//                 <span class="item-total">${item.netAmount}</span>
-//               </div>
-//             </div>
-//           `).join("")}
-          
-//        <div class="totals">
-//   <div class="total-row">
-//     <span class="total-label">Total Amount:</span>
-//     <span class="dot-fill"></span>
-    
-//     <span class="total-value">
-//   ${(invoiceData.data.data.sale.totalAmount - invoiceData.data.data.sale.returnItemAmount).toFixed(2)}
-// </span>
-
-//   </div>
-
-//   ${invoiceData.data.data.sale.discountAmount > 0 ? `
-//   <div class="total-row">
-//     <span class="total-label">Discount:</span>
-//     <span class="dot-fill"></span>
-//     <span class="total-value">${invoiceData.data.data.sale.discountAmount.toFixed(2)}</span>
-//   </div>
-//   <div class="total-row">
-//     <span class="total-label">Net Amount:</span>
-//     <span class="dot-fill"></span>
-//      <span class="total-value">
-    
-//      ${(invoiceData.data.data.sale.finalAmount - invoiceData.data.data.sale.returnItemAmount).toFixed(2)}
-//     </span>
-//   </div>
-//   ` : ''}
-
-//   <div class="total-row">
-//     <span class="total-label">Paid Amount:</span>
-//     <span class="dot-fill"></span>
-//     <span class="total-value">
-  
-//      ${(invoiceData.data.data.sale.paidAmount - invoiceData.data.data.sale.returnItemAmount).toFixed(2)}
-//     </span>
-//   </div>
-
-//   <div class="total-row">
-//     <span class="total-label">Remaining:</span>
-//     <span class="dot-fill"></span>
-//     <span class="total-value">${invoiceData.data.data.sale.remaining.toFixed(2)}</span>
-//   </div>
-// </div>
-          
-//           <div class="footer">
-//               ${companyInfo.data.termsConditions}           
-//           </div>
-          
-//           <div class="signature-line">
-//             ${companyInfo.data.personalHints}
-//           </div>
-          
-//           <div class="spacer"></div>
-          
-//           <script>
-//             window.onload = function() {
-//               setTimeout(function() {
-//                 window.print();
-//                 setTimeout(function() {
-//                   window.close();
-//                 }, 500);
-//               }, 500);
-//             };
-//           </script>
-//         </body>
-//       </html>
-//     `);
-
-//     printWindow.document.close();
-
-//   } catch (error) {
-//     console.error("Error printing invoice:", error);
-//   }
-// };
-
-
 const handleSubmit = async () => {
   try {    
     const formData = await form1.validateFields();       
@@ -1252,7 +943,7 @@ const handleSubmit = async () => {
 
 
     if (!cartItems || cartItems.length === 0) {
-      Toaster.error('Please add at least one item to the cart');
+      Toaster.warning('Please add at least one item to the cart');
       return;
     }
 
@@ -1320,9 +1011,13 @@ const isInvoiceNumberNew = convertedInvoiceNo === newInvChecking;
 
     console.log('Payload to be sent:', payload);
  
-  await createSale(payload);
-
-    Toaster.success('Validation successful. Ready to submit to API.');
+   const result =  await createSale(payload);
+if (result.data.status === 'Success') {
+    Toaster.success('Record Saved successfully.');
+}
+else{
+    Toaster.warning('Error in creating sale: ' + result.data.data.message);
+  }
     form1.resetFields();            
 setCartItems([]);               
 setCustomerRemainingAmount(0); 
@@ -1336,10 +1031,16 @@ setShowPaymentMethod(false);
 
 stripProductCache.current = null;
 boxProductCache.current = null;
-if (isChecked) {
-  await fetchBoxProduct();
-} else {
-  await fetchStripProduct();
+const sts = isChecked;
+
+      setIsChecked(sts);
+if(sts)
+{
+fetchStripProduct();
+}
+else
+ {
+   fetchBoxProduct();
 }
     setLoadingSave(false);
   } catch (error) {
@@ -1353,7 +1054,7 @@ if (isChecked) {
   }
 };
 
-const [isChecked, setIsChecked] = useState(false);
+
  const { Option } = Select;
 
 
@@ -1509,7 +1210,7 @@ const [isChecked, setIsChecked] = useState(false);
   <Col span={12}>
    <Form.Item
   name="purchaseInventoryId"
-label={`Product Name - ${remainingQuantity}`}
+label={`Product Name : ${remainingQuantity}`}
 
 >
   <Space.Compact style={{ width: '100%' }}>
@@ -1535,19 +1236,44 @@ label={`Product Name - ${remainingQuantity}`}
     setFinalPurchaseRate('');
     setProducts([]); 
         setLoadingproduct(true);
-        try {
-           if (checked) {
-            console.log("checked");
-        await fetchStripProduct();     
-      } else { 
-                    console.log("Unchecked");
-        await fetchBoxProduct(); 
+      //   try {
+      //      if (checked) {
+      //   await fetchStripProduct();     
+      // } else {            
+      //   await fetchBoxProduct(); 
+      // }
+      //   } catch (error) {
+      //     console.error("API Error:", error);
+      //   } finally {
+      //     setLoadingproduct(false);
+      //   }
+      try {
+    if (checked) {
+      // ✅ Load strip only if not cached
+      if (!stripProductCache.current) {
+        await fetchStripProduct();
+      } else {
+        setProducts(stripProductCache.current);
+        const map = new Map();
+        stripProductCache.current.forEach(s => map.set(s.purchaseInventoryId, s));
+        setProductMap(map);
       }
-        } catch (error) {
-          console.error("API Error:", error);
-        } finally {
-          setLoadingproduct(false);
-        }
+    } else {
+      // ✅ Load box only if not cached
+      if (!boxProductCache.current) {
+        await fetchBoxProduct();
+      } else {
+        setProducts(boxProductCache.current);
+        const map = new Map();
+        boxProductCache.current.forEach(s => map.set(s.purchaseInventoryId, s));
+        setProductMap(map);
+      }
+    }
+  } catch (error) {
+    console.error("API Error:", error);
+  } finally {
+    setLoadingproduct(false);
+  }
       }}
     />
 
@@ -1624,7 +1350,7 @@ label={`Product Name - ${remainingQuantity}`}
           <div style={{ display: 'flex', alignItems: 'center' }}>
              
             <div>
-              <div style={{ fontWeight: 500 }}>{`${product.productName} - ${product.remainingQuantity}`}</div>
+              <div style={{ fontWeight: 500 }}>{`${product.productName} : ${product.remainingQuantity}`}</div>
               <div style={{ fontSize: 12, color: 'gray' }}>
                 Rate: {product.saleRate.toFixed(2)}  | B.No: {product.batchNo} | BC: {product.barcode}
               </div>
@@ -1641,7 +1367,7 @@ label={`Product Name - ${remainingQuantity}`}
                <Col span={6}>
                 <Form.Item
                   name="saleRate"
-                 label={` Sale Rate - ${finalPurchaseRate}`}
+                 label={` Sale Rate : ${finalPurchaseRate}`}
                   rules={[{ required: true, message: 'Please enter sale rate' }]}
                 >
                  <InputNumber
@@ -1706,7 +1432,7 @@ label={`Product Name - ${remainingQuantity}`}
   <Col span={6}> 
         <Form.Item
     name="finalRate"
-    label={`Unit Rate - Rs. ${minSaleRate}`}
+    label={`Unit Rate : Rs. ${minSaleRate}`}
     rules={[{ required: true, message: 'Please enter quantity' }]}
   >
     <Input type="number"

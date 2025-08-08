@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 
+import { Link, useNavigate } from "react-router-dom";
 
- 
-
- 
-import { useNavigate } from "react-router-dom";
 import { login } from "../../services/authService";
 import { Toaster } from "../common/Toaster";
 import { jwtDecode } from "jwt-decode";
 import useAuth from "../../hooks/useAuth";
- 
+
 
 const Login = () => {
   const { login: setAuth } = useAuth();
@@ -23,40 +20,40 @@ const Login = () => {
     setLoading(true);
     try {
       const data = await login({ username, password });
-  
+
       if (data.status === "Success") {
-        localStorage.setItem("authToken", data.token);  
+        localStorage.setItem("authToken", data.token);
         Toaster.success("Successfully logged in");
-        setAuth(data); 
-        
+        setAuth(data);
+
         const token = data.token;
         const decodeToken = jwtDecode(token);
-        console.log("Decoded Token:", decodeToken);  
-  
-        const roleId = parseInt(decodeToken.role, 10);  
-        console.log("Role ID:", roleId); 
-        
-  
+        console.log("Decoded Token:", decodeToken);
+
+        const roleId = parseInt(decodeToken.role, 10);
+        console.log("Role ID:", roleId);
+
+
         switch (roleId) {
           case 1:
-            navigate("/"); 
+            navigate("/");
             break;
           case 2:
-            navigate("/"); 
+            navigate("/");
             break;
           case 3:
-            navigate("/"); 
+            navigate("/");
             break;
           default:
             navigate("/unauthorized");
             break;
         }
       } else {
-        localStorage.removeItem("authToken");  
+        localStorage.removeItem("authToken");
         Toaster.error(data.message);
       }
     } catch (err) {
-      localStorage.removeItem("authToken");  
+      localStorage.removeItem("authToken");
       Toaster.error("An error occurred during login. Please try again.");
       console.error("Login error:", err);
     } finally {
@@ -69,8 +66,8 @@ const Login = () => {
         {/* Image Section (Left) */}
         <div className="col-lg-5 d-none d-lg-flex align-items-center justify-content-center p-5 bg-light">
           <div className="text-center">
-            <img 
-              src="/loginimage.png" 
+            <img
+              src="/logo1 .png"
               alt="Welcome Illustration"
               className="img-fluid mb-4"
               style={{ maxHeight: "420px", width: "auto" }}
@@ -79,7 +76,7 @@ const Login = () => {
             <p className="lead text-muted">Secure access to your dashboard</p>
           </div>
         </div>
-  
+
         {/* Login Form Section (Right) */}
         <div className="col-lg-7 d-flex align-items-center justify-content-center p-4">
           <div className="w-100" style={{ maxWidth: "400px" }}>
@@ -87,7 +84,7 @@ const Login = () => {
               <h2 className="fw-bold text-primary">Sign In</h2>
               <p className="text-muted">Enter your credentials to continue</p>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-4 shadow-sm rounded bg-white">
               <div className="mb-3">
                 <label htmlFor="email" className="form-label">Email Address</label>
@@ -112,29 +109,29 @@ const Login = () => {
                   required
                   placeholder="••••••••"
                 />
-              </div>       
-              <button 
-                type="submit" 
+              </div>
+              <button
+                type="submit"
                 className="btn btn-primary w-100 py-2 fw-bold"
                 disabled={loading}
               >
                 {loading ? <i className="fa fa-spinner fa-spin me-2" /> : null}
                 {loading ? "Signing in..." : "Sign In"}
               </button>
-              
-              <div className="text-center mt-3">
-                <a href="#forgot-password" className="text-decoration-none">Forgot password?</a>
-              </div>
+
             </form>
-            
+
             <div className="text-center mt-4">
-              <p className="text-muted">Don't have an account? <a href="#signup" className="text-decoration-none">Sign up</a></p>
+              <p className="text-muted">
+                Don't have an account?{' '}
+                <Link to="/signup" className="text-decoration-none">Sign up</Link>
+              </p>
             </div>
           </div>
-        </div>      
+        </div>
       </div>
     </div>
-  );  
+  );
 };
 
 export default Login;
